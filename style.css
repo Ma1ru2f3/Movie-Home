@@ -1,27 +1,67 @@
-.category-buttons {
-  margin-bottom: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+/* বেসিক স্টাইল রিসেট */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
-.category-buttons button {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background: #333;
-  color: #fff;
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #141414; /* ডার্ক ব্যাকগ্রাউন্ড */
+    color: white; /* সাদা লেখা */
 }
-.category-buttons button:hover {
-  background: #ff4444;
+
+header {
+    padding: 20px 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #101010;
 }
-#historyList {
-  list-style: none;
-  padding: 10px;
+
+header h1 {
+    color: red;
+    font-size: 2em;
 }
-#historyList li {
-  margin: 8px 0;
-  padding: 8px;
-  background: #1c1c1c;
-  border-radius: 8px;
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
+}
+
+main {
+    padding: 20px 50px;
+}
+
+.movie-section h2 {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+}
+
+.movie-grid {
+    display: grid;
+    /* প্রতি সারিতে কয়টি পোস্টার দেখাবে তা ঠিক করা */
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px; /* পোস্টারগুলোর মধ্যে ফাঁকা জায়গা */
+}
+
+.movie-card {
+    background-color: #1f1f1f;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.movie-card img {
+    width: 100%;
+    height: auto;
+}
+
+.movie-card h3 {
+    padding: 10px;
+    font-size: 1em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
