@@ -1,29 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>My MovieBox</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MovieBox</title>
+<link rel="stylesheet" href="style.css">
 </head>
-<body style="background:#000;color:#fff;text-align:center;font-family:sans-serif;">
+<body>
 
-<!-- Navigation Menu -->
-<nav style="background:#111;padding:10px;text-align:center;">
-  <a href="index.html" style="color:#0f0;margin:10px;">Home</a>
-  <a href="history.html" style="color:#0f0;margin:10px;">History</a>
-  <a href="categories.html" style="color:#0f0;margin:10px;">Categories</a>
-  <a href="trending.html" style="color:#0f0;margin:10px;">Trending</a>
+<!-- Top Navbar -->
+<nav class="navbar">
+  <div class="logo">🎬 MovieBox</div>
+  <input type="text" placeholder="Search..." id="searchBox">
 </nav>
 
-<h1>📺 My MovieBox</h1>
+<!-- Featured Section -->
+<section class="featured">
+  <h1>🎥 Welcome to MovieBox</h1>
+  <p>Discover trending and latest movies right from your device!</p>
+</section>
 
-<!-- Search Box -->
-<form action="search.html" method="get" style="margin:20px;">
-  <input type="text" name="query" placeholder="Search movies..." style="padding:5px;width:70%;">
-  <button type="submit" style="padding:5px;">Search</button>
-</form>
+<!-- Movie Section -->
+<section class="movies" id="movieSection">
+  <div class="movie-card">
+    <a href="movie1.html">
+      <img src="assets/movie1-thumb.jpg" alt="Movie 1 Thumbnail">
+      <h3>Movie 1</h3>
+    </a>
+  </div>
+  <div class="movie-card">
+    <a href="movie2.html">
+      <img src="assets/movie2-thumb.jpg" alt="Movie 2 Thumbnail">
+      <h3>Movie 2</h3>
+    </a>
+  </div>
+  <!-- Add more movies as needed -->
+</section>
 
-<!-- Movie Links -->
-<a href="movie1.html" style="color:#0f0;font-size:20px;display:block;margin:10px;">▶ Movie 1</a>
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <a href="index.html">Home</a>
+  <a href="history.html">History</a>
+  <a href="trending.html">Trending</a>
+  <a href="categories.html">Categories</a>
+</nav>
 
+<script src="script.js"></script>
 </body>
 </html>
