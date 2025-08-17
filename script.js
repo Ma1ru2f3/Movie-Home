@@ -1,58 +1,30 @@
-// Save history
-function saveHistory(title) {
-  let history = JSON.parse(localStorage.getItem("history")) || [];
-  if (!history.includes(title)) {
-    history.push(title);
-    localStorage.setItem("history", JSON.stringify(history));
-  }
-}
+const searchInput = document.getElementById("searchInput");
+const searchBtn = document.getElementById("searchBtn");
+const movieList = document.getElementById("movieList");
+const historyList = document.getElementById("historyList");
 
-// Show history
-document.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("historyList")) {
-    let history = JSON.parse(localStorage.getItem("history")) || [];
-    let list = document.getElementById("historyList");
-    if (history.length === 0) {
-      list.innerHTML = "<p>No history yet.</p>";
-    } else {
-      history.forEach(item => {
-        let li = document.createElement("li");
-        li.textContent = item;
-        list.appendChild(li);
-      });
-    }
-  }
+// Load history from localStorage
+let history = JSON.parse(localStorage.getItem("movieHistory")) || [];
+updateHistoryUI();
+
+searchBtn.addEventListener("click", () => {
+  const query = searchInput.value.trim();
+  if (!query) return;
+
+  // Save to history
+  history.push(query);
+  localStorage.setItem("movieHistory", JSON.stringify(history));
+  updateHistoryUI();
+
+  // Fake search result (replace with API later)
+  movieList.innerHTML = `<li>Result for "${query}"</li>`;
 });
 
-// Category filter
-function filterCategory(category) {
-  let allVideos = document.querySelectorAll(".video-card");
-  allVideos.forEach(card => {
-    if (category === "all" || card.dataset.category === category) {
-      card.style.display = "block";
-    } else {
-      card.style.display = "none";
-    }
+function updateHistoryUI() {
+  historyList.innerHTML = "";
+  history.slice().reverse().forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    historyList.appendChild(li);
   });
 }
-
-// Copy videos from Home page to Categories
-document.addEventListener("DOMContentLoaded", () => {
-  if (document.getElementById("categoryGrid")) {
-    let homeVideos = JSON.parse(localStorage.getItem("allVideos")) || [];
-    let grid = document.getElementById("categoryGrid");
-
-    if (homeVideos.length === 0) {
-      // প্রথমবারে index.html থেকে সব ভিডিও পড়া
-      let cards = document.querySelectorAll("#videoGrid .video-card");
-      let htmlArr = [];
-      cards.forEach(c => htmlArr.push(c.outerHTML));
-      localStorage.setItem("allVideos", JSON.stringify(htmlArr));
-      homeVideos = htmlArr;
-    }
-
-    homeVideos.forEach(v => {
-      grid.innerHTML += v;
-    });
-  }
-});
