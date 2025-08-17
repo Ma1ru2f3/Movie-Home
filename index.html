@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MovieBox</title>
+  <title>MovieBox - Home</title>
   <link rel="stylesheet" href="style.css">
+  <script defer src="script.js"></script>
 </head>
 <body>
   <!-- Header -->
   <header class="header">
     <div class="logo">
-      <img src="images/logo.png" alt="MovieBox Logo">
+      <img src="images/logo.png" alt="Logo">
       <h1>MovieBox</h1>
     </div>
     <div class="home-text">_home</div>
@@ -18,37 +19,36 @@
 
   <!-- Search -->
   <section class="search-box">
-    <input type="text" placeholder="Search movies, anime, drama...">
+    <input type="text" id="searchInput" placeholder="Search movies, anime, drama...">
   </section>
 
-  <!-- Main Content -->
+  <!-- Videos -->
   <main class="video-section">
     <h2>All Videos</h2>
-    <div class="video-grid">
+    <div class="video-grid" id="videoGrid">
       <!-- Example Video -->
-      <div class="video-card">
-        <video controls poster="images/thumb1.jpg">
+      <div class="video-card" data-category="movie">
+        <video controls poster="images/thumb1.jpg" onclick="saveHistory('Movie Title 1')">
           <source src="videos/video1.mp4" type="video/mp4">
         </video>
         <h3>Movie Title 1</h3>
         <p>2025 • Action • HD</p>
       </div>
 
-      <div class="video-card">
-        <iframe src="https://www.youtube.com/embed/ScMzIvxBSi4" allowfullscreen></iframe>
+      <div class="video-card" data-category="anime">
+        <iframe src="https://www.youtube.com/embed/ScMzIvxBSi4"
+                allowfullscreen onclick="saveHistory('Anime Trailer')"></iframe>
         <h3>Anime Trailer</h3>
         <p>2024 • Anime • Trailer</p>
       </div>
-
-      <!-- আরও ভিডিও এখানে কপি করে দাও -->
     </div>
   </main>
 
-  <!-- Bottom Navigation -->
+  <!-- Bottom Nav -->
   <nav class="bottom-nav">
-    <button class="active">🏠 Home</button>
-    <button>📜 History</button>
-    <button>🎬 Categories</button>
+    <a href="index.html" class="active">🏠 Home</a>
+    <a href="history.html">📜 History</a>
+    <a href="categories.html">🎬 Categories</a>
   </nav>
 </body>
 </html>
