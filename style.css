@@ -1,111 +1,27 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: Arial, sans-serif;
-}
-
-body {
-  background: #0d0d0d;
-  color: #fff;
+.category-buttons {
+  margin-bottom: 20px;
   display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+  flex-wrap: wrap;
+  gap: 10px;
 }
-
-/* Header */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  background: #1a1a1a;
-  border-bottom: 1px solid #333;
-}
-.logo {
-  display: flex;
-  align-items: center;
-}
-.logo img {
-  width: 40px;
-  margin-right: 10px;
-}
-.logo h1 {
-  font-size: 20px;
-  color: #ff4444;
-}
-.home-text {
-  font-size: 14px;
-  color: #ccc;
-}
-
-/* Search */
-.search-box {
-  padding: 10px 20px;
-  background: #111;
-}
-.search-box input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
+.category-buttons button {
+  padding: 8px 14px;
   border: none;
-  outline: none;
-  background: #222;
-  color: #fff;
-}
-
-/* Video Section */
-.video-section {
-  flex: 1;
-  padding: 20px;
-}
-.video-section h2 {
-  margin-bottom: 15px;
-}
-.video-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-}
-.video-card {
-  background: #1c1c1c;
-  border-radius: 12px;
-  padding: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-}
-.video-card video,
-.video-card iframe {
-  width: 100%;
-  border-radius: 8px;
-  margin-bottom: 8px;
-}
-.video-card h3 {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-.video-card p {
-  font-size: 12px;
-  color: #aaa;
-}
-
-/* Bottom Navigation */
-.bottom-nav {
-  display: flex;
-  justify-content: space-around;
-  background: #1a1a1a;
-  padding: 12px 0;
-  border-top: 1px solid #333;
-  position: sticky;
-  bottom: 0;
-}
-.bottom-nav button {
-  background: none;
-  border: none;
-  color: #ccc;
-  font-size: 16px;
+  border-radius: 6px;
   cursor: pointer;
+  background: #333;
+  color: #fff;
 }
-.bottom-nav button.active,
-.bottom-nav button:hover {
-  color: #ff4444;
+.category-buttons button:hover {
+  background: #ff4444;
+}
+#historyList {
+  list-style: none;
+  padding: 10px;
+}
+#historyList li {
+  margin: 8px 0;
+  padding: 8px;
+  background: #1c1c1c;
+  border-radius: 8px;
 }
