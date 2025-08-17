@@ -1,46 +1,149 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MovieBox</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
 <style>
-body { margin:0; font-family: Arial, sans-serif; background:#121212; color:#fff;}
-header { background:#1f1f1f; padding:1em; text-align:center; }
-nav { display:flex; justify-content:center; background:#1a1a1a; flex-wrap:wrap; }
-nav button { background:none; border:none; color:#fff; padding:1em 2em; cursor:pointer; font-size:16px; }
-nav button.active { border-bottom:2px solid #ff4500; }
-main { max-width:900px; margin:1em auto; padding:1em; }
-input[type=text], input[type=password] { width:100%; padding:0.5em; margin:0.5em 0; border-radius:5px; border:none; }
-button { background:#ff4500; border:none; padding:0.5em 1em; border-radius:5px; cursor:pointer; color:#fff; margin-top:0.3em; }
-button:hover { background:#e03e00; }
-.video-card { background:#2a2a2a; padding:0.5em; margin:1em 0; border-radius:8px; position:relative; }
-iframe { width:100%; height:250px; border-radius:5px; }
-.hidden { display:none; }
-#uploadSection { background:#2a2a2a; padding:1em; margin-top:1em; border-radius:8px; }
-.profile-info { text-align:right; margin-bottom:1em; }
-#historyList .video-card { background:#333; }
-.delete-btn { position:absolute; top:10px; right:10px; background:#ff0000; padding:0.3em 0.5em; font-size:12px; border-radius:4px; }
-.delete-btn:hover { background:#cc0000; }
+body { font-family: Arial, sans-serif; background:#111; color:#eee; margin:0; padding:0;}
+header { background:#222; padding:10px; display:flex; justify-content:space-between; align-items:center;}
+nav button { margin-right:10px; padding:8px 15px; background:#333; color:#eee; border:none; cursor:pointer; border-radius:5px;}
+nav button:hover { background:#555;}
+#profile { display:flex; align-items:center; }
+#profile img { width:35px; height:35px; border-radius:50%; margin-right:10px;}
+main { padding:20px; }
+input, button { padding:8px; margin:5px 0; border-radius:5px; border:none;}
+input { width:300px;}
+button.add, button.delete { background:#007BFF; color:white; cursor:pointer;}
+button.add:hover, button.delete:hover { background:#0056b3;}
+.video-item { background:#222; padding:10px; margin:10px 0; border-radius:5px;}
+iframe { width:100%; height:315px; margin-top:10px; }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
 <header>
-  <h1>MovieBox</h1>
+  <nav>
+    <button onclick="showHome()">Home</button>
+    <button onclick="showUpload()">Upload</button>
+    <button onclick="showHistory()">History</button>
+  </nav>
+  <div id="profile"></div>
 </header>
 
-<nav>
-  <button id="homeBtn" class="active" onclick="showSection('home')">Home</button>
-  <button id="videoBtn" onclick="showSection('video')">Video</button>
-  <button id="historyBtn" onclick="showSection('history')">History</button>
-  <button id="profileBtn" onclick="showSection('profile')">Profile</button>
-</nav>
-
 <main>
-  <!-- Home -->
-  <section id="home">
-    <input type="text" id="searchBar" placeholder="Search Video..." onkeyup="searchVideo()">
-    <div id="
+  <div id="home">
+    <h2>Welcome to MovieBox</h2>
+    <div id="video-list"></div>
+  </div>
+
+  <div id="upload" style="display:none;">
+    <h2>Add YouTube Video</h2>
+    <input type="text" id="video-title" placeholder="Video Title"><br>
+    <input type="text" id="video-link" placeholder="YouTube Video Link"><br>
+    <input type="password" id="admin-code" placeholder="Admin Code"><br>
+    <button class="add" onclick="addVideo()">Add Video</button>
+  </div>
+
+  <div id="history" style="display:none;">
+    <h2>History</h2>
+    <div id="history-list"></div>
+  </div>
+</main>
+
+<script>
+let videos = [];
+let historyVideos = [];
+
+function showHome() { document.getElementById('home').style.display='block'; document.getElementById('upload').style.display='none'; document.getElementById('history').style.display='none'; renderVideos(); }
+function showUpload() { document.getElementById('home').style.display='none'; document.getElementById('upload').style.display='block'; document.getElementById('history').style.display='none'; }
+function showHistory() { document.getElementById('home').style.display='none'; document.getElementById('upload').style.display='none'; document.getElementById('history').style.display='block'; renderHistory(); }
+
+function renderVideos() {
+  const list = document.getElementById('video-list');
+  list.innerHTML = '';
+  videos.forEach((v, idx)=>{
+    const div = document.createElement('div');
+    div.className='video-item';
+    div.innerHTML = `<b>${v.title}</b><br>
+                     <iframe src="${convertEmbed(v.link)}" frameborder="0" allowfullscreen></iframe>
+                     <button class="delete" onclick="deleteVideo(${idx})">Delete</button>`;
+    list.appendChild(div);
+  });
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  list.innerHTML = '';
+  historyVideos.forEach(v=>{
+    const div = document.createElement('div');
+    div.className='video-item';
+    div.innerHTML = `<b>${v.title}</b> - <a href="${v.link}" target="_blank">Link</a>`;
+    list.appendChild(div);
+  });
+}
+
+function convertEmbed(link) {
+  if(link.includes("youtube.com/watch?v=")){
+    return link.replace("watch?v=","embed/");
+  } else if(link.includes("youtu.be/")){
+    return "https://www.youtube.com/embed/"+link.split("/").pop();
+  }
+  return link;
+}
+
+function addVideo() {
+  const title = document.getElementById('video-title').value.trim();
+  const link = document.getElementById('video-link').value.trim();
+  const code = document.getElementById('admin-code').value.trim();
+  if(code !== "123450"){ alert("Wrong admin code"); return; }
+  if(title && link){
+    videos.push({title, link});
+    historyVideos.push({title, link});
+    renderVideos();
+    renderHistory();
+    document.getElementById('video-title').value='';
+    document.getElementById('video-link').value='';
+    alert("Video Added!");
+  } else alert("Enter title and link");
+}
+
+function deleteVideo(idx){
+  if(confirm("Are you sure to delete this video?")){
+    videos.splice(idx,1);
+    renderVideos();
+  }
+}
+
+// Google Login
+function handleCredentialResponse(response) {
+  const profile = parseJwt(response.credential);
+  document.getElementById('profile').innerHTML=`<img src="${profile.picture}">${profile.name}`;
+}
+
+window.onload = function () {
+  google.accounts.id.initialize({
+    client_id: "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",
+    callback: handleCredentialResponse
+  });
+  google.accounts.id.renderButton(
+    document.getElementById("profile"),
+    { theme: "outline", size: "medium" }
+  );
+  google.accounts.id.prompt();
+};
+
+// Parse JWT token
+function parseJwt (token) {
+  var base64Url = token.split('.')[1];
+  var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+  return JSON.parse(jsonPayload);
+}
+</script>
+
+</body>
+</html>
