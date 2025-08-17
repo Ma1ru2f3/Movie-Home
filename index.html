@@ -3,36 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AnimeHub Clone</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>MovieBox</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>AnimeHub Clone</h1>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="anime.html">Anime List</a>
-    </nav>
+    <h1>MovieBox</h1>
+    <input type="text" id="searchInput" placeholder="Search movies...">
+    <button id="searchBtn">Search</button>
   </header>
 
   <main>
-    <section class="anime-list">
-      <div class="anime-card">
-        <img src="images/anime1.jpg" alt="Anime 1">
-        <h3>Anime Title 1</h3>
-        <a href="anime.html">Watch Now</a>
-      </div>
-      <div class="anime-card">
-        <img src="images/anime2.jpg" alt="Anime 2">
-        <h3>Anime Title 2</h3>
-        <a href="anime.html">Watch Now</a>
-      </div>
+    <section id="home">
+      <h2>Welcome to MovieBox</h2>
+      <p>Search for your favorite movies!</p>
+    </section>
+
+    <section id="results">
+      <h2>Search Results</h2>
+      <ul id="movieList"></ul>
+    </section>
+
+    <section id="history">
+      <h2>Search History</h2>
+      <ul id="historyList"></ul>
     </section>
   </main>
 
-  <footer>
-    <p>© 2025 AnimeHub Clone</p>
-  </footer>
-  <script src="js/script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
