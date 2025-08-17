@@ -1,35 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MovieBox</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ভিডিও হাব</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>MovieBox</h1>
-    <input type="text" id="searchInput" placeholder="Search movies...">
-    <button id="searchBtn">Search</button>
-  </header>
+    <header>
+        <h1>ভিডিও হাব</h1>
+        <nav>
+            <a href="index.html" class="active">Home</a>
+            <a href="upload.html">Upload ভিডিও</a>
+        </nav>
+    </header>
 
-  <main>
-    <section id="home">
-      <h2>Welcome to MovieBox</h2>
-      <p>Search for your favorite movies!</p>
-    </section>
+    <main>
+        <section class="search-section">
+            <input type="text" id="searchBar" placeholder="ভিডিও খুঁজুন...">
+            <button onclick="searchVideo()">Search</button>
+        </section>
 
-    <section id="results">
-      <h2>Search Results</h2>
-      <ul id="movieList"></ul>
-    </section>
+        <section class="history-section">
+            <h2>সার্চ ইতিহাস</h2>
+            <ul id="historyList"></ul>
+        </section>
 
-    <section id="history">
-      <h2>Search History</h2>
-      <ul id="historyList"></ul>
-    </section>
-  </main>
+        <section class="video-section">
+            <h2>ভিডিও</h2>
+            <div id="videoContainer">
+                <!-- ভিডিও এখানে দেখানো হবে -->
+            </div>
+        </section>
+    </main>
 
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
