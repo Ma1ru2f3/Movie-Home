@@ -3,52 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MovieBox - Home</title>
-  <link rel="stylesheet" href="style.css">
-  <script defer src="script.js"></script>
+  <title>AnimeHub Clone</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <!-- Header -->
-  <header class="header">
-    <div class="logo">
-      <img src="images/logo.png" alt="Logo">
-      <h1>MovieBox</h1>
-    </div>
-    <div class="home-text">_home</div>
+  <header>
+    <h1>AnimeHub Clone</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="anime.html">Anime List</a>
+    </nav>
   </header>
 
-  <!-- Search -->
-  <section class="search-box">
-    <input type="text" id="searchInput" placeholder="Search movies, anime, drama...">
-  </section>
-
-  <!-- Videos -->
-  <main class="video-section">
-    <h2>All Videos</h2>
-    <div class="video-grid" id="videoGrid">
-      <!-- Example Video -->
-      <div class="video-card" data-category="movie">
-        <video controls poster="images/thumb1.jpg" onclick="saveHistory('Movie Title 1')">
-          <source src="videos/video1.mp4" type="video/mp4">
-        </video>
-        <h3>Movie Title 1</h3>
-        <p>2025 • Action • HD</p>
+  <main>
+    <section class="anime-list">
+      <div class="anime-card">
+        <img src="images/anime1.jpg" alt="Anime 1">
+        <h3>Anime Title 1</h3>
+        <a href="anime.html">Watch Now</a>
       </div>
-
-      <div class="video-card" data-category="anime">
-        <iframe src="https://www.youtube.com/embed/ScMzIvxBSi4"
-                allowfullscreen onclick="saveHistory('Anime Trailer')"></iframe>
-        <h3>Anime Trailer</h3>
-        <p>2024 • Anime • Trailer</p>
+      <div class="anime-card">
+        <img src="images/anime2.jpg" alt="Anime 2">
+        <h3>Anime Title 2</h3>
+        <a href="anime.html">Watch Now</a>
       </div>
-    </div>
+    </section>
   </main>
 
-  <!-- Bottom Nav -->
-  <nav class="bottom-nav">
-    <a href="index.html" class="active">🏠 Home</a>
-    <a href="history.html">📜 History</a>
-    <a href="categories.html">🎬 Categories</a>
-  </nav>
+  <footer>
+    <p>© 2025 AnimeHub Clone</p>
+  </footer>
+  <script src="js/script.js"></script>
 </body>
 </html>
