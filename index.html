@@ -74,11 +74,13 @@ let videos = JSON.parse(localStorage.getItem('videos') || '[]');
 
 // Convert YouTube Link to Embed
 function convertYouTubeLink(url){
-    let id = url.split('v=')[1];
-    if(!id) return '';
-    let amp = id.indexOf('&');
-    if(amp != -1) id = id.substring(0, amp);
-    return 'https://www.youtube.com/embed/' + id;
+    let regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    let match = url.match(regExp);
+    if(match && match[2].length==11){
+        return "https://www.youtube.com/embed/"+match[2];
+    } else {
+        return "";
+    }
 }
 
 // Render Videos
@@ -88,11 +90,13 @@ function renderVideos() {
     containerHome.innerHTML = '';
     containerVideo.innerHTML = '';
     videos.forEach(v=>{
+        const embedLink = convertYouTubeLink(v.url);
+        if(!embedLink) return; // Invalid link ignore
         const div = document.createElement('div');
         div.className='video-card';
         div.innerHTML = `
             <h3>${v.title}</h3>
-            <iframe src="${convertYouTubeLink(v.url)}" allowfullscreen></iframe>
+            <iframe src="${embedLink}" allowfullscreen></iframe>
         `;
         containerHome.appendChild(div.cloneNode(true));
         containerVideo.appendChild(div);
@@ -123,9 +127,11 @@ function searchVideo(){
     container.innerHTML='';
     videos.filter(v=>v.title.toLowerCase().includes(query))
           .forEach(v=>{
+            const embedLink = convertYouTubeLink(v.url);
+            if(!embedLink) return;
             const div=document.createElement('div');
             div.className='video-card';
-            div.innerHTML=`<h3>${v.title}</h3><iframe src="${convertYouTubeLink(v.url)}" allowfullscreen></iframe>`;
+            div.innerHTML=`<h3>${v.title}</h3><iframe src="${embedLink}" allowfullscreen></iframe>`;
             container.appendChild(div);
           });
 }
