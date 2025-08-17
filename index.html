@@ -1,159 +1,54 @@
-<!doctype html>
-<html lang="bn">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ANIMOHUB — Demo</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MovieBox</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Top bar -->
-  <header class="topbar">
+  <!-- Header -->
+  <header class="header">
     <div class="logo">
-      <svg viewBox="0 0 24 24"><path d="M4 3l16 9-16 9V3z" fill="currentColor"/></svg>
+      <img src="images/logo.png" alt="MovieBox Logo">
+      <h1>MovieBox</h1>
     </div>
-    <h1>ANIMOHUB</h1>
-    <div class="avatar"></div>
+    <div class="home-text">_home</div>
   </header>
 
-  <!-- Main area (tabs) -->
-  <main>
-    <!-- HOME TAB -->
-    <section class="tab visible" id="tab-home">
-      <!-- hero -->
-      <div class="hero">
-        <img src="https://images.unsplash.com/photo-1535016120720-40c646be5580?q=80&w=1200&auto=format&fit=crop" alt="">
-        <div class="hero__overlay">
-          <h2>Dekin no Mogura: The Earthbound Mole</h2>
-          <div class="hero__actions">
-            <button class="btn btn--primary">
-              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
-              WATCH NOW
-            </button>
-            <button class="btn">
-              <svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2V7zm0 4h2v6h-2v-6zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10
-              10-4.48 10-10S17.52 2 12 2z" fill="currentColor"/></svg>
-              Info
-            </button>
-            <button class="btn">
-              <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2zm-7 7H5v-2h7v2zM5 6h14v2H5V6z" fill="currentColor"/></svg>
-              My List
-            </button>
-          </div>
-        </div>
+  <!-- Search -->
+  <section class="search-box">
+    <input type="text" placeholder="Search movies, anime, drama...">
+  </section>
+
+  <!-- Main Content -->
+  <main class="video-section">
+    <h2>All Videos</h2>
+    <div class="video-grid">
+      <!-- Example Video -->
+      <div class="video-card">
+        <video controls poster="images/thumb1.jpg">
+          <source src="videos/video1.mp4" type="video/mp4">
+        </video>
+        <h3>Movie Title 1</h3>
+        <p>2025 • Action • HD</p>
       </div>
 
-      <!-- networks -->
-      <div class="pad">
-        <p class="muted small">POPULAR</p>
-        <h3>Content Networks</h3>
-        <div class="networks">
-          <div class="net">
-            <div class="net__logo">C</div>
-            <span>Crunchyroll</span>
-          </div>
-          <div class="net">
-            <div class="net__logo">N</div>
-            <span>Netflix</span>
-          </div>
-          <div class="net">
-            <div class="net__logo">P</div>
-            <span>Prime Video</span>
-          </div>
-        </div>
-
-        <div class="chips">
-          <span class="chip">Adventure</span>
-          <span class="chip">Romance</span>
-          <span class="chip">Science Fic...</span>
-          <span class="chip">Fantasy</span>
-          <span class="chip">Drama</span>
-        </div>
+      <div class="video-card">
+        <iframe src="https://www.youtube.com/embed/ScMzIvxBSi4" allowfullscreen></iframe>
+        <h3>Anime Trailer</h3>
+        <p>2024 • Anime • Trailer</p>
       </div>
 
-      <!-- trending -->
-      <div class="pad">
-        <h3 class="title">Trending</h3>
-        <div class="grid">
-          <article class="card numbered">
-            <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop">
-            <span class="badge yellow">MULTI</span>
-            <span class="num">1</span>
-            <div class="card__meta">
-              <p>Naruto Shippuden</p>
-            </div>
-          </article>
+      <!-- আরও ভিডিও এখানে কপি করে দাও -->
+    </div>
+  </main>
 
-          <article class="card numbered">
-            <img src="https://images.unsplash.com/photo-1526178613552-1a1c0171be30?q=80&w=800&auto=format&fit=crop">
-            <span class="badge purple">DUAL</span>
-            <span class="num">2</span>
-            <div class="card__meta">
-              <p>BAKI</p>
-            </div>
-          </article>
-
-          <article class="card numbered">
-            <img src="https://images.unsplash.com/photo-1512428559087-560fa5ceab42?q=80&w=800&auto=format&fit=crop">
-            <span class="badge orange">HINDI</span>
-            <span class="num">3</span>
-            <div class="card__meta">
-              <p>Mystery Girl</p>
-            </div>
-          </article>
-        </div>
-      </div>
-
-      <!-- most popular -->
-      <div class="pad">
-        <h3 class="title">Most Popular Movies</h3>
-        <div class="grid">
-          <article class="card">
-            <img src="https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?q=80&w=800&auto=format&fit=crop">
-            <span class="badge purple">DUAL</span>
-            <div class="card__meta">
-              <p>Mononoke the ...</p><span class="chip chip--dim">2025</span>
-            </div>
-          </article>
-
-          <article class="card">
-            <img src="https://images.unsplash.com/photo-1535016120720-40c646be5580?q=80&w=800&auto=format&fit=crop">
-            <span class="badge purple">DUAL</span>
-            <div class="card__meta">
-              <p>Smurfs</p><span class="chip chip--dim">2025</span>
-            </div>
-          </article>
-
-          <article class="card">
-            <img src="https://images.unsplash.com/photo-1526948128573-703ee1aeb6fa?q=80&w=800&auto=format&fit=crop">
-            <span class="badge yellow">MULTI</span>
-            <div class="card__meta">
-              <p>My Hero Academia</p><span class="chip chip--dim">2024</span>
-            </div>
-          </article>
-
-          <article class="card">
-            <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=800&auto=format&fit=crop">
-            <span class="badge purple">DUAL</span>
-            <div class="card__meta">
-              <p>Watchmen Chap II</p><span class="chip chip--dim">2024</span>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- SEARCH TAB -->
-    <section class="tab" id="tab-search">
-      <div class="pad">
-        <h2 class="big"><span class="accent">Global</span> Search</h2>
-        <p class="muted">Search Your Favourite Content</p>
-        <div class="searchbar">
-          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79L20 21.5 21.5 20 15.5 14zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/></svg>
-          <input placeholder="Search" />
-          <span class="mic">🎤</span>
-        </div>
-
-        <div class="search-
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="active">🏠 Home</button>
+    <button>📜 History</button>
+    <button>🎬 Categories</button>
+  </nav>
+</body>
+</html>
