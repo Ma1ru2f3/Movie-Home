@@ -11,12 +11,11 @@ nav { display:flex; justify-content:center; background:#1a1a1a; }
 nav button { background:none; border:none; color:#fff; padding:1em 2em; cursor:pointer; font-size:16px; }
 nav button.active { border-bottom:2px solid #ff4500; }
 main { max-width:900px; margin:1em auto; padding:1em; }
-input[type=text] { width:100%; padding:0.5em; margin:0.5em 0; border-radius:5px; border:none; }
+input[type=text], input[type=password] { width:100%; padding:0.5em; margin:0.5em 0; border-radius:5px; border:none; }
 button { background:#ff4500; border:none; padding:0.5em 1em; border-radius:5px; cursor:pointer; color:#fff; }
 button:hover { background:#e03e00; }
 .video-card { background:#2a2a2a; padding:0.5em; margin:1em 0; border-radius:8px; }
 iframe { width:100%; height:250px; border-radius:5px; }
-h2,h3 { margin:0.5em 0; }
 .hidden { display:none; }
 </style>
 </head>
@@ -29,7 +28,6 @@ h2,h3 { margin:0.5em 0; }
 <nav>
   <button id="homeBtn" class="active" onclick="showSection('home')">Home</button>
   <button id="videoBtn" onclick="showSection('video')">Video</button>
-  <button id="historyBtn" onclick="showSection('history')">History</button>
   <button id="uploadBtn" onclick="showSection('upload')">Upload</button>
 </nav>
 
@@ -46,23 +44,17 @@ h2,h3 { margin:0.5em 0; }
     <div id="videoListVideo"></div>
   </section>
 
-  <!-- History Section -->
-  <section id="history" class="hidden">
-    <h2>History</h2>
-    <div id="historyList"></div>
-  </section>
-
   <!-- Upload Section -->
   <section id="upload" class="hidden">
-    <h2>Upload Video</h2>
+    <h2>Upload Video (Admin)</h2>
+    <label>Admin Password</label>
+    <input type="password" id="adminPass" placeholder="Enter password">
+
     <label>Title</label>
     <input type="text" id="title" placeholder="Video Title">
 
-    <label>Google Drive Link</label>
-    <input type="text" id="link" placeholder="https://drive.google.com/file/.../view?usp=sharing">
-
-    <label>Category/Tag</label>
-    <input type="text" id="category" placeholder="Anime, Movie, etc">
+    <label>YouTube Link</label>
+    <input type="text" id="link" placeholder="https://www.youtube.com/watch?v=VIDEO_ID">
 
     <button onclick="addVideo()">Add Video</button>
   </section>
@@ -80,10 +72,13 @@ function showSection(sec) {
 // LocalStorage Video List
 let videos = JSON.parse(localStorage.getItem('videos') || '[]');
 
-// Convert Google Drive Link
-function convertDriveLink(url){
-    return url.replace('/view?usp=drivesdk','/preview')
-              .replace('/view?usp=sharing','/preview');
+// Convert YouTube Link to Embed
+function convertYouTubeLink(url){
+    let id = url.split('v=')[1];
+    if(!id) return '';
+    let amp = id.indexOf('&');
+    if(amp != -1) id = id.substring(0, amp);
+    return 'https://www.youtube.com/embed/' + id;
 }
 
 // Render Videos
@@ -97,28 +92,28 @@ function renderVideos() {
         div.className='video-card';
         div.innerHTML = `
             <h3>${v.title}</h3>
-            <p>Category: ${v.category || 'Uncategorized'}</p>
-            <iframe src="${convertDriveLink(v.url)}" allowfullscreen></iframe>
+            <iframe src="${convertYouTubeLink(v.url)}" allowfullscreen></iframe>
         `;
-        // Home Section
         containerHome.appendChild(div.cloneNode(true));
-        // Video Section
         containerVideo.appendChild(div);
     });
 }
 
-// Add Video
+// Add Video (Admin Only)
 function addVideo(){
+    const pass = document.getElementById('adminPass').value;
+    if(pass !== '123450'){ alert('Wrong password!'); return; }
+
     const title = document.getElementById('title').value.trim();
     const link = document.getElementById('link').value.trim();
-    const category = document.getElementById('category').value.trim();
-    if(!title||!link){ alert('Title এবং Link দিতে হবে!'); return; }
-    videos.push({title,url:link,category});
-    localStorage.setItem('videos',JSON.stringify(videos));
+    if(!title || !link){ alert('Title এবং Link দিতে হবে!'); return; }
+
+    videos.push({title,url:link});
+    localStorage.setItem('videos', JSON.stringify(videos));
     renderVideos();
     document.getElementById('title').value='';
     document.getElementById('link').value='';
-    document.getElementById('category').value='';
+    document.getElementById('adminPass').value='';
 }
 
 // Search Function
@@ -126,11 +121,11 @@ function searchVideo(){
     const query = document.getElementById('searchBar').value.toLowerCase();
     const container = document.getElementById('videoList');
     container.innerHTML='';
-    videos.filter(v=>v.title.toLowerCase().includes(query)|| (v.category && v.category.toLowerCase().includes(query)))
+    videos.filter(v=>v.title.toLowerCase().includes(query))
           .forEach(v=>{
             const div=document.createElement('div');
             div.className='video-card';
-            div.innerHTML=`<h3>${v.title}</h3><p>Category: ${v.category || 'Uncategorized'}</p><iframe src="${convertDriveLink(v.url)}" allowfullscreen></iframe>`;
+            div.innerHTML=`<h3>${v.title}</h3><iframe src="${convertYouTubeLink(v.url)}" allowfullscreen></iframe>`;
             container.appendChild(div);
           });
 }
