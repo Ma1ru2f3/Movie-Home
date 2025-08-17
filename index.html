@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ভিডিও হাব</title>
+    <title>MovieBox ভিডিও হাব</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>ভিডিও হাব</h1>
+        <h1>MovieBox ভিডিও হাব</h1>
         <nav>
             <a href="index.html" class="active">Home</a>
             <a href="upload.html">Upload ভিডিও</a>
@@ -28,11 +28,16 @@
 
         <section class="video-section">
             <h2>ভিডিও</h2>
-            <div id="videoContainer">
-                <!-- ভিডিও এখানে দেখানো হবে -->
+            <div id="videoContainer" class="video-grid">
+                <!-- ভিডিও কার্ড এখানে দেখানো হবে -->
             </div>
         </section>
     </main>
+
+    <!-- Lightbox / Popup -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <iframe id="lightboxVideo" frameborder="0" allowfullscreen></iframe>
+    </div>
 
     <script src="script.js"></script>
 </body>
