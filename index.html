@@ -1,167 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Moviebox</title>
-<style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; }
-nav { background:#222; color:#fff; padding:10px; display:flex; gap:15px; }
-nav button { background:#444; color:#fff; border:none; padding:8px 12px; cursor:pointer; }
-nav button:hover { background:#555; }
-section { padding:20px; display:none; }
-section.active { display:block; }
-input, button { padding:8px; margin:5px 0; }
-video { display:block; margin:10px 0; max-width:400px; }
-.video-item { margin-bottom:20px; }
-</style>
+  <title>MovieBox</title>
 </head>
 <body>
+  <h1>MovieBox</h1>
 
-<nav>
-  <button onclick="showSection('home')">Home</button>
-  <button onclick="showSection('search')">Search</button>
-  <button onclick="showSection('favourite')">Favourite</button>
-  <button onclick="showSection('profile')">Profile</button>
-</nav>
-
-<!-- Home -->
-<section id="home" class="active">
-  <h2>All Videos</h2>
-  <div id="homeVideos"></div>
-</section>
-
-<!-- Search -->
-<section id="search">
-  <h2>Search Videos</h2>
-  <input type="text" id="searchInput" placeholder="Search...">
-  <button onclick="searchVideos()">Search</button>
-  <div id="searchResults"></div>
-</section>
-
-<!-- Favourite -->
-<section id="favourite">
-  <h2>Favourite Videos</h2>
-  <div id="favVideos"></div>
-</section>
-
-<!-- Profile / Admin -->
-<section id="profile">
-  <h2>Admin Login</h2>
-  <input type="text" id="adminUser" placeholder="Username">
-  <input type="password" id="adminPass" placeholder="Password">
-  <button onclick="loginAdmin()">Login</button>
-
-  <div id="adminPanel" style="display:none;">
-    <h3>Upload Video</h3>
-    <input type="file" id="uploadFile" accept="video/*">
-    <button onclick="uploadVideo()">Upload</button>
+  <!-- Admin login -->
+  <div id="adminLogin">
+    <input type="text" id="user" placeholder="User">
+    <input type="password" id="pass" placeholder="Password">
+    <button onclick="loginAdmin()">Login</button>
   </div>
-</section>
 
-<script>
-// Cloudinary setup
-const cloudName = 'dlxa4684c';
-const uploadPreset = 'cfda63c0-c3fe-4c7b-9435-c0e0e8dc3357';
-const assetFolder = 'Moviebox';
+  <!-- Upload section -->
+  <div id="uploadSection" style="display:none;">
+    <input type="file" id="videoFile">
+    <button onclick="uploadVideo()">Upload Video</button>
+  </div>
 
-// Video storage
-let allVideos = JSON.parse(localStorage.getItem('allVideos') || '[]');
-let favVideos = JSON.parse(localStorage.getItem('favVideos') || '[]');
+  <!-- Video list -->
+  <div id="videos"></div>
 
-// Admin credentials
-const adminCred = { user:'admin', pass:'1234' };
+  <script>
+    let isAdmin = false;
 
-// Navigation
-function showSection(sec){
-  document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
-  document.getElementById(sec).classList.add('active');
-  if(sec==='home') renderHome();
-  if(sec==='favourite') renderFav();
-}
+    function loginAdmin() {
+      const user = document.getElementById("user").value;
+      const pass = document.getElementById("pass").value;
 
-// Admin login
-function loginAdmin(){
-  const user = document.getElementById('adminUser').value;
-  const pass = document.getElementById('adminPass').value;
-  if(user===adminCred.user && pass===adminCred.pass){
-    document.getElementById('adminPanel').style.display='block';
-    alert('Admin Logged In');
-  } else alert('Wrong credentials');
-}
+      // Simple front-end check
+      if(user === "admin" && pass === "1234") {
+        isAdmin = true;
+        document.getElementById("uploadSection").style.display="block";
+        document.getElementById("adminLogin").style.display="none";
+      } else {
+        alert("Invalid login");
+      }
+    }
 
-// Upload video
-function uploadVideo(){
-  const file = document.getElementById('uploadFile').files[0];
-  if(!file){ alert('Select a video'); return; }
+    async function uploadVideo() {
+      const file = document.getElementById("videoFile").files[0];
+      if(!file) return alert("Select a video");
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', uploadPreset);
-  formData.append('folder', assetFolder);
+      const formData = new FormData();
+      formData.append("video", file);
+      formData.append("user", "admin");
+      formData.append("pass", "1234");
 
-  fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, { method:'POST', body: formData })
-    .then(res=>res.json())
-    .then(data=>{
-      const videoData = { title: file.name, url: data.secure_url };
-      allVideos.push(videoData);
-      localStorage.setItem('allVideos', JSON.stringify(allVideos));
-      alert('Video uploaded successfully!');
-      renderHome();
-    }).catch(err=>console.error(err));
-}
+      const res = await fetch("/upload", { method:"POST", body: formData });
+      const data = await res.json();
+      alert("Uploaded: "+data.public_id);
+      loadVideos();
+    }
 
-// Render videos
-function renderHome(){
-  const container = document.getElementById('homeVideos');
-  container.innerHTML = '';
-  allVideos.forEach((v,i)=>{
-    const div = document.createElement('div');
-    div.className='video-item';
-    div.innerHTML = `<video src="${v.url}" controls></video>
-                     <p>${v.title}</p>
-                     <button onclick="addFav(${i})">Add to Favourite</button>`;
-    container.appendChild(div);
-  });
-}
+    async function deleteVideo(public_id){
+      if(!confirm("Delete this video?")) return;
+      const res = await fetch("/delete", {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({user:"admin", pass:"1234", public_id})
+      });
+      const data = await res.json();
+      alert("Deleted: "+public_id);
+      loadVideos();
+    }
 
-function renderFav(){
-  const container = document.getElementById('favVideos');
-  container.innerHTML = '';
-  favVideos.forEach(v=>{
-    const div = document.createElement('div');
-    div.className='video-item';
-    div.innerHTML = `<video src="${v.url}" controls></video>
-                     <p>${v.title}</p>`;
-    container.appendChild(div);
-  });
-}
+    // Load video list (demo)
+    async function loadVideos(){
+      document.getElementById("videos").innerHTML = `
+        <p>Video list will appear here (implement Cloudinary fetch)</p>
+      `;
+    }
 
-function addFav(index){
-  const v = allVideos[index];
-  if(!favVideos.includes(v)){
-    favVideos.push(v);
-    localStorage.setItem('favVideos', JSON.stringify(favVideos));
-    alert('Added to favourite');
-  }
-}
-
-// Search
-function searchVideos(){
-  const query = document.getElementById('searchInput').value.toLowerCase();
-  const container = document.getElementById('searchResults');
-  container.innerHTML='';
-  allVideos.filter(v=>v.title.toLowerCase().includes(query)).forEach(v=>{
-    const div = document.createElement('div');
-    div.className='video-item';
-    div.innerHTML = `<video src="${v.url}" controls></video>
-                     <p>${v.title}</p>`;
-    container.appendChild(div);
-  });
-}
-
-// Initial render
-renderHome();
-</script>
-
+    loadVideos();
+  </script>
 </body>
 </html>
