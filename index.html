@@ -3,184 +3,128 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Moviebox</title>
+<title>MovieBox</title>
 <style>
-body { font-family: Arial, sans-serif; padding: 0; margin:0; }
-nav { display: flex; background:#333; color:white; padding:10px; }
-nav div { margin-right:20px; cursor:pointer; }
-section { padding:20px; }
-input, button { padding:8px; margin:5px 0; }
-.video-item { border:1px solid #ccc; padding:10px; margin-bottom:10px; }
-video { width:300px; display:block; margin-bottom:5px; }
-#searchBar { width:300px; padding:5px; margin-bottom:10px; }
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  nav { margin-bottom: 20px; }
+  nav a { margin-right: 10px; text-decoration: none; color: blue; }
+  #adminPanel { display: none; margin-top: 20px; border: 1px solid #ccc; padding: 15px; }
+  #progress { width: 100%; height: 20px; display: none; }
+  #message { margin-top: 10px; font-weight: bold; }
+  input, button { margin-bottom: 10px; display: block; }
 </style>
 </head>
 <body>
+  <nav>
+    <a href="#">Home</a>
+    <a href="#">Search</a>
+    <a href="#">Favorite</a>
+    <a href="#" id="profileLink">Profile</a>
+  </nav>
 
-<nav>
-  <div onclick="showSection('home')">Home</div>
-  <div onclick="showSection('fvrt')">Favourites</div>
-  <div onclick="showSection('profile')">Profile</div>
-</nav>
-
-<section id="home">
-  <h2>Home</h2>
-  <input type="text" id="searchBar" placeholder="Search videos..." oninput="filterVideos()">
-  <div id="videoGallery"></div>
-</section>
-
-<section id="fvrt" style="display:none;">
-  <h2>Favourites</h2>
-  <div id="favouritesList">No favourite videos yet.</div>
-</section>
-
-<section id="profile" style="display:none;">
-  <h2>Profile</h2>
-  
   <div id="loginDiv">
-    <input type="text" id="adminUser" placeholder="Admin ID">
+    <h3>Admin Login</h3>
+    <input type="text" id="adminUser" placeholder="Username">
     <input type="password" id="adminPass" placeholder="Password">
-    <button onclick="login()">Login</button>
+    <button id="loginBtn">Login</button>
+    <div id="loginMessage"></div>
   </div>
 
-  <div id="adminPanel" style="display:none;">
+  <div id="adminPanel">
     <h3>Upload Video</h3>
-    <input type="file" id="videoFile">
-    <button onclick="uploadVideo()">Upload</button>
+    <input type="file" id="videoFile" accept="video/*">
+    <button id="uploadBtn">Upload</button>
+    <progress id="progress" value="0" max="100"></progress>
+    <div id="message"></div>
 
-    <h3>Uploaded Videos</h3>
-    <div id="videoList"></div>
+    <h3>Delete Video</h3>
+    <input type="text" id="publicId" placeholder="Enter Public ID to delete">
+    <button id="deleteBtn">Delete</button>
+    <div id="deleteMessage"></div>
   </div>
-</section>
 
 <script>
-const CLOUD_NAME = "dlxa4684c";
-const UPLOAD_PRESET = "Moviebox";
-let loggedIn = false;
-let videos = []; // All uploaded video URLs
-let favourites = [];
+const loginBtn = document.getElementById('loginBtn');
+const adminPanel = document.getElementById('adminPanel');
+const loginDiv = document.getElementById('loginDiv');
+const loginMessage = document.getElementById('loginMessage');
 
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "1234";
+const uploadBtn = document.getElementById('uploadBtn');
+const videoFile = document.getElementById('videoFile');
+const progress = document.getElementById('progress');
+const message = document.getElementById('message');
 
-function showSection(id){
-  document.querySelectorAll("section").forEach(s=>s.style.display="none");
-  document.getElementById(id).style.display="block";
-}
+const deleteBtn = document.getElementById('deleteBtn');
+const publicIdInput = document.getElementById('publicId');
+const deleteMessage = document.getElementById('deleteMessage');
 
-function login(){
-  const user = document.getElementById("adminUser").value;
-  const pass = document.getElementById("adminPass").value;
-  if(user===ADMIN_USER && pass===ADMIN_PASS){
-    loggedIn = true;
-    document.getElementById("loginDiv").style.display="none";
-    document.getElementById("adminPanel").style.display="block";
-    alert("Login Successful!");
-    loadVideos();
-  } else {
-    alert("Invalid credentials!");
-  }
-}
+loginBtn.addEventListener('click', () => {
+  const user = document.getElementById('adminUser').value;
+  const pass = document.getElementById('adminPass').value;
 
-function uploadVideo(){
-  if(!loggedIn){ alert("Login first"); return; }
-
-  const fileInput = document.getElementById("videoFile");
-  if(fileInput.files.length===0){ alert("Select a video!"); return; }
-
-  const file = fileInput.files[0];
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", UPLOAD_PRESET);
-
-  fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, {
-    method:"POST",
-    body: formData
-  })
-  .then(res=>res.json())
-  .then(data=>{
-    alert("Upload Successful!");
-    videos.push({url: data.secure_url, name: data.original_filename});
-    displayVideos();
-    loadVideos();
-  })
-  .catch(err=>console.error(err));
-}
-
-function loadVideos(){
-  displayVideos();
-}
-
-function displayVideos(){
-  const videoGallery = document.getElementById("videoGallery");
-  const videoList = document.getElementById("videoList");
-  
-  videoGallery.innerHTML="";
-  videoList.innerHTML="";
-
-  videos.forEach((vid, index)=>{
-    // Home Gallery
-    const divHome = document.createElement("div");
-    divHome.className = "video-item";
-    divHome.innerHTML = `
-      <video src="${vid.url}" controls></video>
-      <button onclick="addFavourite(${index})">Add to Favourites</button>
-    `;
-    videoGallery.appendChild(divHome);
-
-    // Admin List
-    const divAdmin = document.createElement("div");
-    divAdmin.className = "video-item";
-    divAdmin.innerHTML = `
-      <video src="${vid.url}" controls></video>
-      <button onclick="deleteVideo(${index})">Delete</button>
-    `;
-    videoList.appendChild(divAdmin);
-  });
-}
-
-function addFavourite(index){
-  const vid = videos[index];
-  if(!favourites.includes(vid)){
-    favourites.push(vid);
-    renderFavourites();
-  }
-}
-
-function renderFavourites(){
-  const favDiv = document.getElementById("favouritesList");
-  favDiv.innerHTML="";
-  favourites.forEach(vid=>{
-    const div = document.createElement("div");
-    div.className="video-item";
-    div.innerHTML = `<video src="${vid.url}" controls></video>`;
-    favDiv.appendChild(div);
-  });
-}
-
-function deleteVideo(index){
-  if(!loggedIn){ alert("Login first"); return; }
-  videos.splice(index, 1);
-  displayVideos();
-  renderFavourites();
-}
-
-function filterVideos(){
-  const term = document.getElementById("searchBar").value.toLowerCase();
-  const videoGallery = document.getElementById("videoGallery");
-  videoGallery.innerHTML="";
-
-  videos.forEach((vid, index)=>{
-    if(vid.name.toLowerCase().includes(term)){
-      const divHome = document.createElement("div");
-      divHome.className = "video-item";
-      divHome.innerHTML = `<video src="${vid.url}" controls></video>
-        <button onclick="addFavourite(${index})">Add to Favourites</button>`;
-      videoGallery.appendChild(divHome);
+  fetch('/admin/login', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({user, pass})
+  }).then(res => {
+    if(res.status === 200){
+      loginDiv.style.display = 'none';
+      adminPanel.style.display = 'block';
+    } else {
+      loginMessage.textContent = "Invalid credentials";
+      loginMessage.style.color = "red";
     }
   });
-}
-</script>
+});
 
+uploadBtn.addEventListener('click', () => {
+  if(!videoFile.files.length){
+    alert("Select a video file");
+    return;
+  }
+  const file = videoFile.files[0];
+  const formData = new FormData();
+  formData.append("video", file);
+  formData.append("user", "admin");
+  formData.append("pass", "1234");
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "/upload");
+
+  xhr.upload.onprogress = (e) => {
+    if(e.lengthComputable){
+      progress.style.display = "block";
+      progress.value = (e.loaded / e.total) * 100;
+    }
+  };
+
+  xhr.onload = () => {
+    progress.style.display = "none";
+    if(xhr.status === 200){
+      message.style.color = "green";
+      message.textContent = "Success! Video uploaded.";
+    } else {
+      message.style.color = "red";
+      message.textContent = "Upload failed: " + xhr.responseText;
+    }
+  };
+  xhr.send(formData);
+});
+
+deleteBtn.addEventListener('click', () => {
+  const public_id = publicIdInput.value;
+  if(!public_id){
+    alert("Enter Public ID");
+    return;
+  }
+  fetch('/delete', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({user:"admin", pass:"1234", public_id})
+  }).then(res => res.json())
+    .then(data => deleteMessage.textContent = "Deleted: " + JSON.stringify(data))
+    .catch(err => deleteMessage.textContent = "Error: " + err);
+});
+</script>
 </body>
 </html>
