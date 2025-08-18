@@ -29,7 +29,6 @@ button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; 
 
 <div class="container" id="content">
 
-  <!-- Admin Form -->
   <div class="admin-form" id="adminForm" style="display:none;">
     <h3>Admin Upload</h3>
     <input type="text" id="title" placeholder="Video Title" required>
@@ -39,7 +38,6 @@ button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; 
     <div class="success" id="uploadStatus"></div>
   </div>
 
-  <!-- Videos List -->
   <div id="videosList"></div>
 </div>
 
@@ -91,7 +89,7 @@ document.getElementById("uploadBtn").addEventListener("click", async () => {
     const response = await fetch(SHEETDB_API, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: { title, category, link: Link } })
+      body: JSON.stringify({ data: { title: title, category: category, link: videoLink } })
     });
     if(response.ok) {
       statusDiv.textContent = "✅ Uploaded Successfully!";
@@ -126,10 +124,10 @@ async function loadVideos() {
 
       card.innerHTML = `
         <video controls>
-          <source src="${video.link}" type="video/mp4">
+          <source src="${video.Link}" type="video/mp4">
           Your browser does not support HTML5 video.
         </video>
-        <p>Title: ${video.title} | Category: ${video.category}</p>
+        <p>Title: ${video.Title} | Category: ${video.category}</p>
         ${adminLoggedIn ? `<button onclick="deleteVideo('${video._id}', this)">Delete</button>` : ""}
       `;
       listDiv.appendChild(card);
