@@ -10,18 +10,18 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.use(fileUpload());
 
-// Cloudinary config
+// Cloudinary Config
 cloudinary.config({
-  cloud_name: "dlxa4684c",
-  api_key: "614488499354894",
-  api_secret: "v5qLsHvcETVr5ptyLl3N9zuHd_A"
+  cloud_name: process.env.CLOUD_NAME || "dlxa4684c",
+  api_key: process.env.API_KEY || "614488499354894",
+  api_secret: process.env.API_SECRET || "v5qLsHvcETVr5ptyLl3N9zuHd_A"
 });
 
 // Admin credentials
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "1234";
+const ADMIN_USER = process.env.ADMIN_USER || "admin";
+const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
-// Admin middleware
+// Admin login middleware
 const checkAdmin = (req, res, next) => {
   const { user, pass } = req.body;
   if (user === ADMIN_USER && pass === ADMIN_PASS) {
@@ -31,7 +31,7 @@ const checkAdmin = (req, res, next) => {
   }
 };
 
-// Upload route
+// Upload video route
 app.post("/upload", checkAdmin, async (req, res) => {
   try {
     const file = req.files.video;
@@ -42,13 +42,13 @@ app.post("/upload", checkAdmin, async (req, res) => {
       use_filename: true,
       unique_filename: false
     });
-    res.json({ public_id: result.public_id, url: result.secure_url, title });
+    res.json({ url: result.secure_url, public_id: result.public_id, title });
   } catch (err) {
     res.status(500).send(err.message);
   }
 });
 
-// Delete route
+// Delete video route
 app.post("/delete", checkAdmin, async (req, res) => {
   try {
     const { public_id } = req.body;
@@ -68,8 +68,8 @@ app.get("/videos", async (req, res) => {
       prefix: "Moviebox"
     });
     const videos = result.resources.map(v => ({
-      public_id: v.public_id,
       url: v.secure_url,
+      public_id: v.public_id,
       title: v.public_id.split("/").pop()
     }));
     res.json(videos);
