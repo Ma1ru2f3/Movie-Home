@@ -1,82 +1,151 @@
-const express = require("express");
-const fileUpload = require("express-fileupload");
-const cloudinary = require("cloudinary").v2;
-const bodyParser = require("body-parser");
-const cors = require("cors");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moviebox</title>
+<style>
+  body { font-family: Arial; background: #f2f2f2; margin:0; padding:0; }
+  header { background:#111; color:white; display:flex; justify-content:space-around; padding:10px;}
+  header button { background:#333; border:none; color:white; padding:10px; cursor:pointer; }
+  header button:hover { background:#555; }
+  #content { padding:20px; }
+  .video-card { margin:10px; padding:10px; background:white; display:inline-block; width:300px; vertical-align:top; border-radius:5px; }
+  video { width:100%; height:180px; }
+  .progress-bar { width:100%; background:#ddd; border-radius:5px; overflow:hidden; margin-top:5px; }
+  .progress { width:0%; height:10px; background:#4caf50; }
+  #loginForm,#uploadForm{ margin-bottom:20px; }
+  #uploadForm{ display:none; }
+  #deleteBtn{ margin-top:5px; background:red; color:white; border:none; padding:5px; cursor:pointer; }
+</style>
+</head>
+<body>
 
-const app = express();
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("public"));
-app.use(fileUpload());
+<header>
+<button onclick="showPage('home')">Home</button>
+<button onclick="showPage('search')">Search</button>
+<button onclick="showPage('fav')">Favorite</button>
+<button onclick="showPage('profile')">Profile</button>
+</header>
 
-// Cloudinary Config
-cloudinary.config({
-  cloud_name: "dlxa4684c",
-  api_key: "488983136699335",
-  api_secret: "Q0pMZ3qtVHouepBUcWzPaDpZ7lI"
+<div id="content">
+
+<div id="homePage"><h2>Home</h2><div id="videosContainer"></div></div>
+
+<div id="searchPage" style="display:none;">
+<h2>Search</h2>
+<input type="text" id="searchInput" placeholder="Search by title">
+<div id="searchResults"></div>
+</div>
+
+<div id="favPage" style="display:none;">
+<h2>Favorites</h2>
+<div id="favContainer"></div>
+</div>
+
+<div id="profilePage" style="display:none;">
+<h2>Admin Login</h2>
+<form id="loginForm">
+<input type="text" id="adminUser" placeholder="Username"><br><br>
+<input type="password" id="adminPass" placeholder="Password"><br><br>
+<button type="submit">Login</button>
+</form>
+
+<form id="uploadForm">
+<input type="text" id="videoTitle" placeholder="Video Title"><br><br>
+<input type="file" id="videoFile"><br><br>
+<button type="button" onclick="uploadVideo()">Upload Video</button>
+<div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
+<p id="uploadStatus"></p>
+</form>
+</div>
+
+</div>
+
+<script>
+let isAdmin = false;
+let videos = [];
+let favorites = [];
+
+function showPage(page){
+document.getElementById('homePage').style.display = page==='home'?'block':'none';
+document.getElementById('searchPage').style.display = page==='search'?'block':'none';
+document.getElementById('favPage').style.display = page==='fav'?'block':'none';
+document.getElementById('profilePage').style.display = page==='profile'?'block':'none';
+}
+
+// Load videos from server
+async function loadVideos(){
+const res = await fetch("/videos");
+videos = await res.json();
+renderVideos();
+}
+
+document.getElementById('loginForm').addEventListener('submit', async function(e){
+e.preventDefault();
+const user = document.getElementById('adminUser').value;
+const pass = document.getElementById('adminPass').value;
+if(user==="admin" && pass==="1234"){
+isAdmin=true;
+document.getElementById('loginForm').style.display='none';
+document.getElementById('uploadForm').style.display='block';
+alert("Admin Login Successful");
+}else alert("Invalid credentials");
 });
 
-// Admin credentials
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "1234";
-
-// Admin login middleware
-const checkAdmin = (req, res, next) => {
-  const { user, pass } = req.body;
-  if(user === ADMIN_USER && pass === ADMIN_PASS){
-    next();
-  } else {
-    res.status(401).send("Unauthorized");
-  }
-};
-
-// Upload video
-app.post("/upload", checkAdmin, async (req, res) => {
-  try {
-    const file = req.files.video;
-    const { title } = req.body;
-    const result = await cloudinary.uploader.upload(file.tempFilePath, {
-      resource_type: "video",
-      folder: "Moviebox",
-      use_filename: true,
-      unique_filename: false
-    });
-    res.json({ public_id: result.public_id, url: result.secure_url, title });
-  } catch(err){
-    res.status(500).send(err.message);
-  }
+function uploadVideo(){
+const file=document.getElementById('videoFile').files[0];
+const title=document.getElementById('videoTitle').value;
+if(!file||!title){alert("Select file and enter title"); return;}
+const formData=new FormData();
+formData.append("video", file);
+formData.append("title", title);
+formData.append("user","admin"); // login
+formData.append("pass","1234");
+const xhr=new XMLHttpRequest();
+xhr.open("POST","/upload",true);
+xhr.upload.addEventListener("progress", e=>{
+if(e.lengthComputable){
+document.getElementById('uploadProgress').style.width=(e.loaded/e.total*100)+"%";
+}
 });
+xhr.onload=function(){
+if(xhr.status===200){
+const response=JSON.parse(xhr.responseText);
+videos.unshift(response);
+document.getElementById('uploadStatus').innerText="Upload Successful!";
+renderVideos();
+}else alert("Upload failed");
+}
+xhr.send(formData);
+}
 
-// Delete video
-app.post("/delete", checkAdmin, async (req, res) => {
-  try {
-    const { public_id } = req.body;
-    const result = await cloudinary.uploader.destroy(public_id, { resource_type: "video" });
-    res.json(result);
-  } catch(err){
-    res.status(500).send(err.message);
-  }
+function renderVideos(){
+const container=document.getElementById('videosContainer');
+container.innerHTML="";
+videos.forEach(v=>{
+const card=document.createElement('div');
+card.className="video-card";
+card.innerHTML=`<video src="${v.url}" controls></video>
+<h4>${v.title}</h4>
+<button onclick="addFav('${v.url}','${v.title}')">Favorite</button>
+${isAdmin?`<button id="deleteBtn" onclick="deleteVideo('${v.public_id}')">Delete</button>`:''}`;
+container.appendChild(card);
 });
+renderFavorites();
+}
 
-// Fetch all videos
-app.get("/videos", async (req, res) => {
-  try {
-    const result = await cloudinary.api.resources({
-      type: "upload",
-      resource_type: "video",
-      prefix: "Moviebox"
-    });
-    const videos = result.resources.map(v => ({
-      public_id: v.public_id,
-      url: v.secure_url,
-      title: v.public_id.split("/").pop()
-    }));
-    res.json(videos);
-  } catch(err){
-    res.status(500).send(err.message);
-  }
-});
+function deleteVideo(public_id){
+if(confirm("Are you sure to delete?")){
+fetch("/delete",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({public_id, user:"admin", pass:"1234"})
+}).then(res=>res.json()).then(res=>{
+videos=videos.filter(v=>v.public_id!==public_id);
+renderVideos();
+}).catch(err=>alert("Delete Failed"));
+}
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+function addFav(url,title){favorites.push({url,title});renderFavorites();}
+function renderFavorites(){const favContainer=document.getElementById('favContainer');favContainer.innerHTML="";favorites.forEach(v=>{const div=document.createElement('div');div.className="video-card";div.innerHTML=`<video src="${v.url}" controls></video><h4>${v.title}</h4>`;favContainer.appendChild
