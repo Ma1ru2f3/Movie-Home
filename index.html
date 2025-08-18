@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MovieBox</title>
-<link rel="stylesheet" href="style.css">
+<style>
+  nav { background:#222; padding:10px; }
+  nav button { margin:5px; padding:10px; }
+  .page { display:none; }
+  video { display:block; margin:10px 0; }
+</style>
 </head>
 <body>
-
 <nav>
   <button id="homeBtn">Home</button>
   <button id="searchBtn">Search</button>
@@ -15,45 +18,37 @@
   <button id="profileBtn">Profile</button>
 </nav>
 
-<div id="content">
-  <!-- Home Section -->
-  <div id="homeDiv" class="page">
-    <h3>All Videos</h3>
-    <div id="videoList"></div>
+<div id="homeDiv" class="page">
+  <h3>All Videos</h3>
+  <div id="videoList"></div>
+</div>
+
+<div id="searchDiv" class="page">
+  <h3>Search</h3>
+  <input id="searchInput" placeholder="Title...">
+  <button id="searchGo">Go</button>
+  <div id="searchResults"></div>
+</div>
+
+<div id="favDiv" class="page">
+  <h3>Favourites</h3>
+  <div id="favList"></div>
+</div>
+
+<div id="profileDiv" class="page">
+  <div id="loginDiv">
+    <input id="user" placeholder="User">
+    <input id="pass" type="password" placeholder="Pass">
+    <button id="loginBtn">Login</button>
   </div>
-
-  <!-- Search Section -->
-  <div id="searchDiv" class="page" style="display:none;">
-    <h3>Search</h3>
-    <input type="text" id="searchInput" placeholder="Search by title...">
-    <button id="searchGo">Go</button>
-    <div id="searchResults"></div>
-  </div>
-
-  <!-- Favourites Section -->
-  <div id="favDiv" class="page" style="display:none;">
-    <h3>Favourites</h3>
-    <div id="favList"></div>
-  </div>
-
-  <!-- Profile Section -->
-  <div id="profileDiv" class="page" style="display:none;">
-    <h3>Admin Panel</h3>
-    <div id="loginDiv">
-      <input type="text" id="user" placeholder="Username">
-      <input type="password" id="pass" placeholder="Password">
-      <button id="loginBtn">Login</button>
-    </div>
-
-    <div id="adminDiv" style="display:none;">
-      <h4>Upload Video</h4>
-      <input type="file" id="videoFile">
-      <input type="text" id="videoTitle" placeholder="Video Title">
-      <button id="uploadBtn">Upload</button>
-      <div id="progressDiv" style="display:none;">
-        <progress id="progressBar" value="0" max="100"></progress>
-        <span id="progressText"></span>
-      </div>
+  <div id="adminDiv" style="display:none;">
+    <h3>Upload</h3>
+    <input type="file" id="videoFile">
+    <input type="text" id="videoTitle" placeholder="Title">
+    <button id="uploadBtn">Upload</button>
+    <div id="progressDiv" style="display:none;">
+      <progress id="progressBar" value="0" max="100"></progress>
+      <span id="progressText"></span>
     </div>
   </div>
 </div>
