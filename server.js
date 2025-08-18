@@ -12,14 +12,14 @@ app.use(fileUpload());
 
 // Cloudinary Config
 cloudinary.config({
-  cloud_name: "dlxa4684c",  // তোমার Cloudinary name
-  api_key: "488983136699335", // তোমার API key
-  api_secret: "Q0pMZ3qtVHouepBUcWzPaDpZ7lI" // তোমার API secret
+  cloud_name: process.env.CLOUD_NAME || "dlxa4684c",
+  api_key: process.env.API_KEY || "488983136699335",
+  api_secret: process.env.API_SECRET || "Q0pMZ3qtVHouepBUcWzPaDpZ7lI"
 });
 
 // Admin credentials
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "1234";
+const ADMIN_USER = process.env.ADMIN_USER || "admin";
+const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
 
 // Admin login middleware
 const checkAdmin = (req, res, next) => {
@@ -28,7 +28,7 @@ const checkAdmin = (req, res, next) => {
   else res.status(401).send("Unauthorized");
 };
 
-// Upload route
+// Upload video route
 app.post("/upload", checkAdmin, async (req, res) => {
   try {
     const file = req.files.video;
@@ -45,7 +45,18 @@ app.post("/upload", checkAdmin, async (req, res) => {
   }
 });
 
-// Fetch all videos
+// Delete video route
+app.post("/delete", checkAdmin, async (req, res) => {
+  try {
+    const { public_id } = req.body;
+    const result = await cloudinary.uploader.destroy(public_id, { resource_type: "video" });
+    res.json(result);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// Fetch videos
 app.get("/videos", async (req, res) => {
   try {
     const result = await cloudinary.api.resources({
@@ -59,17 +70,6 @@ app.get("/videos", async (req, res) => {
       title: v.public_id.split("/").pop()
     }));
     res.json(videos);
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
-
-// Delete video
-app.post("/delete", checkAdmin, async (req, res) => {
-  try {
-    const { public_id } = req.body;
-    const result = await cloudinary.uploader.destroy(public_id, { resource_type: "video" });
-    res.json(result);
   } catch (err) {
     res.status(500).send(err.message);
   }
