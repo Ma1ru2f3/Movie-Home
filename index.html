@@ -10,10 +10,12 @@ header { background:#111; color:#fff; display:flex; justify-content:space-around
 header button { padding:10px 20px; cursor:pointer; background:#222; color:#fff; border:none; border-radius:5px; }
 section { padding:20px; display:none; }
 section.active { display:block; }
-.video-card { border:1px solid #ccc; padding:10px; margin:10px 0; background:#fff; border-radius:5px; }
-.video-card video { width:100%; max-width:500px; height:280px; }
+.video-card { border:1px solid #ccc; padding:0; margin:10px 0; background:#000; border-radius:8px; overflow:hidden; }
+video { width:100%; height:200px; object-fit:cover; display:block; }
 input { margin:5px 0; padding:5px; width:90%; }
-.fav-btn { display:block; margin-top:5px; background:#ff4081; color:#fff; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; }
+.fav-btn { display:block; margin:5px auto 10px auto; background:#ff4081; color:#fff; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; }
+.video-title { padding:5px; text-align:center; color:#fff; font-weight:bold; }
+#videoGallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; }
 </style>
 </head>
 <body>
@@ -26,18 +28,18 @@ input { margin:5px 0; padding:5px; width:90%; }
 
 <section id="home" class="active">
   <h2>Home</h2>
-  <div id="videoList"></div>
+  <div id="videoGallery"></div>
 </section>
 
 <section id="search">
   <h2>Search</h2>
   <input type="text" id="searchInput" placeholder="Search video..." oninput="searchVideo()">
-  <div id="searchResults"></div>
+  <div id="searchResults" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px;"></div>
 </section>
 
 <section id="favourite">
   <h2>Favourite Videos</h2>
-  <div id="favList"></div>
+  <div id="favList" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px;"></div>
 </section>
 
 <section id="profile">
@@ -48,7 +50,7 @@ input { margin:5px 0; padding:5px; width:90%; }
   <div id="adminTab" style="display:none;">
     <h3>Admin Dashboard</h3>
     <input type="text" id="videoTitle" placeholder="Video Title"><br>
-    <input type="text" id="videoLink" placeholder="Direct Video Link (MP4/WebM)"><br>
+    <input type="text" id="videoLink" placeholder="Video Link (MP4)"><br>
     <input type="text" id="videoCategory" placeholder="Category"><br>
     <button onclick="uploadVideo()">Upload Video</button>
     <h4>Video List</h4>
@@ -107,30 +109,19 @@ async function fetchVideos(){
     const res = await fetch(apiURL);
     const data = await res.json();
     allVideos = data;
-    const list = document.getElementById('videoList');
-    list.innerHTML = '';
+    const gallery = document.getElementById('videoGallery');
+    gallery.innerHTML = '';
     data.forEach(v=>{
-      const div = document.createElement('div');
-      div.className='video-card';
-      div.innerHTML = `
-        <strong>${v.Title}</strong><br>
-        ${embedVideo(v.Link)}
+      const card = document.createElement('div');
+      card.className='video-card';
+      card.innerHTML = `
+        <video src="${v.Link}" controls preload="metadata"></video>
+        <div class="video-title">${v.Title}</div>
         <button class="fav-btn" onclick="addFav('${v.Title}','${v.Link}','${v.Category}')">Favourite</button>
       `;
-      list.appendChild(div);
+      gallery.appendChild(card);
     });
   } catch(err){ console.error('Fetch error', err); }
-}
-
-// Updated embed function: only direct video links, no logos, no suggested
-function embedVideo(link){
-  if(link.endsWith('.mp4') || link.endsWith('.webm')){
-    return `<video src="${link}" controls autoplay style="width:100%; max-width:500px; height:280px;"></video>`;
-  } else if(link.includes('moviebox.ph') || link.includes('animohub.com')){
-    return `<video src="${link}" controls autoplay style="width:100%; max-width:500px; height:280px;"></video>`;
-  } else{
-    return `<p>Video cannot be displayed. Please use direct video link (MP4/WebM).</p>`;
-  }
 }
 
 function addFav(title,link,category){
@@ -148,8 +139,8 @@ function showFavVideos(){
     const div = document.createElement('div');
     div.className='video-card';
     div.innerHTML = `
-      <strong>${v.Title}</strong><br>
-      ${embedVideo(v.Link)}
+      <video src="${v.Link}" controls preload="metadata"></video>
+      <div class="video-title">${v.Title}</div>
       <button class="fav-btn" onclick="removeFav('${v.Link}')">Remove</button>
     `;
     list.appendChild(div);
@@ -218,8 +209,8 @@ function searchVideo(){
     const div = document.createElement('div');
     div.className='video-card';
     div.innerHTML = `
-      <strong>${v.Title}</strong><br>
-      ${embedVideo(v.Link)}
+      <video src="${v.Link}" controls preload="metadata"></video>
+      <div class="video-title">${v.Title}</div>
       <button class="fav-btn" onclick="addFav('${v.Title}','${v.Link}','${v.Category}')">Favourite</button>
     `;
     container.appendChild(div);
