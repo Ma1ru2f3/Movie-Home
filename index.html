@@ -1,174 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Moviebox</title>
-  <style>
-    body { font-family: Arial, sans-serif; background:#f0f0f0; margin:0; padding:0; }
-    header { background:#111; color:white; padding:10px; display:flex; justify-content:space-around; }
-    header button { background:none; border:none; color:white; font-size:16px; cursor:pointer; }
-    #content { padding:20px; }
-    .video-card { display:inline-block; margin:10px; background:white; padding:10px; border-radius:5px; width:300px; vertical-align:top; }
-    video { width:100%; border-radius:5px; }
-    #adminPanel { display:none; margin-top:20px; background:#eee; padding:10px; border-radius:5px; }
-    input, button { padding:5px; margin:5px; }
-    .fav { color:red; cursor:pointer; float:right; font-weight:bold; }
-  </style>
-</head>
-<body>
+const express = require("express");
+const fileUpload = require("express-fileupload");
+const cloudinary = require("cloudinary").v2;
+const bodyParser = require("body-parser");
+const cors = require("cors");
 
-<header>
-  <button id="homeBtn">Home</button>
-  <button id="searchBtn">Search</button>
-  <button id="favBtn">Favrt</button>
-  <button id="profileBtn">Profile</button>
-</header>
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
+app.use(fileUpload());
 
-<div id="content">
-  <div id="searchDiv" style="display:none;">
-    <input type="text" id="searchInput" placeholder="Search video by title">
-    <button id="searchGo">Search</button>
-  </div>
+// Cloudinary Config
+cloudinary.config({
+  cloud_name: "dlxa4684c",
+  api_key: "488983136699335",
+  api_secret: "Q0pMZ3qtVHouepBUcWzPaDpZ7lI"
+});
 
-  <div id="videoList"></div>
+// Admin credentials
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "1234";
 
-  <div id="adminPanel">
-    <h3>Admin Upload</h3>
-    <input type="text" id="videoTitle" placeholder="Enter title">
-    <input type="file" id="videoFile">
-    <button id="uploadBtn">Upload</button>
-    <div id="progressDiv" style="display:none;">Uploading: <span id="progressText">0%</span></div>
-  </div>
-</div>
-
-<script>
-let videos = [];
-let favs = JSON.parse(localStorage.getItem('favs') || '[]');
-
-// Fetch all videos from server
-async function loadVideos() {
-  const res = await fetch('/videos');
-  videos = await res.json();
-  showVideos(videos);
-}
-
-function showVideos(list) {
-  const videoList = document.getElementById('videoList');
-  videoList.innerHTML = '';
-  list.forEach(v => {
-    const div = document.createElement('div');
-    div.className = 'video-card';
-    div.innerHTML = `
-      <video src="${v.url}" controls></video>
-      <h4>${v.title} <span class="fav" onclick="toggleFav('${v.public_id}','${v.url}','${v.title}')">${favs.find(f=>f.id===v.public_id)?'❤️':'♡'}</span></h4>
-      <button onclick="deleteVideo('${v.public_id}')">Delete</button>
-    `;
-    videoList.appendChild(div);
-  });
-}
-
-function toggleFav(id,url,title){
-  const index = favs.findIndex(f=>f.id===id);
-  if(index>=0){
-    favs.splice(index,1);
+// Admin login middleware
+const checkAdmin = (req, res, next) => {
+  const { user, pass } = req.body;
+  if(user === ADMIN_USER && pass === ADMIN_PASS){
+    next();
   } else {
-    favs.push({id,url,title});
+    res.status(401).send("Unauthorized");
   }
-  localStorage.setItem('favs',JSON.stringify(favs));
-  showVideos(videos);
-}
-
-// Delete video
-async function deleteVideo(id){
-  const user = prompt("Admin User:");
-  const pass = prompt("Admin Pass:");
-  const res = await fetch('/delete',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({public_id:id,user,pass})});
-  if(res.ok){
-    alert('Deleted!');
-    loadVideos();
-  }else{
-    alert('Unauthorized');
-  }
-}
+};
 
 // Upload video
-document.getElementById('uploadBtn').addEventListener('click', async ()=>{
-  const file = document.getElementById('videoFile').files[0];
-  const title = document.getElementById('videoTitle').value;
-  const user = prompt("Admin User:");
-  const pass = prompt("Admin Pass:");
-  if(!file){ alert('Select file'); return; }
-  const formData = new FormData();
-  formData.append('video',file);
-  formData.append('title',title);
-  formData.append('user',user);
-  formData.append('pass',pass);
-  
-  const progressDiv = document.getElementById('progressDiv');
-  const progressText = document.getElementById('progressText');
-  progressDiv.style.display='block';
-  
-  const xhr = new XMLHttpRequest();
-  xhr.upload.addEventListener('progress', e=>{
-    const percent = Math.round(e.loaded/e.total*100);
-    progressText.innerText = percent+'%';
-  });
-  
-  xhr.onreadystatechange = ()=>{
-    if(xhr.readyState===4){
-      progressDiv.style.display='none';
-      if(xhr.status===200){
-        alert('Upload Success!');
-        loadVideos();
-      }else{
-        alert('Upload Failed');
-      }
-    }
-  };
-  
-  xhr.open('POST','/upload');
-  xhr.send(formData);
-});
-
-// Header buttons
-document.getElementById('homeBtn').addEventListener('click',()=>{
-  document.getElementById('searchDiv').style.display='none';
-  document.getElementById('videoList').style.display='block';
-  document.getElementById('adminPanel').style.display='none';
-  showVideos(videos);
-});
-
-document.getElementById('searchBtn').addEventListener('click',()=>{
-  document.getElementById('searchDiv').style.display='block';
-  document.getElementById('videoList').style.display='block';
-  document.getElementById('adminPanel').style.display='none';
-});
-
-document.getElementById('searchGo').addEventListener('click',()=>{
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  showVideos(videos.filter(v=>v.title.toLowerCase().includes(q)));
-});
-
-document.getElementById('favBtn').addEventListener('click',()=>{
-  document.getElementById('searchDiv').style.display='none';
-  document.getElementById('videoList').style.display='block';
-  document.getElementById('adminPanel').style.display='none';
-  showVideos(favs);
-});
-
-document.getElementById('profileBtn').addEventListener('click',()=>{
-  const user = prompt("Admin User:");
-  const pass = prompt("Admin Pass:");
-  if(user==='admin' && pass==='1234'){
-    document.getElementById('adminPanel').style.display='block';
-    document.getElementById('searchDiv').style.display='none';
-  } else {
-    alert('Unauthorized');
+app.post("/upload", checkAdmin, async (req, res) => {
+  try {
+    const file = req.files.video;
+    const { title } = req.body;
+    const result = await cloudinary.uploader.upload(file.tempFilePath, {
+      resource_type: "video",
+      folder: "Moviebox",
+      use_filename: true,
+      unique_filename: false
+    });
+    res.json({ public_id: result.public_id, url: result.secure_url, title });
+  } catch(err){
+    res.status(500).send(err.message);
   }
 });
 
-loadVideos();
-</script>
-</body>
-</html>
+// Delete video
+app.post("/delete", checkAdmin, async (req, res) => {
+  try {
+    const { public_id } = req.body;
+    const result = await cloudinary.uploader.destroy(public_id, { resource_type: "video" });
+    res.json(result);
+  } catch(err){
+    res.status(500).send(err.message);
+  }
+});
+
+// Fetch all videos
+app.get("/videos", async (req, res) => {
+  try {
+    const result = await cloudinary.api.resources({
+      type: "upload",
+      resource_type: "video",
+      prefix: "Moviebox"
+    });
+    const videos = result.resources.map(v => ({
+      public_id: v.public_id,
+      url: v.secure_url,
+      title: v.public_id.split("/").pop()
+    }));
+    res.json(videos);
+  } catch(err){
+    res.status(500).send(err.message);
+  }
+});
+
+app.listen(3000, () => console.log("Server running on port 3000"));
