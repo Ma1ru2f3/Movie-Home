@@ -1,58 +1,106 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="bn">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie Box</title>
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; }
-header { background: #111; color: #fff; padding: 10px; display:flex; justify-content:space-around; }
-header button { padding:10px 20px; cursor:pointer; }
-section { padding:20px; }
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#121212; color:#fff; }
+header { display:flex; justify-content:space-around; padding:10px; background:#1f1f1f; }
+button { padding:10px 20px; margin:5px; background:#6200ea; color:white; border:none; cursor:pointer; border-radius:5px; }
+button:hover { background:#3700b3; }
+#content { padding:20px; }
+.video-item { margin:10px 0; background:#1f1f1f; padding:10px; border-radius:5px; }
+iframe { width:100%; height:300px; border:none; border-radius:5px; margin-top:5px; }
 .hidden { display:none; }
-.video-card { border:1px solid #ccc; padding:10px; margin:10px 0; display:flex; justify-content:space-between; align-items:center; }
+input { padding:8px; margin:5px 0; width:100%; border-radius:5px; border:1px solid #555; }
 </style>
 </head>
 <body>
+
 <header>
-<button onclick="showSection('home')">Home</button>
-<button onclick="showSection('search')">Search</button>
-<button onclick="showSection('profile')">Profile</button>
-</header><section id="home"> <h2>Home</h2> <div id="videoList"></div> </section>
-<section id="search" class="hidden"> <h2>Search</h2> <input type="text" id="searchInput" placeholder="Search video..." oninput="searchVideo()"> <div id="searchResults"></div> </section>
-<section id="profile" class="hidden">
-<h2>Profile</h2>
-<div id="profileContent">
-<button onclick="showProfileTab('account')">Account Create/Login</button>
-<button onclick="showProfileTab('admin')">Admin Access</button>
-<button onclick="showProfileTab('owner')">Owner Info</button>
-<div id="accountTab" class="hidden">
-<h3>Account Create/Login</h3>
-<input type="text" id="fullName" placeholder="Full Name"><br>
-<input type="email" id="email" placeholder="Email"><br>
-<input type="password" id="password" placeholder="Password"><br>
-<input type="password" id="confirmPassword" placeholder="Confirm Password"><br>
-<button onclick="createAccount()">Create Account</button>
-<button onclick="loginUser()">Login</button>
+<button onclick="showHome()">Home</button>
+<button onclick="showSearch()">Search</button>
+<button onclick="showProfile()">Profile</button>
+</header>
+
+<div id="content">
+<!-- Dynamic content will appear here -->
 </div>
-<div id="adminTab" class="hidden">
-<h3>Admin Login</h3>
-<input type="text" id="adminId" placeholder="ID"><br>
-<input type="password" id="adminPass" placeholder="Password"><br>
-<button onclick="loginAdmin()">Login as Admin</button>
-<div id="adminDashboard" class="hidden">
-<h4>Upload Video</h4>
-<input type="text" id="videoTitle" placeholder="Video Title"><br>
-<input type="text" id="videoLink" placeholder="Video Link"><br>
-<input type="text" id="videoCategory" placeholder="Category"><br>
-<button onclick="uploadVideo()">Upload</button>
-<h4>Video List</h4>
-<div id="adminVideoList"></div>
-</div>
-</div>
-<div id="ownerTab" class="hidden">
-<pre>
+
+<script>
+// SheetDB API URL
+const SHEETDB_API = "https://sheetdb.io/api/v1/3p5l2ilgzemvr";
+
+// State
+let currentUser = null; // {name, email, isAdmin:false/true}
+
+// Pages
+function showHome() {
+    fetchVideos();
+}
+
+function showSearch() {
+    document.getElementById('content').innerHTML = `
+        <h2>Search</h2>
+        <input type="text" id="searchInput" placeholder="Search video by title..." oninput="searchVideos()">
+        <div id="searchResults"></div>
+    `;
+    fetchVideos();
+}
+
+function showProfile() {
+    let content = document.getElementById('content');
+    content.innerHTML = `
+        <h2>Profile</h2>
+        <button onclick="showAccountCreateLogin()">Account Create/Login</button>
+        <button onclick="showAdminAccess()">Admin Access</button>
+        <button onclick="showOwnerInfo()">Owner Info</button>
+        <div id="profileContent"></div>
+    `;
+    if(currentUser) showDashboard();
+}
+
+// Account Create/Login
+function showAccountCreateLogin() {
+    let html = `
+        <h3>Account Create/Login</h3>
+        <div id="accountForm">
+            <h4>Create Account</h4>
+            <input type="text" id="fullName" placeholder="Full Name">
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password (min 8 chars)">
+            <input type="password" id="confirmPassword" placeholder="Confirm Password">
+            <button onclick="createAccount()">Create Account</button>
+            <hr>
+            <h4>Login</h4>
+            <input type="email" id="loginEmail" placeholder="Email">
+            <input type="password" id="loginPassword" placeholder="Password">
+            <button onclick="loginUser()">Login</button>
+        </div>
+        <div id="dashboard"></div>
+    `;
+    document.getElementById('profileContent').innerHTML = html;
+}
+
+// Admin Access
+function showAdminAccess() {
+    let html = `
+        <h3>Admin Access</h3>
+        <input type="text" id="adminId" placeholder="Admin ID">
+        <input type="password" id="adminPass" placeholder="Password">
+        <button onclick="loginAdmin()">Login as Admin</button>
+        <div id="adminPanel"></div>
+    `;
+    document.getElementById('profileContent').innerHTML = html;
+}
+
+// Owner Info
+function showOwnerInfo() {
+    let html = `
+    <pre style="background:#1f1f1f; padding:10px; border-radius:5px;">
 ┏━━━━━━━━━━━━━━━━━━━━━┓
-┃      🌟 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 🌟      ┃
+┃      🌟 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 🌟      
 ┣━━━━━━━━━━━━━━━━━━━━━┫
 ┃ 👤 𝐍𝐚𝐦𝐞      : Maruf Hossainッ
 ┃ 🚹 𝐆𝐞𝐧𝐝𝐞𝐫    : 𝐌𝐚𝐥𝐞
@@ -60,86 +108,78 @@ section { padding:20px; }
 ┃ 🎂 𝐀𝐠𝐞       : 17+
 ┃ 🕌 𝐑𝐞𝐥𝐢𝐠𝐢𝐨𝐧 : 𝐈𝐬𝐥𝐚𝐦
 ┃ 🏫 𝐄𝐝𝐮𝐜𝐚𝐭𝐢𝐨𝐧 : SSC 25
-┃ 🏡 𝐀𝐝𝐝𝐫𝐞𝐬𝐬 : Meherpur, Bangladesh
+┃ 🏡 𝐀𝐝𝐝𝐫𝐞𝐬𝐬  : Meherpur, Bangladesh
 ┣━━━━━━━━━━━━━━━━━━━━━┫
 ┃ 🎭 𝐓𝐢𝐤𝐭𝐨𝐤  : Srotoshini-স্রোত্বোসিনী
 ┃ 📢 𝐓𝐞𝐥𝐞𝐠𝐫𝐚𝐦 : ×
 ┃ 🌐 𝐅𝐚𝐜𝐞𝐛𝐨𝐨𝐤 : fb.com/profile.php?id=100066542686904
 ┣━━━━━━━━━━━━━━
 ┗━━━━━━━━━━━━━━━━━━━┛
-</pre>
-</div>
-</div>
-</section><script>
-const apiURL = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
-
-function showSection(section) {
-  document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
-  document.getElementById(section).classList.remove('hidden');
-  if(section==='home') fetchVideos();
+    </pre>
+    `;
+    document.getElementById('profileContent').innerHTML = html;
 }
 
-function showProfileTab(tab) {
-  document.getElementById('accountTab').classList.add('hidden');
-  document.getElementById('adminTab').classList.add('hidden');
-  document.getElementById('ownerTab').classList.add('hidden');
-  if(tab==='account') document.getElementById('accountTab').classList.remove('hidden');
-  if(tab==='admin') document.getElementById('adminTab').classList.remove('hidden');
-  if(tab==='owner') document.getElementById('ownerTab').classList.remove('hidden');
+// -------------------- Users & Admin Logic --------------------
+function createAccount() {
+    let name = document.getElementById('fullName').value;
+    let email = document.getElementById('email').value;
+    let pass = document.getElementById('password').value;
+    let confirm = document.getElementById('confirmPassword').value;
+    if(pass.length < 8){ alert("Password must be at least 8 characters"); return; }
+    if(pass !== confirm){ alert("Passwords do not match"); return; }
+    // Save to localStorage for demo
+    let users = JSON.parse(localStorage.getItem("users") || "[]");
+    if(users.find(u=>u.email===email)){ alert("Email already exists"); return; }
+    users.push({name,email,pass});
+    localStorage.setItem("users",JSON.stringify(users));
+    alert("Account created successfully!");
 }
 
-async function fetchVideos(){
-  const res = await fetch(apiURL);
-  const data = await res.json();
-  const list = document.getElementById('videoList');
-  list.innerHTML = '';
-  data.forEach(video => {
-    const div = document.createElement('div');
-    div.className='video-card';
-    div.innerHTML = `<strong>${video.Tital}</strong> [${video.Catagry}] <a href='${video.Link}' target='_blank'>Watch</a>`;
-    list.appendChild(div);
-  });
+function loginUser() {
+    let email = document.getElementById('loginEmail').value;
+    let pass = document.getElementById('loginPassword').value;
+    let users = JSON.parse(localStorage.getItem("users") || "[]");
+    let user = users.find(u=>u.email===email && u.pass===pass);
+    if(user){ 
+        currentUser = {name:user.name,email:user.email,isAdmin:false};
+        alert("Login successful!");
+        showDashboard();
+    } else { alert("Invalid credentials"); }
 }
 
-async function uploadVideo(){
-  const title = document.getElementById('videoTitle').value;
-  const link = document.getElementById('videoLink').value;
-  const cat = document.getElementById('videoCategory').value;
-  if(!title || !link) { alert('Enter Title and Link'); return; }
-  await fetch(apiURL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({data:{Tital:title, Link:link, Catagry:cat}})});
-  alert('Video Uploaded');
-  fetchAdminVideos();
+function loginAdmin() {
+    let id = document.getElementById('adminId').value;
+    let pass = document.getElementById('adminPass').value;
+    if(id==="112233445500" && pass==="123450"){
+        currentUser = {name:"Admin",email:"admin@moviebox.com",isAdmin:true};
+        alert("Admin login successful!");
+        showAdminPanel();
+    } else { alert("Invalid admin credentials"); }
 }
 
-async function fetchAdminVideos(){
-  const res = await fetch(apiURL);
-  const data = await res.json();
-  const list = document.getElementById('adminVideoList');
-  list.innerHTML='';
-  data.forEach(video => {
-    const div = document.createElement('div');
-    div.className='video-card';
-    div.innerHTML=`<strong>${video.Tital}</strong> [${video.Catagry}] <a href='${video.Link}' target='_blank'>Watch</a> <button onclick='deleteVideo(${video.id})'>Delete</button>`;
-    list.appendChild(div);
-  });
+function showDashboard() {
+    if(!currentUser || currentUser.isAdmin) return;
+    document.getElementById('dashboard').innerHTML = `
+        <h4>Welcome, ${currentUser.name}</h4>
+        <p>Email: ${currentUser.email}</p>
+        <button onclick="logout()">Logout</button>
+        <div id="downloadedVideos"></div>
+    `;
 }
 
-async function deleteVideo(id){
-  if(!confirm('Delete this video?')) return;
-  await fetch(`${apiURL}/id/${id}`, { method:'DELETE' });
-  fetchAdminVideos();
+function showAdminPanel() {
+    if(!currentUser || !currentUser.isAdmin) return;
+    document.getElementById('adminPanel').innerHTML = `
+        <h4>Admin Panel</h4>
+        <input type="text" id="videoTitle" placeholder="Video Title">
+        <input type="text" id="videoLink" placeholder="Video Link (YouTube/Facebook/Other)">
+        <input type="text" id="videoCategory" placeholder="Category">
+        <button onclick="addVideo()">Upload Video</button>
+        <h5>Video List</h5>
+        <div id="adminVideoList"></div>
+    `;
+    fetchVideos();
 }
 
-function createAccount(){ alert('Account creation simulation'); }
-function loginUser(){ alert('User login simulation'); }
-function loginAdmin(){
-  const id = document.getElementById('adminId').value;
-  const pass = document.getElementById('adminPass').value;
-  if(id==='112233445500' && pass==='123450'){
-    alert('Admin logged in');
-    document.getElementById('adminDashboard').classList.remove('hidden');
-    fetchAdminVideos();
-  } else alert('Invalid Admin');
-}
-</script></body>
-</html>
+function logout() { currentUser
