@@ -1,73 +1,199 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Video Web Player</title>
-<style>
-body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-header { background: #222; color: white; padding: 10px; text-align: center; }
-nav { display: flex; justify-content: space-around; background: #444; color: white; padding: 10px 0; }
-nav button { background: none; border: none; color: white; font-size: 16px; cursor: pointer; }
-#videos { display: flex; flex-wrap: wrap; justify-content: center; padding: 10px; }
-.video-card { width: 300px; margin: 10px; border: 1px solid #ccc; border-radius: 5px; overflow: hidden; }
-.video-card iframe { width: 100%; height: 200px; }
-.video-info { padding: 5px; }
-#admin-panel { display: none; padding: 10px; background: #eee; }
-input, select { margin: 5px 0; width: 100%; padding: 5px; }
-button.submit { padding: 5px 10px; cursor: pointer; }
-@media(max-width: 500px) {
-  .video-card { width: 90%; }
-  nav { flex-direction: column; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MovieBox Clone</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#111; color:#fff;}
+    header { display:flex; justify-content:space-around; padding:10px; background:#222; position:sticky; top:0; z-index:100;}
+    header button { background:#333; color:#fff; border:none; padding:10px 20px; cursor:pointer; border-radius:5px;}
+    header button.active { background:#f90; color:#000;}
+    #content { padding:20px;}
+    .video-card { background:#222; margin:10px 0; padding:10px; border-radius:8px;}
+    .video-card iframe { width:100%; height:200px; border:none; border-radius:8px;}
+    .video-card h3 { margin:5px 0;}
+    #admin-panel { background:#333; padding:10px; border-radius:8px; margin-top:20px;}
+    input, select { padding:5px; margin:5px 0; width:100%; border-radius:5px; border:none;}
+    button.upload-btn { background:#f90; color:#000; border:none; padding:10px; cursor:pointer; width:100%; margin-top:10px; border-radius:5px;}
+  </style>
 </head>
 <body>
-<header><h1>Video Web Player</h1></header>
-<nav>
-  <button onclick="showSection('home')">Home</button>
-  <button onclick="showSection('search')">Search</button>
-  <button onclick="showSection('fvrt')">Favourite</button>
-  <button onclick="showSection('profile')">Profile</button>
-</nav>
-<div id="home" class="section">
-  <div id="videos"></div>
-</div>
-<div id="search" class="section" style="display:none; padding:10px;">
-  <input type="text" id="searchInput" placeholder="Search videos..." onkeyup="searchVideos()">
-  <div id="searchResults"></div>
-</div>
-<div id="fvrt" class="section" style="display:none; padding:10px;">
-  <p>Favourite videos coming soon.</p>
-</div>
-<div id="profile" class="section" style="display:none; padding:10px;">
-  <button onclick="toggleAdmin()">Admin Login</button>
-  <div id="admin-panel">
-    <h3>Add Video</h3>
-    <input type="text" id="title" placeholder="Title">
-    <input type="text" id="link" placeholder="Video Link">
-    <input type="text" id="category" placeholder="Category">
-    <button class="submit" onclick="addVideo()">Upload</button>
+
+<header>
+  <button id="homeBtn" class="active">Home</button>
+  <button id="searchBtn">Search</button>
+  <button id="fvrtBtn">Fvrt</button>
+  <button id="profileBtn">Profile</button>
+</header>
+
+<div id="content">
+  <div id="homeSection"></div>
+  <div id="searchSection" style="display:none;">
+    <input type="text" id="searchInput" placeholder="Search by title">
+    <div id="searchResults"></div>
+  </div>
+  <div id="fvrtSection" style="display:none;">
+    <div id="fvrtList">No favorites yet.</div>
+  </div>
+  <div id="profileSection" style="display:none;">
+    <div id="adminLogin">
+      <input type="text" id="adminUser" placeholder="Admin Username">
+      <input type="password" id="adminPass" placeholder="Admin Password">
+      <button id="loginBtn">Login</button>
+    </div>
+    <div id="adminPanel" style="display:none;">
+      <h3>Upload Video</h3>
+      <input type="text" id="videoTitle" placeholder="Video Title">
+      <input type="text" id="videoCategory" placeholder="Category">
+      <input type="text" id="videoLink" placeholder="Video URL (MP4 or iframe)">
+      <button class="upload-btn" id="uploadVideoBtn">Upload Video</button>
+      <h3>All Videos</h3>
+      <div id="allVideos"></div>
+    </div>
   </div>
 </div>
+
 <script>
-const sheetApi = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
-let videosData = [];function showSection(section){ document.querySelectorAll('.section').forEach(s => s.style.display='none'); document.getElementById(section).style.display='block'; }
+const SHEETDB_API = "https://sheetdb.io/api/v1/3p5l2ilgzemvr"; // Your SheetDB API
 
-function toggleAdmin(){ const panel = document.getElementById('admin-panel'); panel.style.display = panel.style.display === 'none' ? 'block' : 'none'; }
+// Elements
+const homeBtn = document.getElementById('homeBtn');
+const searchBtn = document.getElementById('searchBtn');
+const fvrtBtn = document.getElementById('fvrtBtn');
+const profileBtn = document.getElementById('profileBtn');
 
-async function fetchVideos(){ try{ const res = await fetch(sheetApi); const data = await res.json(); videosData = data; displayVideos(videosData); }catch(err){ console.error('Error fetching videos:', err); } }
+const homeSection = document.getElementById('homeSection');
+const searchSection = document.getElementById('searchSection');
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+const fvrtSection = document.getElementById('fvrtSection');
+const fvrtList = document.getElementById('fvrtList');
+const profileSection = document.getElementById('profileSection');
+const adminLogin = document.getElementById('adminLogin');
+const adminPanel = document.getElementById('adminPanel');
+const adminUser = document.getElementById('adminUser');
+const adminPass = document.getElementById('adminPass');
+const loginBtn = document.getElementById('loginBtn');
+const videoTitle = document.getElementById('videoTitle');
+const videoCategory = document.getElementById('videoCategory');
+const videoLink = document.getElementById('videoLink');
+const uploadVideoBtn = document.getElementById('uploadVideoBtn');
+const allVideos = document.getElementById('allVideos');
 
-function displayVideos(videos){ const container = document.getElementById('videos'); container.innerHTML = ''; videos.forEach(v => { const card = document.createElement('div'); card.className = 'video-card'; card.innerHTML = <iframe src="${v.Link}" frameborder="0" allowfullscreen></iframe> <div class="video-info"><strong>${v.Title}</strong><br>Category: ${v.category}</div>; container.appendChild(card); }); }
+// Navigation
+function showSection(section) {
+  homeSection.style.display = section==='home'?'block':'none';
+  searchSection.style.display = section==='search'?'block':'none';
+  fvrtSection.style.display = section==='fvrt'?'block':'none';
+  profileSection.style.display = section==='profile'?'block':'none';
+  
+  homeBtn.classList.toggle('active', section==='home');
+  searchBtn.classList.toggle('active', section==='search');
+  fvrtBtn.classList.toggle('active', section==='fvrt');
+  profileBtn.classList.toggle('active', section==='profile');
+}
 
-function searchVideos(){ const query = document.getElementById('searchInput').value.toLowerCase(); const results = videosData.filter(v => v.Title.toLowerCase().includes(query) || v.category.toLowerCase().includes(query)); const container = document.getElementById('searchResults'); container.innerHTML = ''; results.forEach(v => { const card = document.createElement('div'); card.className = 'video-card'; card.innerHTML = <iframe src="${v.Link}" frameborder="0" allowfullscreen></iframe> <div class="video-info"><strong>${v.Title}</strong><br>Category: ${v.category}</div>; container.appendChild(card); }); }
+homeBtn.onclick = ()=>{ showSection('home'); loadHomeVideos(); }
+searchBtn.onclick = ()=>{ showSection('search'); }
+fvrtBtn.onclick = ()=>{ showSection('fvrt'); loadFvrtVideos(); }
+profileBtn.onclick = ()=>{ showSection('profile'); }
 
-async function addVideo(){ const title = document.getElementById('title').value; const link = document.getElementById('link').value; const category = document.getElementById('category').value;
+// Load Videos
+async function loadHomeVideos() {
+  homeSection.innerHTML = "Loading...";
+  try {
+    const res = await fetch(SHEETDB_API);
+    const data = await res.json();
+    homeSection.innerHTML = "";
+    data.forEach(v=>{
+      const card = document.createElement('div');
+      card.className = 'video-card';
+      card.innerHTML = `<h3>${v.title} [${v.category}]</h3><iframe src="${v.Link}" allowfullscreen></iframe>`;
+      homeSection.appendChild(card);
+    });
+  } catch(err) {
+    homeSection.innerHTML = "Error loading videos.";
+  }
+}
 
-if(!title || !link || !category){ alert('Fill all fields'); return; }
+// Search
+searchInput.addEventListener('input', async ()=>{
+  const query = searchInput.value.toLowerCase();
+  if(!query){ searchResults.innerHTML=""; return; }
+  const res = await fetch(SHEETDB_API);
+  const data = await res.json();
+  const results = data.filter(v=>v.title.toLowerCase().includes(query));
+  searchResults.innerHTML = "";
+  results.forEach(v=>{
+    const card = document.createElement('div');
+    card.className = 'video-card';
+    card.innerHTML = `<h3>${v.title} [${v.category}]</h3><iframe src="${v.Link}" allowfullscreen></iframe>`;
+    searchResults.appendChild(card);
+  });
+});
 
-try{ const res = await fetch(sheetApi, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: { Title: title, Link: link, category: category } }) }); if(res.ok){ alert('Video added successfully'); document.getElementById('title').value=''; document.getElementById('link').value=''; document.getElementById('category').value=''; fetchVideos(); } }catch(err){ console.error(err); } }
+// Favorites (simple localStorage)
+function loadFvrtVideos(){
+  const fav = JSON.parse(localStorage.getItem('fvrtVideos')||"[]");
+  fvrtList.innerHTML = fav.length? "": "No favorites yet.";
+  fav.forEach(v=>{
+    const card = document.createElement('div');
+    card.className = 'video-card';
+    card.innerHTML = `<h3>${v.title} [${v.category}]</h3><iframe src="${v.Link}" allowfullscreen></iframe>`;
+    fvrtList.appendChild(card);
+  });
+}
 
-// Initial fetch fetchVideos(); </script>
+// Admin login
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "1234";
+loginBtn.onclick = ()=>{
+  if(adminUser.value===ADMIN_USER && adminPass.value===ADMIN_PASS){
+    adminLogin.style.display='none';
+    adminPanel.style.display='block';
+    loadAllVideos();
+  }else{
+    alert("Invalid credentials");
+  }
+}
 
-</body>
-</html>
+// Upload video
+uploadVideoBtn.onclick = async ()=>{
+  const title = videoTitle.value;
+  const category = videoCategory.value;
+  const Link = videoLink.value;
+  if(!title||!Link) { alert("Title and Link required"); return; }
+  try{
+    const res = await fetch(SHEETDB_API, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ data:{ title, category, Link } })
+    });
+    const data = await res.json();
+    alert("Video uploaded successfully!");
+    videoTitle.value=""; videoCategory.value=""; videoLink.value="";
+    loadAllVideos();
+  }catch(err){ alert("Upload failed"); }
+}
+
+// Load all videos for admin
+async function loadAllVideos(){
+  allVideos.innerHTML = "Loading...";
+  try{
+    const res = await fetch(SHEETDB_API);
+    const data = await res.json();
+    allVideos.innerHTML = "";
+    data.forEach(v=>{
+      const card = document.createElement('div');
+      card.className='video-card';
+      card.innerHTML = `<h3>${v.title} [${v.category}]</h3><iframe src="${v.Link}" allowfullscreen></iframe>
+        <button onclick='deleteVideo("${v._id}")'>Delete</button>`;
+      allVideos.appendChild(card);
+    });
+  }catch(err){ allVideos.innerHTML="Error loading"; }
+}
+
+// Delete video
+async function deleteVideo(id){
+  if(!confirm("Are you sure?")) return
