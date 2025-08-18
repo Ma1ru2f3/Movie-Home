@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie Box</title>
 <style>
-body { font-family: Arial; margin:0; background:#f5f5f5; }
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; }
 header { background:#111; color:#fff; display:flex; justify-content:space-around; padding:10px; }
 header button { padding:10px 20px; cursor:pointer; background:#222; color:#fff; border:none; border-radius:5px; }
 section { padding:20px; display:none; }
@@ -15,11 +15,10 @@ video { width:100%; height:200px; object-fit:cover; display:block; }
 input { margin:5px 0; padding:5px; width:90%; }
 .fav-btn { display:block; margin:5px auto 10px auto; background:#ff4081; color:#fff; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; }
 .video-title { padding:5px; text-align:center; color:#fff; font-weight:bold; }
-#videoGallery, #searchResults, #favList, #adminVideoList { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; }
+#videoGallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; }
 </style>
 </head>
 <body>
-
 <header>
   <button onclick="showSection('home')">Home</button>
   <button onclick="showSection('search')">Search</button>
@@ -35,17 +34,16 @@ input { margin:5px 0; padding:5px; width:90%; }
 <section id="search">
   <h2>Search</h2>
   <input type="text" id="searchInput" placeholder="Search video..." oninput="searchVideo()">
-  <div id="searchResults"></div>
+  <div id="searchResults" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px;"></div>
 </section>
 
 <section id="favourite">
   <h2>Favourite Videos</h2>
-  <div id="favList"></div>
+  <div id="favList" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px;"></div>
 </section>
 
 <section id="profile">
   <h2>Profile</h2>
-
   <div id="adminLoginDiv">
     <input type="text" id="adminId" placeholder="Admin ID"><br>
     <input type="password" id="adminPass" placeholder="Admin Password"><br>
@@ -55,8 +53,7 @@ input { margin:5px 0; padding:5px; width:90%; }
   <div id="adminTab" style="display:none;">
     <h3>Admin Dashboard</h3>
     <input type="text" id="videoTitle" placeholder="Video Title"><br>
-    <input type="text" id="videoLink" placeholder="Video Link (MP4)"><br>
-    <input type="text" id="videoCategory" placeholder="Category"><br>
+    <input type="file" id="videoFile" accept="video/mp4"><br>
     <button onclick="uploadVideo()">Upload Video</button>
     <h4>Video List</h4>
     <div id="adminVideoList"></div>
@@ -64,54 +61,99 @@ input { margin:5px 0; padding:5px; width:90%; }
 </section>
 
 <script>
-let allVideos = [];
+// Cloudinary unsigned preset config
+const cloudName = 'dlxa4684c';
+const unsignedUploadPreset = 'YOUR_UNSIGNED_PRESET'; // এটা Cloudinary-তে তৈরি করবে
+
+let allVideos = JSON.parse(localStorage.getItem('allVideos')) || [];
 let favVideos = JSON.parse(localStorage.getItem('favVideos')) || [];
 let isAdmin = false;
 
 function showSection(id){
   document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if(id==='home') fetchVideos();
-  if(id==='favourite') showFavVideos();
+  if(id==='home') renderVideos();
+  if(id==='favourite') renderFav();
 }
 
-async function fetchVideos(){
-  const res = await fetch('/api/videos');
-  allVideos = await res.json();
+function loginAdmin(){
+  const id = document.getElementById('adminId').value;
+  const pass = document.getElementById('adminPass').value;
+  if(id==='112233445500' && pass==='123450'){
+    isAdmin = true;
+    alert('Admin logged in');
+    document.getElementById('adminLoginDiv').style.display='none';
+    document.getElementById('adminTab').style.display='block';
+    renderVideos();
+  } else alert('Invalid Admin');
+}
+
+function renderVideos(){
   const gallery = document.getElementById('videoGallery');
-  gallery.innerHTML = '';
+  gallery.innerHTML='';
   allVideos.forEach(v=>{
     const card = document.createElement('div');
     card.className='video-card';
     card.innerHTML = `
-      <video src="${v.link}" controls preload="metadata"></video>
+      <video src="${v.url}" controls preload="metadata"></video>
       <div class="video-title">${v.title}</div>
-      <button class="fav-btn" onclick="addFav('${v.title}','${v.link}','${v.category}')">Favourite</button>
+      <button class="fav-btn" onclick="addFav('${v.title}','${v.url}')">Favourite</button>
     `;
     gallery.appendChild(card);
   });
 }
 
-function addFav(title,link,category){
-  if(!favVideos.find(v=>v.link===link)){
-    favVideos.push({title, link, category});
-    localStorage.setItem('favVideos', JSON.stringify(favVideos));
+function addFav(title,url){
+  if(!favVideos.find(v=>v.url===url)){
+    favVideos.push({title,url});
+    localStorage.setItem('favVideos',JSON.stringify(favVideos));
     alert('Added to Favourite');
   } else alert('Already in Favourite');
 }
 
-function showFavVideos(){
+function renderFav(){
   const list = document.getElementById('favList');
   list.innerHTML='';
   favVideos.forEach(v=>{
     const div = document.createElement('div');
     div.className='video-card';
     div.innerHTML = `
-      <video src="${v.link}" controls preload="metadata"></video>
+      <video src="${v.url}" controls preload="metadata"></video>
       <div class="video-title">${v.title}</div>
+      <button class="fav-btn" onclick="removeFav('${v.url}')">Remove</button>
     `;
     list.appendChild(div);
   });
+}
+
+function removeFav(url){
+  favVideos = favVideos.filter(v=>v.url!==url);
+  localStorage.setItem('favVideos',JSON.stringify(favVideos));
+  renderFav();
+}
+
+function uploadVideo(){
+  if(!isAdmin){ alert('Only admin can upload'); return; }
+  const title = document.getElementById('videoTitle').value;
+  const file = document.getElementById('videoFile').files[0];
+  if(!title || !file){ alert('Enter title and select video'); return; }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', unsignedUploadPreset);
+
+  fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
+    method: 'POST',
+    body: formData
+  })
+  .then(res=>res.json())
+  .then(data=>{
+    allVideos.push({title, url: data.secure_url});
+    localStorage.setItem('allVideos', JSON.stringify(allVideos));
+    alert('Video uploaded');
+    renderVideos();
+  })
+  .catch(err=>console.error(err));
 }
 
 function searchVideo(){
@@ -123,43 +165,16 @@ function searchVideo(){
     const div = document.createElement('div');
     div.className='video-card';
     div.innerHTML = `
-      <video src="${v.link}" controls preload="metadata"></video>
+      <video src="${v.url}" controls preload="metadata"></video>
       <div class="video-title">${v.title}</div>
-      <button class="fav-btn" onclick="addFav('${v.title}','${v.link}','${v.category}')">Favourite</button>
+      <button class="fav-btn" onclick="addFav('${v.title}','${v.url}')">Favourite</button>
     `;
     container.appendChild(div);
   });
 }
 
-function loginAdmin(){
-  const id = document.getElementById('adminId').value;
-  const pass = document.getElementById('adminPass').value;
-  if(id==='112233445500' && pass==='123450'){
-    isAdmin = true;
-    alert('Admin logged in');
-    document.getElementById('adminLoginDiv').style.display='none';
-    document.getElementById('adminTab').style.display='block';
-    fetchVideos();
-  } else alert('Invalid Admin');
-}
-
-async function uploadVideo(){
-  if(!isAdmin){ alert('Only admin can upload'); return; }
-  const title = document.getElementById('videoTitle').value;
-  const link = document.getElementById('videoLink').value;
-  const category = document.getElementById('videoCategory').value;
-  if(!title || !link){ alert('Enter title and link'); return; }
-  await fetch('/api/videos',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({title, link, category, adminKey:'123450'})
-  });
-  alert('Video Uploaded');
-  fetchVideos();
-}
-
-// Initial load
-fetchVideos();
+// Initial render
+renderVideos();
 </script>
 </body>
 </html>
