@@ -1,12 +1,11 @@
-
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie Box</title>
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; }
+body { font-family: Arial; margin:0; background:#f5f5f5; }
 header { background:#111; color:#fff; display:flex; justify-content:space-around; padding:10px; }
 header button { padding:10px 20px; cursor:pointer; background:#222; color:#fff; border:none; border-radius:5px; }
 section { padding:20px; display:none; }
@@ -16,10 +15,11 @@ video { width:100%; height:200px; object-fit:cover; display:block; }
 input { margin:5px 0; padding:5px; width:90%; }
 .fav-btn { display:block; margin:5px auto 10px auto; background:#ff4081; color:#fff; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; }
 .video-title { padding:5px; text-align:center; color:#fff; font-weight:bold; }
-#videoGallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; }
+#videoGallery, #searchResults, #favList, #adminVideoList { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; }
 </style>
 </head>
 <body>
+
 <header>
   <button onclick="showSection('home')">Home</button>
   <button onclick="showSection('search')">Search</button>
@@ -35,18 +35,22 @@ input { margin:5px 0; padding:5px; width:90%; }
 <section id="search">
   <h2>Search</h2>
   <input type="text" id="searchInput" placeholder="Search video..." oninput="searchVideo()">
-  <div id="searchResults" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px;"></div>
+  <div id="searchResults"></div>
 </section>
 
 <section id="favourite">
   <h2>Favourite Videos</h2>
-  <div id="favList" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px;"></div>
+  <div id="favList"></div>
 </section>
 
 <section id="profile">
   <h2>Profile</h2>
-  <button onclick="showProfileTab('admin')">Admin Access</button>
-  <button onclick="showProfileTab('owner')">Owner Info</button>
+
+  <div id="adminLoginDiv">
+    <input type="text" id="adminId" placeholder="Admin ID"><br>
+    <input type="password" id="adminPass" placeholder="Admin Password"><br>
+    <button onclick="loginAdmin()">Login as Admin</button>
+  </div>
 
   <div id="adminTab" style="display:none;">
     <h3>Admin Dashboard</h3>
@@ -57,36 +61,9 @@ input { margin:5px 0; padding:5px; width:90%; }
     <h4>Video List</h4>
     <div id="adminVideoList"></div>
   </div>
-
-  <div id="ownerTab" style="display:none;">
-    <pre>
-┏━━━━━━━━━━━━━━━━━━━━━┓
-┃      🌟 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 🌟      ┃
-┣━━━━━━━━━━━━━━━━━━━━━┫
-┃ 👤 Name      : Maruf Hossain
-┃ 🚹 Gender    : Male
-┃ ❤ Relation : Single
-┃ 🎂 Age       : 17+
-┃ 🕌 Religion : Islam
-┃ 🏫 Education : SSC 25
-┃ 🏡 Address  : Meherpur, Bangladesh
-┣━━━━━━━━━━━━━━━━━━━━━┫
-┃ 🎭 Tiktok   : Srotoshini
-┃ 📢 Telegram : ×
-┃ 🌐 Facebook : fb.com/profile.php?id=100066542686904
-┗━━━━━━━━━━━━━━━━━━━┛
-    </pre>
-  </div>
-
-  <div id="adminLoginDiv">
-    <input type="text" id="adminId" placeholder="Admin ID"><br>
-    <input type="password" id="adminPass" placeholder="Admin Password"><br>
-    <button onclick="loginAdmin()">Login as Admin</button>
-  </div>
 </section>
 
 <script>
-const apiURL = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
 let allVideos = [];
 let favVideos = JSON.parse(localStorage.getItem('favVideos')) || [];
 let isAdmin = false;
@@ -98,36 +75,26 @@ function showSection(id){
   if(id==='favourite') showFavVideos();
 }
 
-function showProfileTab(tab){
-  document.getElementById('adminTab').style.display='none';
-  document.getElementById('ownerTab').style.display='none';
-  if(tab==='admin' && isAdmin) document.getElementById('adminTab').style.display='block';
-  if(tab==='owner') document.getElementById('ownerTab').style.display='block';
-}
-
 async function fetchVideos(){
-  try{
-    const res = await fetch(apiURL);
-    const data = await res.json();
-    allVideos = data;
-    const gallery = document.getElementById('videoGallery');
-    gallery.innerHTML = '';
-    data.forEach(v=>{
-      const card = document.createElement('div');
-      card.className='video-card';
-      card.innerHTML = `
-        <video src="${v.Link}" controls preload="metadata"></video>
-        <div class="video-title">${v.Title}</div>
-        <button class="fav-btn" onclick="addFav('${v.Title}','${v.Link}','${v.Category}')">Favourite</button>
-      `;
-      gallery.appendChild(card);
-    });
-  } catch(err){ console.error('Fetch error', err); }
+  const res = await fetch('/api/videos');
+  allVideos = await res.json();
+  const gallery = document.getElementById('videoGallery');
+  gallery.innerHTML = '';
+  allVideos.forEach(v=>{
+    const card = document.createElement('div');
+    card.className='video-card';
+    card.innerHTML = `
+      <video src="${v.link}" controls preload="metadata"></video>
+      <div class="video-title">${v.title}</div>
+      <button class="fav-btn" onclick="addFav('${v.title}','${v.link}','${v.category}')">Favourite</button>
+    `;
+    gallery.appendChild(card);
+  });
 }
 
 function addFav(title,link,category){
-  if(!favVideos.find(v=>v.Link===link)){
-    favVideos.push({Title:title, Link:link, Category:category});
+  if(!favVideos.find(v=>v.link===link)){
+    favVideos.push({title, link, category});
     localStorage.setItem('favVideos', JSON.stringify(favVideos));
     alert('Added to Favourite');
   } else alert('Already in Favourite');
@@ -140,29 +107,39 @@ function showFavVideos(){
     const div = document.createElement('div');
     div.className='video-card';
     div.innerHTML = `
-      <video src="${v.Link}" controls preload="metadata"></video>
-      <div class="video-title">${v.Title}</div>
-      <button class="fav-btn" onclick="removeFav('${v.Link}')">Remove</button>
+      <video src="${v.link}" controls preload="metadata"></video>
+      <div class="video-title">${v.title}</div>
     `;
     list.appendChild(div);
   });
 }
 
-function removeFav(link){
-  favVideos = favVideos.filter(v=>v.Link!==link);
-  localStorage.setItem('favVideos', JSON.stringify(favVideos));
-  showFavVideos();
+function searchVideo(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const results = allVideos.filter(v=>v.title.toLowerCase().includes(q));
+  const container = document.getElementById('searchResults');
+  container.innerHTML='';
+  results.forEach(v=>{
+    const div = document.createElement('div');
+    div.className='video-card';
+    div.innerHTML = `
+      <video src="${v.link}" controls preload="metadata"></video>
+      <div class="video-title">${v.title}</div>
+      <button class="fav-btn" onclick="addFav('${v.title}','${v.link}','${v.category}')">Favourite</button>
+    `;
+    container.appendChild(div);
+  });
 }
 
-async function loginAdmin(){
+function loginAdmin(){
   const id = document.getElementById('adminId').value;
   const pass = document.getElementById('adminPass').value;
   if(id==='112233445500' && pass==='123450'){
     isAdmin = true;
     alert('Admin logged in');
     document.getElementById('adminLoginDiv').style.display='none';
-    showProfileTab('admin');
-    fetchAdminVideos();
+    document.getElementById('adminTab').style.display='block';
+    fetchVideos();
   } else alert('Invalid Admin');
 }
 
@@ -170,55 +147,15 @@ async function uploadVideo(){
   if(!isAdmin){ alert('Only admin can upload'); return; }
   const title = document.getElementById('videoTitle').value;
   const link = document.getElementById('videoLink').value;
-  const cat = document.getElementById('videoCategory').value;
+  const category = document.getElementById('videoCategory').value;
   if(!title || !link){ alert('Enter title and link'); return; }
-  await fetch(apiURL, {
+  await fetch('/api/videos',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({data:{Title:title, Link:link, Category:cat}})
+    body: JSON.stringify({title, link, category, adminKey:'123450'})
   });
   alert('Video Uploaded');
-  fetchAdminVideos();
-}
-
-async function fetchAdminVideos(){
-  const res = await fetch(apiURL);
-  const data = await res.json();
-  allVideos = data;
-  const list = document.getElementById('adminVideoList');
-  list.innerHTML='';
-  data.forEach(v=>{
-    const div = document.createElement('div');
-    div.className='video-card';
-    div.innerHTML = `<strong>${v.Title}</strong>` + (isAdmin ? ` <button onclick="deleteVideo('${v.id}')">Delete</button>` : '');
-    list.appendChild(div);
-  });
-}
-
-async function deleteVideo(id){
-  if(!isAdmin) return;
-  if(confirm('Delete this video?')){
-    await fetch(`${apiURL}/id/${id}`,{method:'DELETE'});
-    fetchAdminVideos();
-    fetchVideos(); // হোমও আপডেট হবে
-  }
-}
-
-function searchVideo(){
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const results = allVideos.filter(v=>v.Title.toLowerCase().includes(q));
-  const container = document.getElementById('searchResults');
-  container.innerHTML='';
-  results.forEach(v=>{
-    const div = document.createElement('div');
-    div.className='video-card';
-    div.innerHTML = `
-      <video src="${v.Link}" controls preload="metadata"></video>
-      <div class="video-title">${v.Title}</div>
-      <button class="fav-btn" onclick="addFav('${v.Title}','${v.Link}','${v.Category}')">Favourite</button>
-    `;
-    container.appendChild(div);
-  });
+  fetchVideos();
 }
 
 // Initial load
