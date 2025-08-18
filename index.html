@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Movie Home</title>
+<title>Movie Home Interactive</title>
 <style>
   body{font-family: Arial, sans-serif;margin:0;padding:0;background:#f0f2f5;}
   header{background:#111;color:white;padding:10px;text-align:center;}
@@ -19,6 +19,7 @@
   .profileButtons button{margin-right:10px;padding:8px 15px;}
   input, button{margin:5px 0;padding:5px;}
   pre{background:#eee;padding:10px;overflow-x:auto;}
+  #videoAddSection{margin-top:10px;background:#ddd;padding:10px;}
 </style>
 </head>
 <body>
@@ -78,6 +79,12 @@
     <input type="password" id="adminPass" placeholder="Admin Password"><br>
     <button onclick="adminLogin()">Login as Admin</button>
     <p id="adminStatus"></p>
+    <div id="videoAddSection" class="hidden">
+      <h4>Add New Video</h4>
+      <input type="text" id="videoTitle" placeholder="Video Title"><br>
+      <input type="text" id="videoLink" placeholder="Video Link"><br>
+      <button onclick="addVideoFromAdmin()">Add Video</button>
+    </div>
   </div>
 
   <!-- Owner Info Section -->
@@ -125,6 +132,7 @@ function toggleSection(sectionId){
 let videos = [];
 let history = [];
 let userLoggedIn = false;
+let adminLoggedIn = false;
 
 // Add video function (admin)
 function addVideo(title, link){
@@ -140,8 +148,9 @@ function renderVideos(){
     const div = document.createElement('div');
     div.className = 'videoCard';
     div.innerHTML = `<h4>${v.title}</h4>
-                     ${userLoggedIn ? `<a href="${v.link}" target="_blank">Watch Video</a>` : `<p>Please login to watch</p>`}
-                     ${userLoggedIn ? `<button onclick="deleteVideo(${i})">Delete</button>` : ''}`;
+                     ${userLoggedIn ? `<a href="${v.link}" target="_blank" onclick="addToHistory('${v.title}')">Watch Video</a>` : `<p>Please login to watch</p>`}
+                     ${userLoggedIn ? `<a href="${v.link}" download>Download</a>` : ''}
+                     ${adminLoggedIn ? `<button onclick="deleteVideo(${i})">Delete</button>` : ''}`;
     list.appendChild(div);
   });
 }
@@ -164,9 +173,26 @@ function searchVideo(){
     const div = document.createElement('div');
     div.className = 'videoCard';
     div.innerHTML = `<h4>${v.title}</h4>
-                     ${userLoggedIn ? `<a href="${v.link}" target="_blank">Watch Video</a>` : `<p>Please login to watch</p>`}
-                     ${userLoggedIn ? `<button onclick="deleteVideo(${i})">Delete</button>` : ''}`;
+                     ${userLoggedIn ? `<a href="${v.link}" target="_blank" onclick="addToHistory('${v.title}')">Watch Video</a>` : `<p>Please login to watch</p>`}
+                     ${userLoggedIn ? `<a href="${v.link}" download>Download</a>` : ''}
+                     ${adminLoggedIn ? `<button onclick="deleteVideo(${i})">Delete</button>` : ''}`;
     list.appendChild(div);
+  });
+}
+
+// History functions
+function addToHistory(title){
+  history.push(title);
+  renderHistory();
+}
+
+function renderHistory(){
+  const list = document.getElementById('historyList');
+  list.innerHTML='';
+  history.forEach(v=>{
+    const li = document.createElement('li');
+    li.textContent = v;
+    list.appendChild(li);
   });
 }
 
@@ -198,19 +224,4 @@ function loginUser(){
 
 // Admin login
 function adminLogin(){
-  const id = document.getElementById('adminId').value;
-  const pass = document.getElementById('adminPass').value;
-  if(id==='112233445500' && pass==='123450'){
-    alert('Admin logged in! You can add videos via console: addVideo("Title","Link")');
-  } else {
-    document.getElementById('adminStatus').innerText='Invalid Admin ID or Password';
-  }
-}
-
-// Initialize with demo video
-addVideo('Death Note Episode 01','https://drive.google.com/file/d/1982RMzUyQM-vsiLO7YUzUBmHlt3dmupE/view?usp=drivesdk');
-
-</script>
-
-</body>
-</html>
+  const id =
