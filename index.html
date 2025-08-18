@@ -1,57 +1,73 @@
+<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>MovieBox</title>
-<style>
-  nav { background:#222; padding:10px; }
-  nav button { margin:5px; padding:10px; }
-  .page { display:none; }
-  video { display:block; margin:10px 0; }
-</style>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<nav>
-  <button id="homeBtn">Home</button>
-  <button id="searchBtn">Search</button>
-  <button id="favBtn">Favourites</button>
-  <button id="profileBtn">Profile</button>
-</nav>
+<header class="topbar">
+  <h1 class="brand">MovieBox</h1>
+  <nav>
+    <button id="homeBtn">Home</button>
+    <button id="searchBtn">Search</button>
+    <button id="favBtn">Favourites</button>
+    <button id="profileBtn">Profile</button>
+  </nav>
+</header>
 
-<div id="homeDiv" class="page">
-  <h3>All Videos</h3>
-  <div id="videoList"></div>
-</div>
+<main>
+  <!-- HOME -->
+  <section id="homePage" class="page active">
+    <h2>Home</h2>
+    <div id="videoGrid" class="grid"></div>
+  </section>
 
-<div id="searchDiv" class="page">
-  <h3>Search</h3>
-  <input id="searchInput" placeholder="Title...">
-  <button id="searchGo">Go</button>
-  <div id="searchResults"></div>
-</div>
-
-<div id="favDiv" class="page">
-  <h3>Favourites</h3>
-  <div id="favList"></div>
-</div>
-
-<div id="profileDiv" class="page">
-  <div id="loginDiv">
-    <input id="user" placeholder="User">
-    <input id="pass" type="password" placeholder="Pass">
-    <button id="loginBtn">Login</button>
-  </div>
-  <div id="adminDiv" style="display:none;">
-    <h3>Upload</h3>
-    <input type="file" id="videoFile">
-    <input type="text" id="videoTitle" placeholder="Title">
-    <button id="uploadBtn">Upload</button>
-    <div id="progressDiv" style="display:none;">
-      <progress id="progressBar" value="0" max="100"></progress>
-      <span id="progressText"></span>
+  <!-- SEARCH -->
+  <section id="searchPage" class="page">
+    <h2>Search</h2>
+    <div class="searchRow">
+      <input id="searchInput" placeholder="Search by title..." />
+      <button id="searchGo">Search</button>
     </div>
-  </div>
-</div>
+    <div id="searchResults" class="grid"></div>
+  </section>
+
+  <!-- FAVOURITES -->
+  <section id="favPage" class="page">
+    <h2>Favourites</h2>
+    <div id="favGrid" class="grid"></div>
+  </section>
+
+  <!-- PROFILE / ADMIN -->
+  <section id="profilePage" class="page">
+    <h2>Profile / Admin</h2>
+
+    <div id="loginBox">
+      <h3>Admin Login</h3>
+      <input id="adminUser" placeholder="Username" />
+      <input id="adminPass" placeholder="Password" type="password" />
+      <button id="loginBtn">Login</button>
+    </div>
+
+    <div id="adminBox" style="display:none;">
+      <h3>Upload Video (Admin)</h3>
+      <input id="videoTitle" placeholder="Video Title" />
+      <input id="videoFile" type="file" accept="video/*" />
+      <div class="uploadRow">
+        <button id="uploadBtn">Upload</button>
+        <div id="progressWrap" style="display:none;">
+          <progress id="progressBar" value="0" max="100"></progress>
+          <span id="progressPct">0%</span>
+        </div>
+      </div>
+      <h4>Your admin actions</h4>
+      <p>Uploaded videos can be deleted from Home (Delete button).</p>
+    </div>
+  </section>
+</main>
 
 <script src="script.js"></script>
 </body>
