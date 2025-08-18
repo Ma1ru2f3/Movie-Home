@@ -3,227 +3,194 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MovieBox Web</title>
+<title>Video Web</title>
 <style>
-body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4;}
-header {background:#222; color:#fff; padding:10px; display:flex; justify-content:space-between; align-items:center;}
-header h1 {margin:0;}
-nav button {margin-left:10px; padding:5px 10px; cursor:pointer;}
-#content {padding:20px;}
-.video-card {background:#fff; padding:10px; margin-bottom:10px; border-radius:5px; box-shadow:0 0 5px #ccc;}
-.video-card h3 {margin:5px 0;}
-.video-card iframe {width:100%; height:300px;}
-.video-card .admin-options {float:right; cursor:pointer; color:red;}
-form input, form select, form button {display:block; margin:5px 0; padding:5px; width:100%;}
-#profile-section, #add-video-section, #login-section {background:#fff; padding:20px; border-radius:5px; max-width:400px; margin:auto;}
+  body{font-family:sans-serif; padding:20px;}
+  .hidden{display:none;}
+  .video-card{border:1px solid #ccc; padding:10px; margin:10px 0;}
 </style>
 </head>
 <body>
 
-<header>
-<h1>MovieBox</h1>
+<h1>🌟 Video Web 🌟</h1>
+
+<!-- Navigation -->
 <nav>
-<button onclick="showSection('home')">Home</button>
-<button onclick="showSection('search')">Search</button>
-<button onclick="showSection('profile')">Profile</button>
+  <button onclick="showSection('home')">Home</button>
+  <button onclick="showSection('search')">Search</button>
+  <button onclick="showSection('profile-section')">Profile</button>
 </nav>
-</header>
 
-<div id="content">
+<hr>
 
-<!-- Home / Video List -->
-<div id="home-section">
-<h2>Videos</h2>
-<div id="video-list"></div>
+<!-- Sections -->
+<div id="home"> <h2>Home</h2> <p>Welcome to Video Web</p> </div>
+
+<div id="search" class="hidden">
+  <h2>Search</h2>
+  <input type="text" id="search-input" placeholder="Search videos" oninput="searchVideo()">
+  <div id="search-results"></div>
 </div>
 
-<!-- Search -->
-<div id="search-section" style="display:none;">
-<h2>Search Video</h2>
-<input type="text" id="search-input" placeholder="Search by title or category">
-<div id="search-result"></div>
-</div>
+<!-- Profile Section -->
+<div id="profile-section" class="hidden">
+  <h2>Profile Options</h2>
 
-<!-- Profile -->
-<div id="profile-section" style="display:none;">
-<h2>Profile</h2>
+  <!-- 1. Account Create/Login -->
+  <div>
+    <h3>Account Create/Login</h3>
+    <input type="text" id="reg-name" placeholder="Full Name"><br>
+    <input type="email" id="reg-email" placeholder="Email"><br>
+    <input type="password" id="reg-pass" placeholder="Password"><br>
+    <input type="password" id="reg-pass2" placeholder="Confirm Password"><br>
+    <button onclick="createAccount()">Create Account</button><br><br>
 
-<!-- Account Create/Login -->
-<div>
-<h3>Account</h3>
-<input type="text" id="fullname" placeholder="Full Name">
-<input type="email" id="email" placeholder="E-mail">
-<input type="password" id="password" placeholder="Password (min 8 chars)">
-<input type="password" id="cpassword" placeholder="Confirm Password">
-<button onclick="createAccount()">Create Account</button>
-<input type="email" id="login-email" placeholder="E-mail">
-<input type="password" id="login-pass" placeholder="Password">
-<button onclick="loginUser()">Login</button>
-</div>
+    <input type="email" id="login-email" placeholder="Email">
+    <input type="password" id="login-pass" placeholder="Password">
+    <button onclick="loginUser()">Login</button>
+  </div>
 
-<!-- Admin Access -->
-<div>
-<h3>Admin Access</h3>
-<input type="text" id="admin-id" placeholder="Admin ID">
-<input type="password" id="admin-pass" placeholder="Admin Password">
-<button onclick="showAddVideo()">Login as Admin</button>
-</div>
+  <!-- 2. Admin Access -->
+  <div>
+    <h3>Admin Access</h3>
+    <input type="text" id="admin-id" placeholder="Admin ID">
+    <input type="password" id="admin-pass" placeholder="Admin Password">
+    <button onclick="loginUser()">Login Admin</button>
+  </div>
 
-<!-- Owner Info -->
-<div>
-<h3>Owner Info</h3>
-<pre>
+  <!-- 3. Owner Info -->
+  <div>
+    <h3>Owner Info</h3>
+    <pre>
 ┏━━━━━━━━━━━━━━━━━━━━━┓
 ┃      🌟 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 🌟      
 ┣━━━━━━━━━━━━━━━━━━━━━┫
-┃ 👤 Name      : Maruf Hossainッ
-┃ 🚹 Gender    : Male
-┃ ❤ Relation  : Single
-┃ 🎂 Age       : 17+
-┃ 🕌 Religion  : Islam
-┃ 🏫 Education : SSC 25
-┃ 🏡 Address   : Meherpur, Bangladesh
+┃ 👤 𝐍𝐚𝐦𝐞      : Maruf Hossainッ
+┃ 🚹 𝐆𝐞𝐧𝐝𝐞𝐫    : 𝐌𝐚𝐥𝐞
+┃ ❤ 𝐑𝐞𝐥𝐚𝐭𝐢𝐨𝐧 : single 🙁
+┃ 🎂 𝐀𝐠𝐞       : 17+
+┃ 🕌 𝐑𝐞𝐥𝐢𝐠𝐢𝐨𝐧 : 𝐈𝐬𝐥𝐚𝐦
+┃ 🏫 𝐄𝐝𝐮𝐜𝐚𝐭𝐢𝐨𝐧 : SSC 25
+┃ 🏡 𝐀𝐝𝐝𝐫𝐞𝐬𝐬  : Meherpur, Bangladesh
 ┣━━━━━━━━━━━━━━━━━━━━━┫
-┃ 🎭 Tiktok   : Srotoshini-স্রোত্বোসিনী
-┃ 📢 Telegram : ×
-┃ 🌐 Facebook : fb.com/profile.php?id=100066542686904
+┃ 🎭 𝐓𝐢𝐤𝐭𝐨𝐤  : Srotoshini-স্রোত্বোসিনী
+┃ 📢 𝐓𝐞𝐥𝐞𝐠𝐫𝐚𝐦 : ×
+┃ 🌐 𝐅𝐚𝐜𝐞𝐛𝐨𝐨𝐤 : fb.com/profile.php?id=100066542686904
+┣━━━━━━━━━━━━━━
 ┗━━━━━━━━━━━━━━━━━━━┛
-</pre>
-</div>
-</div>
-
-<!-- Add Video Section (Admin) -->
-<div id="add-video-section" style="display:none;">
-<h2>Add Video</h2>
-<form onsubmit="addVideo(event)">
-<input type="text" id="video-title" placeholder="Video Title" required>
-<input type="text" id="video-link" placeholder="Video Link" required>
-<input type="text" id="video-category" placeholder="Category" required>
-<button type="submit">Add Video</button>
-</form>
+    </pre>
+  </div>
 </div>
 
+<!-- User Dashboard -->
+<div id="user-dashboard" class="hidden">
+  <h2>Welcome, <span id="user-name"></span></h2>
+  <p>Email: <span id="user-email"></span></p>
+  <button onclick="downloadVideos()">Download Videos</button>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<!-- Admin Dashboard -->
+<div id="admin-dashboard" class="hidden">
+  <h2>Admin Panel</h2>
+  <button onclick="logout()">Logout</button>
+
+  <h3>Upload Video</h3>
+  <form onsubmit="addVideo(event)">
+    <input type="text" id="video-title" placeholder="Video Title" required>
+    <input type="text" id="video-link" placeholder="Video Link" required>
+    <input type="text" id="video-category" placeholder="Category" required>
+    <button type="submit">Add Video</button>
+  </form>
+
+  <h3>Video List</h3>
+  <div id="admin-video-list"></div>
+
+  <h3>User List</h3>
+  <div id="user-list"></div>
 </div>
 
 <script>
-// SheetDB API URL
 const SHEET_API = "https://sheetdb.io/api/v1/3p5l2ilgzemvr";
 
-// Sections
-function showSection(section){
-  document.getElementById('home-section').style.display = section==='home'? 'block':'none';
-  document.getElementById('search-section').style.display = section==='search'? 'block':'none';
-  document.getElementById('profile-section').style.display = section==='profile'? 'block':'none';
-  document.getElementById('add-video-section').style.display = 'none';
+// Navigation
+function showSection(id){
+  document.querySelectorAll('div[id]').forEach(div=>div.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
 }
 
-// Fetch and display videos
-async function fetchVideos(){
-  const res = await fetch(SHEET_API);
-  const data = await res.json();
-  const list = document.getElementById('video-list');
-  list.innerHTML = '';
-  data.forEach(video=>{
-    const card = document.createElement('div');
-    card.className = 'video-card';
-    card.innerHTML = `
-      <h3>${video.title} [${video.category}] 
-      <span class="admin-options" onclick="deleteVideo('${video._id}')">🗑</span>
-      </h3>
-      <iframe src="${convertToEmbed(video.link)}" frameborder="0" allowfullscreen></iframe>
-    `;
-    list.appendChild(card);
-  });
-}
-
-// Convert Youtube/Facebook to embeddable link
-function convertToEmbed(url){
-  if(url.includes('youtube')){
-    const id = url.split('v=')[1];
-    return `https://www.youtube.com/embed/${id}`;
-  } else if(url.includes('facebook')){
-    return url; // Facebook embed requires extra code
-  }
-  return url;
-}
-
-// Add Video
-async function addVideo(e){
-  e.preventDefault();
-  const title = document.getElementById('video-title').value;
-  const link = document.getElementById('video-link').value;
-  const category = document.getElementById('video-category').value;
-  const res = await fetch(SHEET_API, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({data:{title, link, category}})
-  });
-  alert('Video added!');
-  fetchVideos();
-  document.getElementById('video-title').value='';
-  document.getElementById('video-link').value='';
-  document.getElementById('video-category').value='';
-}
-
-// Delete Video
-async function deleteVideo(id){
-  if(prompt('Enter Admin code to delete')==='123450'){
-    await fetch(`${SHEET_API}/${id}`, {method:'DELETE'});
-    fetchVideos();
-  }else alert('Invalid admin code');
-}
-
-// Show Add Video form (Admin)
-function showAddVideo(){
-  const id = document.getElementById('admin-id').value;
-  const pass = document.getElementById('admin-pass').value;
-  if(id==='112233445500' && pass==='123450'){
-    document.getElementById('add-video-section').style.display='block';
-    alert('Admin login success');
-  }else alert('Invalid admin credentials');
-}
-
-// Account Create/Login (simple)
+// Account create
 function createAccount(){
-  const fullname = document.getElementById('fullname').value;
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const cpassword = document.getElementById('cpassword').value;
-  if(password.length<8){alert('Password min 8 char'); return;}
-  if(password!==cpassword){alert('Password not match'); return;}
-  localStorage.setItem(email, JSON.stringify({fullname,email,password}));
+  const name=document.getElementById('reg-name').value;
+  const email=document.getElementById('reg-email').value;
+  const pass=document.getElementById('reg-pass').value;
+  const pass2=document.getElementById('reg-pass2').value;
+  if(pass.length<8){alert('Password min 8 chars'); return;}
+  if(pass!==pass2){alert('Password mismatch'); return;}
+  localStorage.setItem(email, JSON.stringify({fullname:name,email:email,password:pass}));
   alert('Account created!');
 }
 
+// Login user/admin
 function loginUser(){
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-pass').value;
-  const user = JSON.parse(localStorage.getItem(email));
-  if(user && user.password===password) alert('Login success');
-  else alert('Invalid credentials');
+  const email=document.getElementById('login-email')?.value || document.getElementById('admin-id')?.value;
+  const pass=document.getElementById('login-pass')?.value || document.getElementById('admin-pass')?.value;
+  
+  // Admin
+  if(email==="112233445500" && pass==="123450"){
+    document.getElementById('admin-dashboard').classList.remove('hidden');
+    fetchVideosAdmin(); fetchUsers();
+    document.getElementById('profile-section').classList.add('hidden');
+    return;
+  }
+  
+  const user=JSON.parse(localStorage.getItem(email));
+  if(user && user.password===pass){
+    document.getElementById('user-dashboard').classList.remove('hidden');
+    document.getElementById('user-name').innerText=user.fullname;
+    document.getElementById('user-email').innerText=user.email;
+    document.getElementById('profile-section').classList.add('hidden');
+  } else alert('Invalid credentials');
 }
 
-// Search
-document.getElementById('search-input').addEventListener('input', async function(){
-  const q = this.value.toLowerCase();
-  const res = await fetch(SHEET_API);
-  const data = await res.json();
-  const result = data.filter(v=>v.title.toLowerCase().includes(q) || v.category.toLowerCase().includes(q));
-  const container = document.getElementById('search-result');
-  container.innerHTML='';
-  result.forEach(video=>{
-    const card = document.createElement('div');
+function logout(){
+  document.getElementById('user-dashboard').classList.add('hidden');
+  document.getElementById('admin-dashboard').classList.add('hidden');
+  document.getElementById('profile-section').classList.remove('hidden');
+}
+
+// Admin fetch videos
+async function fetchVideosAdmin(){
+  const res=await fetch(SHEET_API);
+  const data=await res.json();
+  const container=document.getElementById('admin-video-list'); container.innerHTML='';
+  data.forEach(video=>{
+    const card=document.createElement('div');
     card.className='video-card';
-    card.innerHTML = `
-      <h3>${video.title} [${video.category}]</h3>
-      <iframe src="${convertToEmbed(video.link)}" frameborder="0" allowfullscreen></iframe>
-    `;
+    card.innerHTML=`<h4>${video.title} [${video.category}] <span style="cursor:pointer;color:red" onclick="deleteVideo('${video.id}')">🗑 Delete</span></h4>
+    <iframe src="${video.link}" frameborder="0" allowfullscreen></iframe>`;
     container.appendChild(card);
   });
-});
+}
 
-fetchVideos();
-</script>
+async function addVideo(e){
+  e.preventDefault();
+  const title=document.getElementById('video-title').value;
+  const link=document.getElementById('video-link').value;
+  const category=document.getElementById('video-category').value;
+  await fetch(SHEET_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:{title,link,category}})});
+  alert('Video added'); fetchVideosAdmin();
+}
 
-</body>
-</html>
+function deleteVideo(id){
+  alert('SheetDB delete API call needed here');
+}
+
+// User list
+function fetchUsers(){
+  const container=document.getElementById('user-list'); container.innerHTML='';
+  for(let key in localStorage){
+    if(localStorage.hasOwnProperty(key) && key!=="112233445500"){
+      const user=JSON.parse(localStorage.getItem(key));
+      const div=document.createElement('div');
+      div.innerHTML=`${user.fullname}
