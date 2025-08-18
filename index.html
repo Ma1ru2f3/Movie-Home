@@ -1,5 +1,6 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -183,20 +184,23 @@ async function uploadVideo(){
 async function fetchAdminVideos(){
   const res = await fetch(apiURL);
   const data = await res.json();
+  allVideos = data;
   const list = document.getElementById('adminVideoList');
   list.innerHTML='';
   data.forEach(v=>{
     const div = document.createElement('div');
     div.className='video-card';
-    div.innerHTML = `<strong>${v.Title}</strong> <button onclick="deleteVideo('${v.id}')">Delete</button>`;
+    div.innerHTML = `<strong>${v.Title}</strong>` + (isAdmin ? ` <button onclick="deleteVideo('${v.id}')">Delete</button>` : '');
     list.appendChild(div);
   });
 }
 
 async function deleteVideo(id){
+  if(!isAdmin) return;
   if(confirm('Delete this video?')){
     await fetch(`${apiURL}/id/${id}`,{method:'DELETE'});
     fetchAdminVideos();
+    fetchVideos(); // হোমও আপডেট হবে
   }
 }
 
