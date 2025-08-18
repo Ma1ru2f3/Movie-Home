@@ -15,10 +15,11 @@ video { width:100%; height:200px; object-fit:cover; display:block; }
 input { margin:5px 0; padding:5px; width:90%; }
 .fav-btn { display:block; margin:5px auto 10px auto; background:#ff4081; color:#fff; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; }
 .video-title { padding:5px; text-align:center; color:#fff; font-weight:bold; }
-#videoGallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; }
+#videoGallery, #searchResults, #favList, #adminVideoList { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; }
 </style>
 </head>
 <body>
+
 <header>
   <button onclick="showSection('home')">Home</button>
   <button onclick="showSection('search')">Search</button>
@@ -34,16 +35,17 @@ input { margin:5px 0; padding:5px; width:90%; }
 <section id="search">
   <h2>Search</h2>
   <input type="text" id="searchInput" placeholder="Search video..." oninput="searchVideo()">
-  <div id="searchResults" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px;"></div>
+  <div id="searchResults"></div>
 </section>
 
 <section id="favourite">
   <h2>Favourite Videos</h2>
-  <div id="favList" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px;"></div>
+  <div id="favList"></div>
 </section>
 
 <section id="profile">
   <h2>Profile</h2>
+
   <div id="adminLoginDiv">
     <input type="text" id="adminId" placeholder="Admin ID"><br>
     <input type="password" id="adminPass" placeholder="Admin Password"><br>
@@ -54,26 +56,46 @@ input { margin:5px 0; padding:5px; width:90%; }
     <h3>Admin Dashboard</h3>
     <input type="text" id="videoTitle" placeholder="Video Title"><br>
     <input type="file" id="videoFile" accept="video/mp4"><br>
+    <input type="text" id="videoCategory" placeholder="Category"><br>
     <button onclick="uploadVideo()">Upload Video</button>
     <h4>Video List</h4>
     <div id="adminVideoList"></div>
   </div>
+
+  <div id="ownerTab" style="display:none;">
+    <pre>
+┏━━━━━━━━━━━━━━━━━━━━━┓
+┃      🌟 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 🌟      ┃
+┣━━━━━━━━━━━━━━━━━━━━━┫
+┃ 👤 Name      : Maruf Hossain
+┃ 🚹 Gender    : Male
+┃ ❤ Relation : Single
+┃ 🎂 Age       : 17+
+┃ 🕌 Religion : Islam
+┃ 🏫 Education : SSC 25
+┃ 🏡 Address  : Meherpur, Bangladesh
+┣━━━━━━━━━━━━━━━━━━━━━┫
+┃ 🎭 Tiktok   : Srotoshini
+┃ 📢 Telegram : ×
+┃ 🌐 Facebook : fb.com/profile.php?id=100066542686904
+┗━━━━━━━━━━━━━━━━━━━┛
+    </pre>
+  </div>
 </section>
 
 <script>
-// Cloudinary unsigned preset config
 const cloudName = 'dlxa4684c';
-const unsignedUploadPreset = 'YOUR_UNSIGNED_PRESET'; // এটা Cloudinary-তে তৈরি করবে
+const uploadPreset = 'Moviebox';
 
-let allVideos = JSON.parse(localStorage.getItem('allVideos')) || [];
+let allVideos = [];
 let favVideos = JSON.parse(localStorage.getItem('favVideos')) || [];
 let isAdmin = false;
 
 function showSection(id){
   document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if(id==='home') renderVideos();
-  if(id==='favourite') renderFav();
+  if(id==='home') renderGallery();
+  if(id==='favourite') showFavVideos();
 }
 
 function loginAdmin(){
@@ -84,97 +106,118 @@ function loginAdmin(){
     alert('Admin logged in');
     document.getElementById('adminLoginDiv').style.display='none';
     document.getElementById('adminTab').style.display='block';
-    renderVideos();
+    renderGallery();
   } else alert('Invalid Admin');
 }
 
-function renderVideos(){
+function uploadVideo(){
+  if(!isAdmin){ alert('Only admin can upload'); return; }
+  const title = document.getElementById('videoTitle').value;
+  const category = document.getElementById('videoCategory').value;
+  const file = document.getElementById('videoFile').files[0];
+  if(!title || !file){ alert('Enter title and choose file'); return; }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', uploadPreset);
+
+  fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,{
+    method:'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    allVideos.push({Title:title, Link:data.secure_url, Category:category});
+    alert('Video Uploaded Successfully');
+    renderGallery();
+    renderAdminList();
+  })
+  .catch(err => console.error(err));
+}
+
+function renderGallery(){
   const gallery = document.getElementById('videoGallery');
   gallery.innerHTML='';
   allVideos.forEach(v=>{
     const card = document.createElement('div');
     card.className='video-card';
     card.innerHTML = `
-      <video src="${v.url}" controls preload="metadata"></video>
-      <div class="video-title">${v.title}</div>
-      <button class="fav-btn" onclick="addFav('${v.title}','${v.url}')">Favourite</button>
+      <video src="${v.Link}" controls preload="metadata"></video>
+      <div class="video-title">${v.Title}</div>
+      <button class="fav-btn" onclick="addFav('${v.Title}','${v.Link}','${v.Category}')">Favourite</button>
     `;
     gallery.appendChild(card);
   });
 }
 
-function addFav(title,url){
-  if(!favVideos.find(v=>v.url===url)){
-    favVideos.push({title,url});
-    localStorage.setItem('favVideos',JSON.stringify(favVideos));
+function addFav(title,link,category){
+  if(!favVideos.find(v=>v.Link===link)){
+    favVideos.push({Title:title, Link:link, Category:category});
+    localStorage.setItem('favVideos', JSON.stringify(favVideos));
     alert('Added to Favourite');
   } else alert('Already in Favourite');
 }
 
-function renderFav(){
+function showFavVideos(){
   const list = document.getElementById('favList');
   list.innerHTML='';
   favVideos.forEach(v=>{
     const div = document.createElement('div');
     div.className='video-card';
     div.innerHTML = `
-      <video src="${v.url}" controls preload="metadata"></video>
-      <div class="video-title">${v.title}</div>
-      <button class="fav-btn" onclick="removeFav('${v.url}')">Remove</button>
+      <video src="${v.Link}" controls preload="metadata"></video>
+      <div class="video-title">${v.Title}</div>
+      <button class="fav-btn" onclick="removeFav('${v.Link}')">Remove</button>
     `;
     list.appendChild(div);
   });
 }
 
-function removeFav(url){
-  favVideos = favVideos.filter(v=>v.url!==url);
-  localStorage.setItem('favVideos',JSON.stringify(favVideos));
-  renderFav();
-}
-
-function uploadVideo(){
-  if(!isAdmin){ alert('Only admin can upload'); return; }
-  const title = document.getElementById('videoTitle').value;
-  const file = document.getElementById('videoFile').files[0];
-  if(!title || !file){ alert('Enter title and select video'); return; }
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', unsignedUploadPreset);
-
-  fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
-    method: 'POST',
-    body: formData
-  })
-  .then(res=>res.json())
-  .then(data=>{
-    allVideos.push({title, url: data.secure_url});
-    localStorage.setItem('allVideos', JSON.stringify(allVideos));
-    alert('Video uploaded');
-    renderVideos();
-  })
-  .catch(err=>console.error(err));
+function removeFav(link){
+  favVideos = favVideos.filter(v=>v.Link!==link);
+  localStorage.setItem('favVideos', JSON.stringify(favVideos));
+  showFavVideos();
 }
 
 function searchVideo(){
   const q = document.getElementById('searchInput').value.toLowerCase();
-  const results = allVideos.filter(v=>v.title.toLowerCase().includes(q));
+  const results = allVideos.filter(v=>v.Title.toLowerCase().includes(q));
   const container = document.getElementById('searchResults');
   container.innerHTML='';
   results.forEach(v=>{
     const div = document.createElement('div');
     div.className='video-card';
     div.innerHTML = `
-      <video src="${v.url}" controls preload="metadata"></video>
-      <div class="video-title">${v.title}</div>
-      <button class="fav-btn" onclick="addFav('${v.title}','${v.url}')">Favourite</button>
+      <video src="${v.Link}" controls preload="metadata"></video>
+      <div class="video-title">${v.Title}</div>
+      <button class="fav-btn" onclick="addFav('${v.Title}','${v.Link}','${v.Category}')">Favourite</button>
     `;
     container.appendChild(div);
   });
 }
 
+function renderAdminList(){
+  const list = document.getElementById('adminVideoList');
+  list.innerHTML='';
+  allVideos.forEach((v,i)=>{
+    const div = document.createElement('div');
+    div.className='video-card';
+    div.innerHTML = `<strong>${v.Title}</strong> <button onclick="deleteVideo(${i})">Delete</button>`;
+    list.appendChild(div);
+  });
+}
+
+function deleteVideo(index){
+  if(!isAdmin) return;
+  if(confirm('Delete this video?')){
+    allVideos.splice(index,1);
+    renderGallery();
+    renderAdminList();
+  }
+}
+
 // Initial render
-renderVideos();
+renderGallery();
 </script>
 </body>
 </html>
