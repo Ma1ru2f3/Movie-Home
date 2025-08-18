@@ -5,43 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie Box</title>
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; }
-header { background: #111; color: #fff; padding: 10px; display:flex; justify-content:space-around; }
-header button { padding:10px 20px; cursor:pointer; color:white; background:#222; border:none; border-radius:5px; }
-header button:hover { background:#444; }
-section { padding:20px; }
-.hidden { display:none; }
-.video-card { border:1px solid #ccc; padding:10px; margin:10px 0; display:flex; flex-direction:column; }
-.video-card iframe { width:100%; height:250px; margin-top:10px; }
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4;}
+header { background: #111; color: #fff; padding: 10px; display:flex; justify-content:space-around;}
+header button { padding:10px 20px; cursor:pointer; background:#333; color:#fff; border:none;}
+section { padding:20px; display:none;}
+section.active { display:block;}
+.video-card { border:1px solid #ccc; padding:10px; margin:10px 0; background:#fff;}
+video { width:100%; max-width:480px; height:auto; display:block; margin-top:10px;}
+button { cursor:pointer; }
 </style>
 </head>
 <body>
-
 <header>
 <button onclick="showSection('home')">Home</button>
 <button onclick="showSection('search')">Search</button>
 <button onclick="showSection('profile')">Profile</button>
 </header>
 
-<section id="home">
+<section id="home" class="active">
 <h2>Home</h2>
 <div id="videoList"></div>
 </section>
 
-<section id="search" class="hidden">
+<section id="search">
 <h2>Search</h2>
 <input type="text" id="searchInput" placeholder="Search video..." oninput="searchVideo()">
 <div id="searchResults"></div>
 </section>
 
-<section id="profile" class="hidden">
+<section id="profile">
 <h2>Profile</h2>
 <div id="profileContent">
 <button onclick="showProfileTab('account')">Account Create/Login</button>
 <button onclick="showProfileTab('admin')">Admin Access</button>
 <button onclick="showProfileTab('owner')">Owner Info</button>
 
-<div id="accountTab" class="hidden">
+<div id="accountTab" style="display:none;">
 <h3>Account Create/Login</h3>
 <input type="text" id="fullName" placeholder="Full Name"><br>
 <input type="email" id="email" placeholder="Email"><br>
@@ -51,16 +50,16 @@ section { padding:20px; }
 <button onclick="loginUser()">Login</button>
 </div>
 
-<div id="adminTab" class="hidden">
+<div id="adminTab" style="display:none;">
 <h3>Admin Login</h3>
 <input type="text" id="adminId" placeholder="ID"><br>
 <input type="password" id="adminPass" placeholder="Password"><br>
 <button onclick="loginAdmin()">Login as Admin</button>
 
-<div id="adminDashboard" class="hidden">
+<div id="adminDashboard" style="display:none;">
 <h4>Upload Video</h4>
 <input type="text" id="videoTitle" placeholder="Video Title"><br>
-<input type="text" id="videoLink" placeholder="Video Link"><br>
+<input type="text" id="videoLink" placeholder="Video Link (.mp4 link or YouTube embed)"><br>
 <input type="text" id="videoCategory" placeholder="Category"><br>
 <button onclick="uploadVideo()">Upload</button>
 
@@ -69,23 +68,15 @@ section { padding:20px; }
 </div>
 </div>
 
-<div id="ownerTab" class="hidden">
+<div id="ownerTab" style="display:none;">
 <pre>
 ┏━━━━━━━━━━━━━━━━━━━━━┓
 ┃      🌟 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 🌟      ┃
 ┣━━━━━━━━━━━━━━━━━━━━━┫
-┃ 👤 Name      : Maruf Hossain
-┃ 🚹 Gender    : Male
-┃ ❤ Relation : single
-┃ 🎂 Age       : 17+
-┃ 🕌 Religion : Islam
-┃ 🏫 Education : SSC 25
-┃ 🏡 Address : Meherpur, Bangladesh
-┣━━━━━━━━━━━━━━━━━━━━━┫
-┃ 🎭 Tiktok  : Srotoshini
-┃ 📢 Telegram : ×
-┃ 🌐 Facebook : fb.com/profile.php?id=100066542686904
-┣━━━━━━━━━━━━━━
+┃ 👤 𝐍𝐚𝐦𝐞      : Maruf Hossain
+┃ 🚹 𝐆𝐞𝐧𝐝𝐞𝐫    : Male
+┃ 🎂 𝐀𝐠𝐞       : 17+
+┃ 🏡 𝐀𝐝𝐝𝐫𝐞𝐬𝐬 : Meherpur, Bangladesh
 ┗━━━━━━━━━━━━━━━━━━━┛
 </pre>
 </div>
@@ -97,64 +88,56 @@ section { padding:20px; }
 const apiURL = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
 
 function showSection(section){
-  document.querySelectorAll('section').forEach(sec=>sec.classList.add('hidden'));
-  document.getElementById(section).classList.remove('hidden');
+  document.querySelectorAll('section').forEach(sec=>sec.classList.remove('active'));
+  document.getElementById(section).classList.add('active');
   if(section==='home') fetchVideos();
 }
 
 function showProfileTab(tab){
-  document.getElementById('accountTab').classList.add('hidden');
-  document.getElementById('adminTab').classList.add('hidden');
-  document.getElementById('ownerTab').classList.add('hidden');
-  if(tab==='account') document.getElementById('accountTab').classList.remove('hidden');
-  if(tab==='admin') document.getElementById('adminTab').classList.remove('hidden');
-  if(tab==='owner') document.getElementById('ownerTab').classList.remove('hidden');
+  document.getElementById('accountTab').style.display='none';
+  document.getElementById('adminTab').style.display='none';
+  document.getElementById('ownerTab').style.display='none';
+  if(tab==='account') document.getElementById('accountTab').style.display='block';
+  if(tab==='admin') document.getElementById('adminTab').style.display='block';
+  if(tab==='owner') document.getElementById('ownerTab').style.display='block';
 }
 
+// Fetch videos for Home
 async function fetchVideos(){
   const res = await fetch(apiURL);
   const data = await res.json();
   const list = document.getElementById('videoList');
   list.innerHTML = '';
   data.forEach(video=>{
-    const div = document.createElement('div');
+    const div=document.createElement('div');
     div.className='video-card';
-    const embedLink = video.Link.includes('youtube') ? video.Link.replace('watch?v=','embed/') : video.Link;
-    div.innerHTML = `<strong>${video.title}</strong> [${video.category}]
-      <iframe src="${embedLink}" frameborder="0" allowfullscreen></iframe>`;
+    
+    // Detect if YouTube link
+    let embedHTML = '';
+    if(video.Link.includes('youtube.com') || video.Link.includes('youtu.be')){
+      let vidId = video.Link.split('v=')[1] || video.Link.split('youtu.be/')[1];
+      if(vidId && vidId.includes('&')) vidId = vidId.split('&')[0];
+      embedHTML = `<iframe width="480" height="270" src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>`;
+    } else {
+      embedHTML = `<video controls><source src="${video.Link}" type="video/mp4">Your browser does not support video tag.</video>`;
+    }
+    
+    div.innerHTML=`<strong>${video.Title}</strong> [${video.Catagry}] ${embedHTML}`;
     list.appendChild(div);
   });
 }
 
-function searchVideo(){
-  const query = document.getElementById('searchInput').value.toLowerCase();
-  const resultsDiv = document.getElementById('searchResults');
-  resultsDiv.innerHTML = '';
-  fetch(apiURL)
-    .then(res=>res.json())
-    .then(data=>{
-      const filtered = data.filter(v => v.title.toLowerCase().includes(query) || v.category.toLowerCase().includes(query));
-      filtered.forEach(video=>{
-        const div = document.createElement('div');
-        div.className='video-card';
-        const embedLink = video.Link.includes('youtube') ? video.Link.replace('watch?v=','embed/') : video.Link;
-        div.innerHTML = `<strong>${video.title}</strong> [${video.category}]
-          <iframe src="${embedLink}" frameborder="0" allowfullscreen></iframe>`;
-        resultsDiv.appendChild(div);
-      });
-    });
-}
-
-// Admin Functions
+// Admin functions
 async function uploadVideo(){
   const title = document.getElementById('videoTitle').value;
   const link = document.getElementById('videoLink').value;
   const cat = document.getElementById('videoCategory').value;
-  if(!title || !link){ alert('Enter Title and Link'); return; }
+  if(!title || !link) { alert('Enter Title and Link'); return; }
+  
   await fetch(apiURL,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({data:{title:title, Link:link, category:cat}})
+    body:JSON.stringify({data:{Title:title, Link:link, Catagry:cat}})
   });
   alert('Video Uploaded');
   fetchAdminVideos();
@@ -166,37 +149,57 @@ async function fetchAdminVideos(){
   const list = document.getElementById('adminVideoList');
   list.innerHTML='';
   data.forEach(video=>{
-    const div = document.createElement('div');
+    const div=document.createElement('div');
     div.className='video-card';
-    const embedLink = video.Link.includes('youtube') ? video.Link.replace('watch?v=','embed/') : video.Link;
-    div.innerHTML=`<strong>${video.title}</strong> [${video.category}]
-      <iframe src="${embedLink}" frameborder="0" allowfullscreen></iframe>
-      <button onclick='deleteVideo("${video.id}")'>Delete</button>`;
+    div.innerHTML=`<strong>${video.Title}</strong> [${video.Catagry}] 
+    <button onclick='deleteVideo(${video.id})'>Delete</button>`;
     list.appendChild(div);
   });
 }
 
 async function deleteVideo(id){
   if(!confirm('Delete this video?')) return;
-  await fetch(`${apiURL}/id/${id}`, { method:'DELETE' });
+  await fetch(`${apiURL}/id/${id}`, {method:'DELETE'});
   fetchAdminVideos();
 }
 
-// Dummy account functions
-function createAccount(){ alert('Account creation simulation'); }
-function loginUser(){ alert('User login simulation'); }
-
-// Admin login
+// Admin login simulation
 function loginAdmin(){
   const id = document.getElementById('adminId').value;
   const pass = document.getElementById('adminPass').value;
   if(id==='112233445500' && pass==='123450'){
     alert('Admin logged in');
-    document.getElementById('adminDashboard').classList.remove('hidden');
+    document.getElementById('adminDashboard').style.display='block';
     fetchAdminVideos();
   } else alert('Invalid Admin');
 }
-</script>
 
+function createAccount(){ alert('Account creation simulation'); }
+function loginUser(){ alert('User login simulation'); }
+
+// Search
+async function searchVideo(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const res = await fetch(apiURL);
+  const data = await res.json();
+  const list = document.getElementById('searchResults');
+  list.innerHTML='';
+  data.filter(v=>v.Title.toLowerCase().includes(q) || v.Catagry.toLowerCase().includes(q))
+  .forEach(video=>{
+    const div=document.createElement('div');
+    div.className='video-card';
+    let embedHTML='';
+    if(video.Link.includes('youtube.com') || video.Link.includes('youtu.be')){
+      let vidId = video.Link.split('v=')[1] || video.Link.split('youtu.be/')[1];
+      if(vidId && vidId.includes('&')) vidId = vidId.split('&')[0];
+      embedHTML = `<iframe width="480" height="270" src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>`;
+    } else {
+      embedHTML = `<video controls><source src="${video.Link}" type="video/mp4">Your browser does not support video tag.</video>`;
+    }
+    div.innerHTML=`<strong>${video.Title}</strong> [${video.Catagry}] ${embedHTML}`;
+    list.appendChild(div);
+  });
+}
+</script>
 </body>
 </html>
