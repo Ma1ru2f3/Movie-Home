@@ -1,18 +1,18 @@
 const express = require("express");
 const fileUpload = require("express-fileupload");
+const bodyParser = require("body-parser");
 const fs = require("fs");
 const path = require("path");
-const bodyParser = require("body-parser");
 
 const app = express();
-const UPLOAD_DIR = path.join(__dirname, "uploads");
-
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.use(fileUpload());
+
+// Create uploads folder if not exist
+const UPLOAD_DIR = path.join(__dirname, "uploads");
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
 
 // Admin credentials
 const ADMIN_USER = "admin";
@@ -22,37 +22,62 @@ const ADMIN_PASS = "1234";
 const checkAdmin = (req, res, next) => {
   const { user, pass } = req.body;
   if (user === ADMIN_USER && pass === ADMIN_PASS) next();
-  else res.status(401).json({ success: false, message: "Unauthorized" });
+  else res.status(401).send("Unauthorized");
 };
 
-// Upload route
+// Upload video
 app.post("/upload", checkAdmin, async (req, res) => {
-  if (!req.files || !req.files.video) return res.status(400).send("No file uploaded");
-  const file = req.files.video;
-  const title = req.body.title || file.name;
-  const savePath = path.join(UPLOAD_DIR, file.name);
+  try {
+    if (!req.files || !req.files.video) return res.status(400).send("No file uploaded");
+    const file = req.files.video;
+    const { title } = req.body;
+    const fileName = Date.now() + "_" + file.name;
+    const savePath = path.join(UPLOAD_DIR, fileName);
 
-  file.mv(savePath, (err) => {
-    if (err) return res.status(500).send(err);
-    res.json({ success: true, url: "/uploads/" + file.name, title });
-  });
+    await file.mv(savePath);
+
+    // Save metadata (title) in JSON file
+    const metaPath = path.join(UPLOAD_DIR, "videos.json");
+    let videos = [];
+    if (fs.existsSync(metaPath)) videos = JSON.parse(fs.readFileSync(metaPath));
+    videos.push({ fileName, title });
+    fs.writeFileSync(metaPath, JSON.stringify(videos));
+
+    res.json({ fileName, title });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
 });
 
-// Delete route
+// Delete video
 app.post("/delete", checkAdmin, (req, res) => {
-  const { filename } = req.body;
-  const filePath = path.join(UPLOAD_DIR, filename);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-    res.json({ success: true });
-  } else res.status(404).json({ success: false, message: "File not found" });
+  const { fileName } = req.body;
+  const filePath = path.join(UPLOAD_DIR, fileName);
+
+  // Remove from uploads
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+  // Remove from metadata
+  const metaPath = path.join(UPLOAD_DIR, "videos.json");
+  if (fs.existsSync(metaPath)) {
+    let videos = JSON.parse(fs.readFileSync(metaPath));
+    videos = videos.filter(v => v.fileName !== fileName);
+    fs.writeFileSync(metaPath, JSON.stringify(videos));
+  }
+
+  res.json({ deleted: true });
 });
 
-// Fetch videos
+// Get all videos
 app.get("/videos", (req, res) => {
-  const files = fs.readdirSync(UPLOAD_DIR);
-  const videos = files.map(f => ({ title: f, url: "/uploads/" + f }));
+  const metaPath = path.join(UPLOAD_DIR, "videos.json");
+  let videos = [];
+  if (fs.existsSync(metaPath)) videos = JSON.parse(fs.readFileSync(metaPath));
+  videos = videos.map(v => ({ ...v, url: "/uploads/" + v.fileName }));
   res.json(videos);
 });
+
+// Serve uploads folder
+app.use("/uploads", express.static(UPLOAD_DIR));
 
 app.listen(3000, () => console.log("Server running on port 3000"));
