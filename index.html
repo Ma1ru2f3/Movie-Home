@@ -1,224 +1,220 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MovieBox Web</title>
 <style>
-body {font-family: Arial, sans-serif; background:#111; color:#fff; margin:0; padding:0;}
-header {background:#222; padding:10px; display:flex; justify-content:space-between; align-items:center;}
-nav button {margin:0 5px; padding:8px 12px; background:#333; color:#fff; border:none; cursor:pointer;}
-.container {padding:20px;}
-.hidden {display:none;}
-.video-card {background:#222; padding:10px; margin:10px 0; border-radius:8px; display:flex; justify-content:space-between; align-items:center;}
-.video-card button {margin-left:5px; padding:5px;}
-input, button {padding:5px; margin:5px 0;}
-.owner-info {background:#222; padding:15px; border-radius:8px; width:300px;}
-.owner-info h4 {margin-bottom:10px; text-decoration:underline;}
+  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#121212; color:#fff; }
+  header { background:#1f1f1f; padding:10px 20px; display:flex; justify-content:space-between; align-items:center; }
+  header h1 { margin:0; font-size:24px; color:#ffcc00; }
+  nav a { margin-left:20px; color:#fff; text-decoration:none; }
+  nav a:hover { text-decoration:underline; }
+  .container { padding:20px; }
+  input[type=text] { padding:8px; width:60%; border-radius:5px; border:none; }
+  button { padding:8px 12px; margin-left:5px; border:none; border-radius:5px; background:#ffcc00; cursor:pointer; }
+  button:hover { background:#e6b800; }
+  .hidden { display:none; }
+  .video-card { background:#222; padding:10px; border-radius:10px; margin:10px 0; display:flex; justify-content:space-between; align-items:center; }
+  .video-card span { font-weight:bold; }
+  .video-actions { cursor:pointer; }
+  .owner-info pre { background:#222; padding:15px; border-radius:10px; font-family:'Courier New', monospace; }
+  .section-title { color:#ffcc00; margin-bottom:10px; font-size:20px; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>MovieBox</h1>
+  <h1>MovieBox Web</h1>
   <nav>
-    <button onclick="showSection('home')">Home</button>
-    <button onclick="showSection('history')">History</button>
-    <button onclick="showSection('profile')">Profile</button>
+    <a href="#" onclick="showSection('home')">Home</a>
+    <a href="#" onclick="showSection('videos')">Videos</a>
+    <a href="#" onclick="showSection('history')">History</a>
+    <a href="#" onclick="showSection('profile')">Profile</a>
   </nav>
 </header>
 
 <div class="container">
 
   <!-- Home Section -->
-  <div id="homeSection">
-    <h2>Home</h2>
-    <input type="text" id="searchInput" placeholder="Search video..." oninput="searchVideo()">
-    <div id="videoList"></div>
+  <div id="home" class="section">
+    <h2 class="section-title">Welcome to MovieBox!</h2>
+    <p>Please login and enjoy videos.</p>
+    <input type="text" id="searchInput" placeholder="Search video...">
+    <button onclick="searchVideo()">Search</button>
+  </div>
+
+  <!-- Videos Section -->
+  <div id="videos" class="section hidden">
+    <h2 class="section-title">Uploaded Videos</h2>
+    <div id="videoList">
+      <!-- Video cards will appear here -->
+    </div>
+    <div>
+      <h3>Add Video (Admin Only)</h3>
+      <input type="text" id="videoTitle" placeholder="Video Title">
+      <input type="text" id="videoLink" placeholder="YouTube Link">
+      <input type="text" id="videoCat" placeholder="Category/Tags">
+      <input type="text" id="adminPass" placeholder="Admin Pass">
+      <button onclick="addVideo()">Add Video</button>
+    </div>
   </div>
 
   <!-- History Section -->
-  <div id="historySection" class="hidden">
-    <h2>History</h2>
-    <div id="historyList"></div>
+  <div id="history" class="section hidden">
+    <h2 class="section-title">Watch History</h2>
+    <div id="historyList">
+      <!-- Watched videos appear here -->
+    </div>
   </div>
 
   <!-- Profile Section -->
-  <div id="profileSection" class="hidden">
-    <h2>Profile</h2>
-    <button onclick="showUserLogin()">User Login</button>
-    <button onclick="showAdminPanel()">Admin Panel</button>
-    <button onclick="showOwnerInfo()">Owner Info</button>
-
+  <div id="profile" class="section hidden">
+    <h2 class="section-title">Profile</h2>
+    
     <!-- User Login -->
-    <div id="userLoginSection" class="hidden">
+    <div>
       <h3>User Login</h3>
-      <div id="gSignInButton"></div>
-      <div id="currentUser" class="hidden">
-        Logged in as: <span id="userName"></span>
-      </div>
+      <input type="text" id="userEmail" placeholder="Google Email">
+      <button onclick="userLogin()">Login</button>
+      <p id="loginStatus"></p>
     </div>
 
     <!-- Admin Panel -->
-    <div id="adminPanelSection" class="hidden">
+    <div>
       <h3>Admin Panel</h3>
-      <input type="text" id="adminID" placeholder="Admin ID"><br>
-      <input type="password" id="adminPass" placeholder="Password"><br>
-      <button onclick="adminLogin()">Login</button>
-
-      <div id="adminControls" class="hidden">
-        <h4>Upload Video</h4>
-        <input type="text" id="videoTitle" placeholder="Video Title"><br>
-        <input type="text" id="videoLink" placeholder="Video Link"><br>
-        <button onclick="uploadVideo()">Upload</button>
-
-        <h4>Users List</h4>
-        <div id="userList"></div>
-      </div>
+      <p>Admin ID: 112233445500 | Password: 123450</p>
+      <input type="text" id="adminId" placeholder="Admin ID">
+      <input type="text" id="adminPassword" placeholder="Password">
+      <button onclick="adminLogin()">Login as Admin</button>
+      <p id="adminStatus"></p>
     </div>
 
     <!-- Owner Info -->
-    <div id="ownerInfoSection" class="hidden">
-      <h3>Owner Info</h3>
+    <div id="ownerInfoSection">
+      <h3>🌟 OWNER INFO 🌟</h3>
       <div class="owner-info">
-        <h4>Maruf Hossain</h4>
-        <p><strong>Address:</strong> Meherpur</p>
-        <p><strong>Country:</strong> Bangladesh</p>
-        <p><strong>Gender:</strong> Male</p>
-        <p><strong>Language:</strong> Bangla / English</p>
+        <pre>
+┏━━━━━━━━━━━━━━━━━━━━━┓
+┃      🌟 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 🌟      
+┣━━━━━━━━━━━━━━━━━━━━━┫
+┃ 👤 𝐍𝐚𝐦𝐞      : Maruf Hossainッ
+┃ 🚹 𝐆𝐞𝐧𝐝𝐞𝐫    : 𝐌𝐚𝐥𝐞
+┃ ❤ 𝐑𝐞𝐥𝐚𝐭𝐢𝐨𝐧 : single 🙁
+┃ 🎂 𝐀𝐠𝐞       : 17+
+┃ 🕌 𝐑𝐞𝐥𝐢𝐠𝐢𝐨𝐧 : 𝐈𝐬𝐥𝐚𝐦
+┃ 🏫 𝐄𝐝𝐮𝐜𝐚𝐭𝐢𝐨𝐧 : SSC 25
+┃ 🏡 𝐀𝐝𝐝𝐫𝐞𝐬𝐬 : Meherpur, Bangladesh
+┣━━━━━━━━━━━━━━━━━━━━━┫
+┃ 🎭 𝐓𝐢𝐤𝐭𝐨𝐤  : Srotoshini-স্রোত্বোসিনী
+┃ 📢 𝐓𝐞𝐥𝐞𝐠𝐫𝐚𝐦 : ×
+┃ 🌐 𝐅𝐚𝐜𝐞𝐛𝐨𝐨𝐤 : fb.com/profile.php?id=100066542686904
+┗━━━━━━━━━━━━━━━━━━━┛
+        </pre>
       </div>
     </div>
-
   </div>
 
 </div>
 
 <script>
-// Sections
-function showSection(sec){
-  document.getElementById("homeSection").classList.add("hidden");
-  document.getElementById("historySection").classList.add("hidden");
-  document.getElementById("profileSection").classList.add("hidden");
-  if(sec==='home') document.getElementById("homeSection").classList.remove("hidden");
-  if(sec==='history') document.getElementById("historySection").classList.remove("hidden");
-  if(sec==='profile') document.getElementById("profileSection").classList.remove("hidden");
-}
-
-// Profile Tabs
-function showUserLogin(){
-  document.getElementById("userLoginSection").classList.remove("hidden");
-  document.getElementById("adminPanelSection").classList.add("hidden");
-  document.getElementById("ownerInfoSection").classList.add("hidden");
-}
-function showAdminPanel(){
-  document.getElementById("adminPanelSection").classList.remove("hidden");
-  document.getElementById("userLoginSection").classList.add("hidden");
-  document.getElementById("ownerInfoSection").classList.add("hidden");
-}
-function showOwnerInfo(){
-  document.getElementById("ownerInfoSection").classList.remove("hidden");
-  document.getElementById("userLoginSection").classList.add("hidden");
-  document.getElementById("adminPanelSection").classList.add("hidden");
-}
-
-// Admin Login
 let videos = [];
-let users = [];
-function adminLogin(){
-  let id = document.getElementById("adminID").value;
-  let pass = document.getElementById("adminPass").value;
-  if(id==="112233445500" && pass==="123450"){
-    alert("Admin login successful");
-    document.getElementById("adminControls").classList.remove("hidden");
-    renderUsersList();
-    renderVideos();
+let history = [];
+let isAdmin = false;
+let loggedUser = null;
+
+function showSection(sectionId){
+  document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+  document.getElementById(sectionId).classList.remove('hidden');
+}
+
+// User Login
+function userLogin(){
+  const email = document.getElementById('userEmail').value;
+  if(email){
+    loggedUser = email;
+    document.getElementById('loginStatus').innerText = 'Logged in as: ' + email;
   } else {
-    alert("Invalid credentials");
+    alert('Enter email');
   }
 }
 
-// Upload Video
-function uploadVideo(){
-  let title = document.getElementById("videoTitle").value;
-  let link = document.getElementById("videoLink").value;
+// Admin Login
+function adminLogin(){
+  const id = document.getElementById('adminId').value;
+  const pass = document.getElementById('adminPassword').value;
+  if(id==='112233445500' && pass==='123450'){
+    isAdmin = true;
+    document.getElementById('adminStatus').innerText = 'Admin Access Granted';
+  } else {
+    alert('Wrong Admin ID/Password');
+  }
+}
+
+// Add Video
+function addVideo(){
+  const title = document.getElementById('videoTitle').value;
+  const link = document.getElementById('videoLink').value;
+  const cat = document.getElementById('videoCat').value;
+  const adminPass = document.getElementById('adminPass').value;
+
+  if(adminPass!=='123450'){
+    alert('Admin pass required');
+    return;
+  }
+
   if(title && link){
-    videos.push({title, link});
-    alert("Video uploaded!");
+    const video = {title, link, cat};
+    videos.push(video);
     renderVideos();
+    document.getElementById('videoTitle').value='';
+    document.getElementById('videoLink').value='';
+    document.getElementById('videoCat').value='';
+  } else {
+    alert('Title and Link required');
   }
 }
 
 // Render Videos
 function renderVideos(){
-  let list = document.getElementById("videoList");
-  list.innerHTML="";
+  const list = document.getElementById('videoList');
+  list.innerHTML = '';
   videos.forEach((v,i)=>{
-    let div = document.createElement("div");
-    div.className="video-card";
-    div.innerHTML=`<span>${v.title}</span>
-                   <div>
-                   <button onclick="playVideo(${i})">Play</button>
-                   <button onclick="deleteVideo(${i})">Delete</button>
-                   </div>`;
+    const div = document.createElement('div');
+    div.className = 'video-card';
+    div.innerHTML = `<span>${v.title}</span>
+      <div>
+        <a href="${v.link}" target="_blank">Watch</a>
+        ${isAdmin ? `<button onclick="deleteVideo(${i})">Delete</button>` : ''}
+      </div>`;
     list.appendChild(div);
   });
 }
 
-// Play Video
-function playVideo(index){
-  let v = videos[index];
-  let url = v.link;
-  let playerWindow = window.open("", "_blank", "width=800,height=500");
-  playerWindow.document.write(`<h2>${v.title}</h2><iframe width="780" height="450" src="${url}" frameborder="0" allowfullscreen></iframe>`);
-  addToHistory(v);
-}
-
 // Delete Video
 function deleteVideo(index){
-  if(confirm("Delete this video?")){
+  if(confirm('Delete this video?')){
     videos.splice(index,1);
     renderVideos();
   }
 }
 
-// User List for Admin
-function renderUsersList(){
-  let ul = document.getElementById("userList");
-  ul.innerHTML="";
-  users.forEach((u,i)=>{
-    let div = document.createElement("div");
-    div.innerHTML=`${u.name} - <button onclick="blockUser(${i})">Block/Unblock</button>`;
-    ul.appendChild(div);
-  });
-}
-
-// Block/Unblock User
-function blockUser(i){
-  users[i].blocked = !users[i].blocked;
-  renderUsersList();
-}
-
-// Search
+// Search Video
 function searchVideo(){
-  let q = document.getElementById("searchInput").value.toLowerCase();
-  let filtered = videos.filter(v=>v.title.toLowerCase().includes(q));
-  let list = document.getElementById("videoList");
-  list.innerHTML="";
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = videos.filter(v => v.title.toLowerCase().includes(query) || (v.cat && v.cat.toLowerCase().includes(query)));
+  const list = document.getElementById('videoList');
+  list.innerHTML = '';
   filtered.forEach((v,i)=>{
-    let div = document.createElement("div");
-    div.className="video-card";
-    div.innerHTML=`<span>${v.title}</span>
-                   <div><button onclick="playVideo(${i})">Play</button></div>`;
+    const div = document.createElement('div');
+    div.className = 'video-card';
+    div.innerHTML = `<span>${v.title}</span>
+      <div>
+        <a href="${v.link}" target="_blank">Watch</a>
+        ${isAdmin ? `<button onclick="deleteVideo(${i})">Delete</button>` : ''}
+      </div>`;
     list.appendChild(div);
   });
-}
-
-// History
-function addToHistory(v){
-  let h = document.getElementById("historyList");
-  let div = document.createElement("div");
-  div.textContent = v.title;
-  h.appendChild(div);
 }
 </script>
 
