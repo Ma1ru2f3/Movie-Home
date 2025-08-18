@@ -1,193 +1,112 @@
-// public/script.js
-let adminLogged = false;
+const SHEETDB_API = "https://sheetdb.io/api/v1/3p5l2ilgzemvr"; // Your SheetBD API
 const ADMIN_USER = "admin";
 const ADMIN_PASS = "1234";
 
-const homeBtn = document.getElementById("homeBtn");
-const searchBtn = document.getElementById("searchBtn");
-const favBtn = document.getElementById("favBtn");
-const profileBtn = document.getElementById("profileBtn");
+let isAdmin = false;
 
-const pages = {
-  home: document.getElementById("homePage"),
-  search: document.getElementById("searchPage"),
-  fav: document.getElementById("favPage"),
-  profile: document.getElementById("profilePage")
-};
-
-function showPage(name){
-  Object.values(pages).forEach(p=>p.classList.remove("active"));
-  pages[name].classList.add("active");
-}
-homeBtn.onclick = ()=>{ showPage("home"); loadVideos(); };
-searchBtn.onclick = ()=>{ showPage("search"); };
-favBtn.onclick = ()=>{ showPage("fav"); loadFavourites(); };
-profileBtn.onclick = ()=>{ showPage("profile"); };
-
-async function fetchVideosRaw(){
-  try{
-    const res = await fetch("/videos");
-    if(!res.ok) throw new Error("Failed to fetch");
-    const arr = await res.json();
-    return arr;
-  } catch(e){
-    console.error(e);
-    return [];
-  }
+// Show sections
+function showSection(section) {
+  document.getElementById('homeSection').style.display = (section==='home') ? 'block' : 'none';
 }
 
-// render video cards
-function makeCard(video, isAdmin){
-  const div = document.createElement("div");
-  div.className = "card";
-  div.innerHTML = `
-    <h4>${escapeHtml(video.title)}</h4>
-    <video controls src="${video.url}"></video>
-    <div class="row" style="margin-top:8px">
-      <button class="small" onclick='addFav("${video.public_id}")'>❤ Favourite</button>
-      ${isAdmin ? `<button class="ghost" onclick='deleteVideo("${video.public_id}")'>Delete</button>` : ""}
-    </div>
-  `;
-  return div;
-}
-
-// Load videos into home
-async function loadVideos(){
-  const list = document.getElementById("videoGrid");
-  list.innerHTML = "<p>Loading...</p>";
-  const videos = await fetchVideosRaw();
-  list.innerHTML = "";
-  if(videos.length === 0) { list.innerHTML = "<p>No videos yet.</p>"; return; }
-  videos.forEach(v => list.appendChild(makeCard(v, adminLogged)));
-}
-
-// Search
-document.getElementById("searchGo").onclick = async ()=>{
-  const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
-  const out = document.getElementById("searchResults");
-  out.innerHTML = "<p>Searching...</p>";
-  const videos = await fetchVideosRaw();
-  const found = videos.filter(v => v.title.toLowerCase().includes(q));
-  out.innerHTML = "";
-  if(found.length === 0) out.innerHTML = "<p>No results.</p>";
-  found.forEach(v => out.appendChild(makeCard(v, adminLogged)));
-};
-
-// Favourites (stored in localStorage as array of public_id)
-function getFavs(){
-  try { return JSON.parse(localStorage.getItem("moviebox_favs") || "[]"); } catch(e){ return []; }
-}
-function saveFavs(arr){ localStorage.setItem("moviebox_favs", JSON.stringify(arr)); }
-
-function addFav(public_id){
-  const favs = getFavs();
-  if(favs.includes(public_id)){ alert("Already in favourites"); return; }
-  favs.push(public_id);
-  saveFavs(favs);
-  alert("Added to favourites");
-}
-
-async function loadFavourites(){
-  const favIds = getFavs();
-  const out = document.getElementById("favGrid");
-  out.innerHTML = "<p>Loading...</p>";
-  if(favIds.length === 0){ out.innerHTML = "<p>No favourites</p>"; return; }
-  const videos = await fetchVideosRaw();
-  const sel = videos.filter(v => favIds.includes(v.public_id));
-  out.innerHTML = "";
-  sel.forEach(v => out.appendChild(makeCard(v, adminLogged)));
-}
-
-// Admin login / upload / delete
-document.getElementById("loginBtn").onclick = ()=>{
-  const user = document.getElementById("adminUser").value;
-  const pass = document.getElementById("adminPass").value;
-  if(user === ADMIN_USER && pass === ADMIN_PASS){
-    adminLogged = true;
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("adminBox").style.display = "block";
-    alert("Admin logged in");
-    loadVideos();
-  } else alert("Invalid credentials");
-};
-
-document.getElementById("uploadBtn").onclick = ()=>{
-  if(!adminLogged) return alert("Login as admin first");
-  const fileEl = document.getElementById("videoFile");
-  const title = document.getElementById("videoTitle").value.trim() || "Untitled";
-  const file = fileEl.files[0];
-  if(!file) return alert("Choose a video file");
-
-  const fd = new FormData();
-  fd.append("video", file);
-  fd.append("title", title);
-  fd.append("user", ADMIN_USER);
-  fd.append("pass", ADMIN_PASS);
-
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST", "/upload", true);
-
-  document.getElementById("progressWrap").style.display = "block";
-  const bar = document.getElementById("progressBar");
-  const pct = document.getElementById("progressPct");
-  bar.value = 0; pct.innerText = "0%";
-
-  xhr.upload.onprogress = (e) => {
-    if(e.lengthComputable){
-      const percent = Math.round((e.loaded / e.total) * 100);
-      bar.value = percent;
-      pct.innerText = percent + "%";
-    }
-  };
-  xhr.onload = () => {
-    if(xhr.status === 200){
-      try {
-        const res = JSON.parse(xhr.responseText);
-        if(res.success){
-          alert("Upload success");
-          document.getElementById("videoFile").value = "";
-          document.getElementById("videoTitle").value = "";
-          // Immediately append new video in Home (without waiting)
-          loadVideos();
-        } else {
-          alert("Upload failed");
-        }
-      } catch(e){
-        alert("Upload response error");
-      }
-    } else {
-      alert("Upload failed: " + xhr.status);
-    }
-    setTimeout(()=>{ document.getElementById("progressWrap").style.display = "none"; }, 800);
-  };
-  xhr.onerror = ()=>{ alert("Upload error"); document.getElementById("progressWrap").style.display = "none"; };
-  xhr.send(fd);
-};
-
-// delete video (admin only)
-async function deleteVideo(public_id){
-  if(!adminLogged) return alert("Admin only");
-  if(!confirm("Delete this video?")) return;
-  const res = await fetch("/delete", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ public_id, user: ADMIN_USER, pass: ADMIN_PASS })
-  });
-  const data = await res.json();
-  if(data && data.result === "ok" || data.success) {
-    alert("Deleted");
+// Show admin login/panel
+function showAdmin() {
+  if(isAdmin){
+    document.getElementById('adminLogin').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
   } else {
-    // cloudinary destroy returns different shapes; we still reload list
-    alert("Deleted (response from server)");
+    document.getElementById('adminLogin').style.display = 'block';
+    document.getElementById('adminPanel').style.display = 'none';
   }
-  loadVideos();
 }
 
-// helper
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Admin login
+function loginAdmin(){
+  const user = document.getElementById('adminUser').value;
+  const pass = document.getElementById('adminPass').value;
+  if(user === ADMIN_USER && pass === ADMIN_PASS){
+    isAdmin = true;
+    showAdmin();
+    alert("Admin logged in!");
+    fetchVideos();
+  } else {
+    alert("Invalid credentials");
+  }
 }
 
-// initial
-showPage("home");
-loadVideos();
+// Fetch videos from SheetBD
+async function fetchVideos(){
+  const res = await fetch(SHEETDB_API);
+  const data = await res.json();
+  displayVideos(data);
+}
+
+// Display videos
+function displayVideos(videos){
+  const home = document.getElementById('homeSection');
+  home.innerHTML = '';
+  videos.forEach(v => {
+    const div = document.createElement('div');
+    div.className = 'video-container';
+    
+    if(v.link.includes("youtube") || v.link.includes("vimeo") || v.link.includes("moviebox")){
+      div.innerHTML = `<iframe src="${convertToEmbed(v.link)}" frameborder="0" allowfullscreen></iframe>`;
+    } else {
+      div.innerHTML = `<video controls><source src="${v.link}" type="video/mp4"></video>`;
+    }
+
+    if(isAdmin){
+      const delBtn = document.createElement('button');
+      delBtn.innerText = "Delete";
+      delBtn.className = "delete-btn";
+      delBtn.onclick = () => deleteVideo(v.id);
+      div.appendChild(delBtn);
+    }
+
+    home.appendChild(div);
+  });
+}
+
+// Convert common video links to embed link (simplified)
+function convertToEmbed(url){
+  if(url.includes("youtube.com")){
+    const id = url.split("v=")[1];
+    return `https://www.youtube.com/embed/${id}`;
+  }
+  if(url.includes("youtu.be")){
+    const id = url.split("/").pop();
+    return `https://www.youtube.com/embed/${id}`;
+  }
+  // For others, return same
+  return url;
+}
+
+// Add video
+async function addVideo(){
+  const link = document.getElementById('videoURL').value;
+  const title = document.getElementById('videoTitle').value;
+  const category = document.getElementById('videoCategory').value;
+
+  if(!link || !title){ alert("Enter link and title"); return; }
+
+  await fetch(SHEETBD_API, {
+    method:"POST",
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({data:{link, title, category}})
+  });
+  fetchVideos();
+  document.getElementById('videoURL').value = '';
+  document.getElementById('videoTitle').value = '';
+  document.getElementById('videoCategory').value = '';
+}
+
+// Delete video
+async function deleteVideo(id){
+  if(!confirm("Delete this video?")) return;
+  await fetch(`${SHEETBD_API}/${id}`, {method:'DELETE'});
+  fetchVideos();
+}
+
+// Initial load
+showSection('home');
+fetchVideos();
