@@ -1,167 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Moviebox</title>
-<style>
-body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #111; color: #fff; }
-nav { display: flex; justify-content: space-around; background: #222; padding: 10px; }
-nav button { background: #333; color: #fff; border: none; padding: 10px 20px; cursor: pointer; }
-nav button:hover { background: #555; }
-.container { padding: 20px; }
-.video-card { margin-bottom: 20px; }
-video { width: 100%; max-width: 700px; background: #000; display: block; margin-bottom: 5px; }
-.admin-form { margin-bottom: 30px; background: #222; padding: 20px; border-radius: 8px; }
-input, select { margin-bottom: 10px; display: block; width: 100%; padding: 8px; border-radius: 4px; border: none; }
-button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-.success { color: lightgreen; margin-bottom: 10px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MovieBox Player</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f2f2f2; }
+    nav { display: flex; background: #333; color: #fff; padding: 10px; }
+    nav button { margin-right: 10px; background: #555; color: #fff; border: none; padding: 8px 12px; cursor: pointer; }
+    nav button:hover { background: #777; }
+    #video-section { padding: 20px; text-align: center; }
+    iframe { max-width: 100%; height: 480px; border: none; }
+    #video-list { margin: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .video-item { padding: 10px; background: #fff; border-radius: 5px; cursor: pointer; }
+    #admin-panel { margin-top: 20px; display: none; }
+    input, select { padding: 8px; margin: 5px; }
+    button.upload { padding: 8px 12px; cursor: pointer; }
+  </style>
 </head>
 <body>
 
-<nav>
-  <button id="homeBtn">Home</button>
-  <button id="searchBtn">Search</button>
-  <button id="fvrtBtn">Favourites</button>
-  <button id="profileBtn">Profile</button>
-</nav>
+  <nav>
+    <button onclick="showSection('home')">Home</button>
+    <button onclick="showSection('search')">Search</button>
+    <button onclick="showSection('fvrt')">Fvrt</button>
+    <button onclick="showSection('profile')">Profile</button>
+  </nav>
 
-<div class="container" id="content">
-
-  <div class="admin-form" id="adminForm" style="display:none;">
-    <h3>Admin Upload</h3>
-    <input type="text" id="title" placeholder="Video Title" required>
-    <input type="text" id="category" placeholder="Category" required>
-    <input type="url" id="videoLink" placeholder="Video URL (MP4)" required>
-    <button id="uploadBtn">Upload</button>
-    <div class="success" id="uploadStatus"></div>
+  <div id="video-section">
+    <h2 id="video-title">Select a video</h2>
+    <iframe id="video-player" src="" allowfullscreen></iframe>
   </div>
 
-  <div id="videosList"></div>
-</div>
+  <div id="home" class="section">
+    <h3>All Videos</h3>
+    <div id="video-list"></div>
+  </div>
 
-<script>
-// --------- Configuration ---------
-const SHEETDB_API = "https://sheetdb.io/api/v1/3p5l2ilgzemvr";
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "1234";
+  <div id="search" class="section" style="display:none;">Search here</div>
+  <div id="fvrt" class="section" style="display:none;">Your Favourites</div>
+  <div id="profile" class="section" style="display:none;">
+    <h3>Admin Login</h3>
+    <input type="text" id="admin-user" placeholder="Username">
+    <input type="password" id="admin-pass" placeholder="Password">
+    <button onclick="loginAdmin()">Login</button>
 
-// --------- State ---------
-let adminLoggedIn = false;
+    <div id="admin-panel">
+      <h3>Upload Video</h3>
+      <input type="text" id="video-link" placeholder="Video Link (Streamable)">
+      <input type="text" id="video-title-input" placeholder="Video Title">
+      <input type="text" id="video-cat" placeholder="Category">
+      <button class="upload" onclick="addVideo()">Add Video</button>
+    </div>
+  </div>
 
-// --------- Navigation Buttons ---------
-document.getElementById("homeBtn").addEventListener("click", () => loadVideos());
-document.getElementById("profileBtn").addEventListener("click", () => showAdminForm());
-document.getElementById("searchBtn").addEventListener("click", () => alert("Search coming soon!"));
-document.getElementById("fvrtBtn").addEventListener("click", () => alert("Favourites coming soon!"));
+  <script>
+    const ADMIN_USER = "admin";
+    const ADMIN_PASS = "1234";
 
-// --------- Admin Login Form ---------
-function showAdminForm() {
-  if(!adminLoggedIn) {
-    const user = prompt("Enter Admin Username:");
-    const pass = prompt("Enter Admin Password:");
-    if(user === ADMIN_USER && pass === ADMIN_PASS) {
-      adminLoggedIn = true;
-      document.getElementById("adminForm").style.display = "block";
-    } else {
-      alert("Unauthorized!");
+    let videos = []; // Store all videos
+
+    function showSection(section) {
+      document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+      document.getElementById(section).style.display = 'block';
     }
-  } else {
-    document.getElementById("adminForm").style.display = "block";
-  }
-}
 
-// --------- Upload Video ---------
-document.getElementById("uploadBtn").addEventListener("click", async () => {
-  const title = document.getElementById("title").value.trim();
-  const category = document.getElementById("category").value.trim();
-  const videoLink = document.getElementById("videoLink").value.trim();
-  const statusDiv = document.getElementById("uploadStatus");
-
-  if(!title || !category || !videoLink) {
-    alert("All fields are required!");
-    return;
-  }
-
-  statusDiv.textContent = "Uploading...";
-  try {
-    const response = await fetch(SHEETDB_API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      // Note: The body data here uses lowercase keys to match the input fields,
-      // which SheetDB will correctly map to the uppercase columns.
-      body: JSON.stringify({ data: { Title: title, category: category, Link: videoLink } })
-    });
-    if(response.ok) {
-      statusDiv.textContent = "✅ Uploaded Successfully!";
-      loadVideos();
-      document.getElementById("title").value = "";
-      document.getElementById("category").value = "";
-      document.getElementById("videoLink").value = "";
-    } else {
-      statusDiv.textContent = "❌ Upload Failed!";
+    function loginAdmin() {
+      const user = document.getElementById('admin-user').value;
+      const pass = document.getElementById('admin-pass').value;
+      if(user === ADMIN_USER && pass === ADMIN_PASS) {
+        document.getElementById('admin-panel').style.display = 'block';
+        alert('Admin logged in');
+      } else {
+        alert('Wrong credentials');
+      }
     }
-  } catch(err) {
-    statusDiv.textContent = "❌ Upload Error!";
-    console.error(err);
-  }
-});
 
-// --------- Load Videos ---------
-async function loadVideos() {
-  const listDiv = document.getElementById("videosList");
-  listDiv.innerHTML = "<p>Loading videos...</p>";
-  try {
-    const res = await fetch(SHEETDB_API);
-    const data = await res.json();
-    if(data.length === 0) {
-      listDiv.innerHTML = "<p>No videos found.</p>";
-      return;
+    function addVideo() {
+      const link = document.getElementById('video-link').value;
+      const title = document.getElementById('video-title-input').value;
+      const cat = document.getElementById('video-cat').value;
+
+      if(!link || !title) {
+        alert('Please enter video link and title');
+        return;
+      }
+
+      const videoObj = { link, title, cat };
+      videos.push(videoObj);
+      renderVideos();
+
+      // Play immediately
+      playVideo(videoObj);
+
+      document.getElementById('video-link').value = '';
+      document.getElementById('video-title-input').value = '';
+      document.getElementById('video-cat').value = '';
     }
-    listDiv.innerHTML = "";
-    data.forEach(video => {
-      const card = document.createElement("div");
-      card.className = "video-card";
 
-      // THIS IS THE MAIN CHANGE:
-      // We now use video.Title and video.Link to match the Google Sheet column names.
-      card.innerHTML = `
-        <video controls>
-          <source src="${video.Link}" type="video/mp4">
-          Your browser does not support HTML5 video.
-        </video>
-        <p>Title: ${video.Title} | Category: ${video.category}</p>
-        ${adminLoggedIn ? `<button onclick="deleteVideo('${video._id}', this)">Delete</button>` : ""}
-      `;
-      listDiv.appendChild(card);
-    });
-  } catch(err) {
-    listDiv.innerHTML = "<p>Error loading videos.</p>";
-    console.error(err);
-  }
-}
-
-// --------- Delete Video (Admin Only) ---------
-async function deleteVideo(id, btn) {
-  if(!confirm("Are you sure to delete this video?")) return;
-  try {
-    const res = await fetch(`${SHEETDB_API}/` + id, { method: "DELETE" });
-    if(res.ok) {
-      btn.parentElement.remove();
-      alert("Deleted successfully!");
-    } else {
-      alert("Delete failed!");
+    function renderVideos() {
+      const list = document.getElementById('video-list');
+      list.innerHTML = '';
+      videos.forEach((v, index) => {
+        const div = document.createElement('div');
+        div.className = 'video-item';
+        div.innerText = `${v.title} [${v.cat}]`;
+        div.onclick = () => playVideo(v);
+        list.appendChild(div);
+      });
     }
-  } catch(err) {
-    console.error(err);
-    alert("Error deleting video.");
-  }
-}
 
-// --------- Initial Load ---------
-loadVideos();
-</script>
+    function playVideo(video) {
+      document.getElementById('video-player').src = video.link;
+      document.getElementById('video-title').innerText = video.title + " [" + video.cat + "]";
+    }
+  </script>
 
 </body>
 </html>
