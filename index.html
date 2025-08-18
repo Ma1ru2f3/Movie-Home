@@ -32,7 +32,6 @@
   <div id="search-results"></div>
 </div>
 
-<!-- Profile Section -->
 <div id="profile-section" class="hidden">
   <h2>Profile Options</h2>
 
@@ -55,7 +54,7 @@
     <h3>Admin Access</h3>
     <input type="text" id="admin-id" placeholder="Admin ID">
     <input type="password" id="admin-pass" placeholder="Admin Password">
-    <button onclick="loginUser()">Login Admin</button>
+    <button onclick="loginAdmin()">Login Admin</button>
   </div>
 
   <!-- 3. Owner Info -->
@@ -131,19 +130,10 @@ function createAccount(){
   alert('Account created!');
 }
 
-// Login user/admin
+// Login user
 function loginUser(){
-  const email=document.getElementById('login-email')?.value || document.getElementById('admin-id')?.value;
-  const pass=document.getElementById('login-pass')?.value || document.getElementById('admin-pass')?.value;
-  
-  // Admin
-  if(email==="112233445500" && pass==="123450"){
-    document.getElementById('admin-dashboard').classList.remove('hidden');
-    fetchVideosAdmin(); fetchUsers();
-    document.getElementById('profile-section').classList.add('hidden');
-    return;
-  }
-  
+  const email=document.getElementById('login-email').value;
+  const pass=document.getElementById('login-pass').value;
   const user=JSON.parse(localStorage.getItem(email));
   if(user && user.password===pass){
     document.getElementById('user-dashboard').classList.remove('hidden');
@@ -151,6 +141,17 @@ function loginUser(){
     document.getElementById('user-email').innerText=user.email;
     document.getElementById('profile-section').classList.add('hidden');
   } else alert('Invalid credentials');
+}
+
+// Login admin
+function loginAdmin(){
+  const id=document.getElementById('admin-id').value;
+  const pass=document.getElementById('admin-pass').value;
+  if(id==="112233445500" && pass==="123450"){
+    document.getElementById('admin-dashboard').classList.remove('hidden');
+    fetchVideosAdmin(); fetchUsers();
+    document.getElementById('profile-section').classList.add('hidden');
+  } else alert('Invalid admin credentials');
 }
 
 function logout(){
@@ -168,29 +169,14 @@ async function fetchVideosAdmin(){
     const card=document.createElement('div');
     card.className='video-card';
     card.innerHTML=`<h4>${video.title} [${video.category}] <span style="cursor:pointer;color:red" onclick="deleteVideo('${video.id}')">🗑 Delete</span></h4>
-    <iframe src="${video.link}" frameborder="0" allowfullscreen></iframe>`;
+    <iframe src="${video.link}" frameborder="0" allowfullscreen width="300" height="150"></iframe>`;
     container.appendChild(card);
   });
 }
 
+// Add video
 async function addVideo(e){
   e.preventDefault();
   const title=document.getElementById('video-title').value;
   const link=document.getElementById('video-link').value;
   const category=document.getElementById('video-category').value;
-  await fetch(SHEET_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:{title,link,category}})});
-  alert('Video added'); fetchVideosAdmin();
-}
-
-function deleteVideo(id){
-  alert('SheetDB delete API call needed here');
-}
-
-// User list
-function fetchUsers(){
-  const container=document.getElementById('user-list'); container.innerHTML='';
-  for(let key in localStorage){
-    if(localStorage.hasOwnProperty(key) && key!=="112233445500"){
-      const user=JSON.parse(localStorage.getItem(key));
-      const div=document.createElement('div');
-      div.innerHTML=`${user.fullname}
