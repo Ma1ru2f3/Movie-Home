@@ -1,177 +1,142 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MovieBox</title>
+<title>Moviebox</title>
 <style>
-  body{font-family:sans-serif; margin:0; padding:0;}
-  nav{display:flex; justify-content:space-around; background:#333; color:white; padding:10px;}
-  nav button{background:none; border:none; color:white; font-size:16px; cursor:pointer;}
-  #content{padding:20px;}
-  .video-item{margin:10px 0;}
-  #admin-panel input, #admin-panel button, #admin-panel select{margin:5px 0;}
-  .progress-container{width:100%; background:#ddd; height:20px; margin:5px 0;}
-  .progress-bar{height:20px; width:0; background:green; color:white; text-align:center;}
+  body { font-family: Arial; margin:0; padding:0; }
+  nav { display:flex; justify-content:space-around; background:#333; color:white; padding:10px; }
+  nav button { background:none; border:none; color:white; font-size:16px; cursor:pointer; }
+  #home-videos div { margin:10px 0; }
+  #progress { width:0; height:20px; background:green; color:white; text-align:center; }
 </style>
 </head>
 <body>
 
 <nav>
-  <button onclick="showHome()">Home</button>
-  <button onclick="showSearch()">Search</button>
-  <button onclick="showFvrt()">Fvrt</button>
-  <button onclick="showProfile()">Profile</button>
+  <button onclick="showPage('home')">Home</button>
+  <button onclick="showPage('search')">Search</button>
+  <button onclick="showPage('fvrt')">Fvrt</button>
+  <button onclick="showPage('profile')">Profile</button>
 </nav>
 
-<div id="content"></div>
+<div id="pages">
+  <div id="home">
+    <h2>Home</h2>
+    <div id="home-videos"></div>
+  </div>
+
+  <div id="search" style="display:none">
+    <h2>Search</h2>
+    <input type="text" id="search-input" placeholder="Search title">
+    <div id="search-results"></div>
+  </div>
+
+  <div id="fvrt" style="display:none">
+    <h2>Fvrt</h2>
+    <div>Favorite videos list here...</div>
+  </div>
+
+  <div id="profile" style="display:none">
+    <h2>Profile</h2>
+    <div id="admin-login">
+      <input type="text" id="user" placeholder="Username">
+      <input type="password" id="pass" placeholder="Password">
+      <button onclick="adminLogin()">Login</button>
+    </div>
+    <div id="admin-panel" style="display:none">
+      <h3>Upload Video</h3>
+      <input type="text" id="title" placeholder="Video Title">
+      <input type="file" id="video">
+      <button onclick="uploadVideo()">Upload</button>
+      <div id="progress"></div>
+    </div>
+  </div>
+</div>
 
 <script>
-let videos = [];
+let isAdmin = false;
 
-function loadVideos(){
-  fetch("/videos").then(res=>res.json()).then(data=>{
-    videos = data;
-    showHome();
-  });
+function showPage(page) {
+  document.querySelectorAll('#pages > div').forEach(d=>d.style.display='none');
+  document.getElementById(page).style.display='block';
+  if(page==='home') loadVideos();
 }
 
-// Show Home
-function showHome(){
-  const container = document.getElementById("content");
-  container.innerHTML = "<h2>Home</h2>";
-  if(videos.length===0){
-    container.innerHTML += "<p>No videos uploaded yet.</p>";
-  } else {
-    videos.forEach(v=>{
-      container.innerHTML += `<div class="video-item">
-        <video src="${v.url}" width="300" controls></video>
-        <p>${v.title}</p>
-      </div>`;
-    });
-  }
+// Admin login
+function adminLogin() {
+  const user = document.getElementById('user').value;
+  const pass = document.getElementById('pass').value;
+  if(user==='admin' && pass==='1234') {
+    isAdmin=true;
+    document.getElementById('admin-login').style.display='none';
+    document.getElementById('admin-panel').style.display='block';
+    alert('Admin logged in');
+  } else alert('Wrong credentials');
 }
 
-// Search (basic by title)
-function showSearch(){
-  const container = document.getElementById("content");
-  container.innerHTML = `<h2>Search</h2>
-    <input type="text" id="searchInput" placeholder="Search title">
-    <div id="searchResults"></div>`;
-  document.getElementById("searchInput").addEventListener("input", e=>{
-    const term = e.target.value.toLowerCase();
-    const results = videos.filter(v=>v.title.toLowerCase().includes(term));
-    const resultsDiv = document.getElementById("searchResults");
-    if(results.length===0){ resultsDiv.innerHTML="<p>No results</p>"; }
-    else{
-      resultsDiv.innerHTML = results.map(v=>`<div class="video-item">
-        <video src="${v.url}" width="300" controls></video>
-        <p>${v.title}</p>
-      </div>`).join("");
-    }
-  });
+// Load videos for home
+async function loadVideos() {
+  const res = await fetch('/videos');
+  const videos = await res.json();
+  const home = document.getElementById('home-videos');
+  home.innerHTML='';
+  videos.forEach(v=>addVideoToHome(v));
 }
 
-// Fvrt (placeholder)
-function showFvrt(){
-  const container = document.getElementById("content");
-  container.innerHTML = "<h2>Favorites</h2><p>No favorites yet.</p>";
-}
-
-// Profile (admin access)
-function showProfile(){
-  const container = document.getElementById("content");
-  container.innerHTML = `
-    <h2>Profile</h2>
-    <input type="text" id="user" placeholder="Username"><br>
-    <input type="password" id="pass" placeholder="Password"><br>
-    <button id="loginBtn">Login as Admin</button>
-    <div id="admin-panel"></div>
+function addVideoToHome(video){
+  const home = document.getElementById('home-videos');
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <video src="${video.url}" controls width="300"></video>
+    <p>${video.title}</p>
+    ${isAdmin?`<button onclick="deleteVideo('${video.public_id}', this)">Delete</button>`:''}
   `;
-  document.getElementById("loginBtn").onclick = ()=>{
-    const user = document.getElementById("user").value;
-    const pass = document.getElementById("pass").value;
-    if(user==="admin" && pass==="1234"){
-      showAdminPanel();
-    } else {
-      alert("Wrong credentials");
-    }
-  };
+  home.prepend(div);
 }
 
-// Admin Panel
-function showAdminPanel(){
-  const panel = document.getElementById("admin-panel");
-  panel.innerHTML = `
-    <h3>Upload Video</h3>
-    <input type="text" id="title" placeholder="Video Title"><br>
-    <input type="file" id="video"><br>
-    <button id="uploadBtn">Upload</button>
-    <div class="progress-container"><div class="progress-bar" id="progress">0%</div></div>
-    <div id="msg"></div>
-    <h3>Delete Video</h3>
-    <select id="deleteSelect"></select>
-    <button id="deleteBtn">Delete</button>
-    <div id="deleteMsg"></div>
-  `;
+// Upload video
+async function uploadVideo(){
+  const file = document.getElementById('video').files[0];
+  const title = document.getElementById('title').value;
+  const formData = new FormData();
+  formData.append('video', file);
+  formData.append('title', title);
+  formData.append('user', 'admin');
+  formData.append('pass', '1234');
 
-  const deleteSelect = document.getElementById("deleteSelect");
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST','/upload');
 
-  function updateDeleteDropdown(){
-    deleteSelect.innerHTML = videos.map(v=>`<option value="${v.public_id}">${v.title}</option>`).join('');
-  }
+  xhr.upload.addEventListener('progress', e=>{
+    const percent = Math.floor(e.loaded / e.total * 100);
+    const bar = document.getElementById('progress');
+    bar.style.width=percent+'%';
+    bar.innerText=percent+'%';
+  });
 
-  updateDeleteDropdown();
-
-  document.getElementById("uploadBtn").onclick = ()=>{
-    const file = document.getElementById("video").files[0];
-    const title = document.getElementById("title").value;
-    if(!file){ alert("Select a file"); return; }
-
-    const formData = new FormData();
-    formData.append("video", file);
-    formData.append("title", title);
-    formData.append("user","admin");
-    formData.append("pass","1234");
-
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST","/upload");
-    xhr.upload.onprogress = e=>{
-      const percent = Math.round((e.loaded/e.total)*100);
-      const bar = document.getElementById("progress");
-      bar.style.width = percent+"%";
-      bar.innerText = percent+"%";
-    };
-    xhr.onload = ()=>{
-      document.getElementById("msg").innerText = "Upload Success!";
-      loadVideos(); // reload videos & update home
-      updateDeleteDropdown();
-    };
-    xhr.send(formData);
+  xhr.onload = async ()=>{
+    if(xhr.status===200){
+      document.getElementById('progress').innerText='Success';
+      const data = JSON.parse(xhr.response);
+      addVideoToHome(data);
+    } else alert('Upload failed');
   };
 
-  document.getElementById("deleteBtn").onclick = ()=>{
-    const public_id = deleteSelect.value;
-    fetch("/delete", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({public_id, user:"admin", pass:"1234"})
-    })
-    .then(res=>res.json())
-    .then(data=>{
-      document.getElementById("deleteMsg").innerText = "Deleted Successfully!";
-      loadVideos();
-      updateDeleteDropdown();
-    })
-    .catch(err=>{
-      document.getElementById("deleteMsg").innerText = "Delete Failed!";
-    });
-  };
+  xhr.send(formData);
 }
 
-// Initial load
-loadVideos();
+// Delete video
+async function deleteVideo(public_id, btn){
+  const res = await fetch('/delete',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({user:'admin', pass:'1234', public_id})
+  });
+  const result = await res.json();
+  if(result.result==='ok') btn.parentElement.remove();
+}
 </script>
 
 </body>
