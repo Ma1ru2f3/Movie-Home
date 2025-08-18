@@ -2,7 +2,6 @@ const express = require("express");
 const fileUpload = require("express-fileupload");
 const cloudinary = require("cloudinary").v2;
 const bodyParser = require("body-parser");
-require("dotenv").config();
 
 const app = express();
 app.use(bodyParser.json());
@@ -10,16 +9,16 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.use(fileUpload());
 
-// Cloudinary Config
+// Cloudinary Config (API Credentials সরাসরি বসানো হলো)
 cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET
+  cloud_name: "dlxa4684c",
+  api_key: "488983136699335",
+  api_secret: "Q0pMZ3qtVHouepBUcWzPaDpZ7lI"
 });
 
 // Admin credentials
-const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "1234";
 
 // Admin login middleware
 const checkAdmin = (req, res, next) => {
@@ -68,11 +67,11 @@ app.get("/videos", async (req, res) => {
       resource_type: "video",
       prefix: "Moviebox"
     });
-    // Include title as public_id name (simple way)
+    // Include title as public_id name
     const videos = result.resources.map(v => ({
       public_id: v.public_id,
       url: v.secure_url,
-      title: v.public_id.split("/").pop() // You can replace with saved title from DB later
+      title: v.public_id.split("/").pop() // Simple title from filename
     }));
     res.json(videos);
   } catch (err) {
