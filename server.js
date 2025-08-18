@@ -2,66 +2,89 @@ const express = require("express");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
-const cors = require("cors");
+const bodyParser = require("body-parser");
 
 const app = express();
-const PORT = 3000;
-
-app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-// Create videos folder if not exists
-const videoDir = path.join(__dirname, "public", "videos");
-if (!fs.existsSync(videoDir)) fs.mkdirSync(videoDir, { recursive: true });
-
-// Multer setup for uploads
+// Internal storage setup
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, videoDir),
-  filename: (req, file, cb) => {
-    const unique = Date.now() + "_" + file.originalname;
-    cb(null, unique);
+  destination: function (req, file, cb) {
+    const dir = "./public/videos";
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
-const upload = multer({ storage });
+const upload = multer({ storage: storage });
 
-// Upload endpoint
-app.post("/upload", upload.single("video"), (req, res) => {
-  const { user, pass, title } = req.body;
-  if (user !== "admin" || pass !== "1234") return res.status(401).send("Unauthorized");
+// Admin credentials
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "1234";
 
-  const file = req.file;
-  if (!file) return res.status(400).send("No file uploaded");
+// Simple Admin middleware
+const checkAdmin = (req, res, next) => {
+  const { user, pass } = req.body;
+  if (user === ADMIN_USER && pass === ADMIN_PASS) {
+    next();
+  } else {
+    res.status(401).send("Unauthorized");
+  }
+};
 
-  res.send({ message: "Upload success", filename: file.filename, url: "/videos/" + file.filename, title });
+// Upload route
+app.post("/upload", checkAdmin, upload.single("video"), (req, res) => {
+  const { title } = req.body;
+  if (!req.file) return res.status(400).send("No file uploaded");
+
+  const videoData = {
+    title: title || req.file.originalname,
+    filename: req.file.filename,
+    url: `/videos/${req.file.filename}`
+  };
+
+  // Save video info in JSON
+  const dbPath = "./public/videos/videos.json";
+  let videos = [];
+  if (fs.existsSync(dbPath)) {
+    videos = JSON.parse(fs.readFileSync(dbPath));
+  }
+  videos.push(videoData);
+  fs.writeFileSync(dbPath, JSON.stringify(videos, null, 2));
+
+  res.json({ success: true, video: videoData });
 });
 
-// Get all videos
+// Delete video route
+app.post("/delete", checkAdmin, (req, res) => {
+  const { filename } = req.body;
+  const dbPath = "./public/videos/videos.json";
+  if (!fs.existsSync(dbPath)) return res.status(400).send("No videos found");
+
+  let videos = JSON.parse(fs.readFileSync(dbPath));
+  const videoIndex = videos.findIndex(v => v.filename === filename);
+  if (videoIndex === -1) return res.status(404).send("Video not found");
+
+  const filePath = path.join(__dirname, "public/videos", filename);
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+  videos.splice(videoIndex, 1);
+  fs.writeFileSync(dbPath, JSON.stringify(videos, null, 2));
+  res.json({ success: true });
+});
+
+// Fetch videos for home page
 app.get("/videos", (req, res) => {
-  fs.readdir(videoDir, (err, files) => {
-    if (err) return res.status(500).send("Error reading videos");
-
-    const videoData = files.map(f => {
-      const title = f.split("_").slice(1).join("_"); // original name
-      return { public_id: f, title, url: "/videos/" + f };
-    });
-
-    res.json(videoData);
-  });
-});
-
-// Delete video
-app.post("/delete", (req, res) => {
-  const { user, pass, public_id } = req.body;
-  if (user !== "admin" || pass !== "1234") return res.status(401).send("Unauthorized");
-
-  const filePath = path.join(videoDir, public_id);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-    return res.send({ message: "Deleted" });
+  const dbPath = "./public/videos/videos.json";
+  let videos = [];
+  if (fs.existsSync(dbPath)) {
+    videos = JSON.parse(fs.readFileSync(dbPath));
   }
-  res.status(404).send("File not found");
+  res.json(videos);
 });
 
-// Start server
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+app.listen(3000, () => console.log("Server running on port 3000"));
