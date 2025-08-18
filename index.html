@@ -11,7 +11,7 @@ header button { padding:10px 20px; cursor:pointer; background:#222; color:#fff; 
 section { padding:20px; display:none; }
 section.active { display:block; }
 .video-card { border:1px solid #ccc; padding:10px; margin:10px 0; background:#fff; border-radius:5px; }
-.video-card iframe, .video-card video { width:100%; max-width:500px; height:280px; }
+.video-card video { width:100%; max-width:500px; height:280px; }
 input { margin:5px 0; padding:5px; width:90%; }
 .fav-btn { display:block; margin-top:5px; background:#ff4081; color:#fff; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; }
 </style>
@@ -48,7 +48,7 @@ input { margin:5px 0; padding:5px; width:90%; }
   <div id="adminTab" style="display:none;">
     <h3>Admin Dashboard</h3>
     <input type="text" id="videoTitle" placeholder="Video Title"><br>
-    <input type="text" id="videoLink" placeholder="Video Link (YouTube, Facebook, TikTok, MP4, MovieBox)"><br>
+    <input type="text" id="videoLink" placeholder="Direct Video Link (MP4/WebM)"><br>
     <input type="text" id="videoCategory" placeholder="Category"><br>
     <button onclick="uploadVideo()">Upload Video</button>
     <h4>Video List</h4>
@@ -122,26 +122,15 @@ async function fetchVideos(){
   } catch(err){ console.error('Fetch error', err); }
 }
 
-// Updated embed function for MovieBox direct play
+// Updated embed function: only direct video links, no logos, no suggested
 function embedVideo(link){
-  if(link.includes('youtube.com') || link.includes('youtu.be')){
-    const id = extractYouTubeID(link);
-    return `<iframe src="https://www.youtube.com/embed/${id}?modestbranding=1" frameborder="0" allowfullscreen></iframe>`;
-  } else if(link.includes('facebook.com') || link.includes('tiktok.com')){
-    return `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`;
-  } else if(link.includes('moviebox.ph')){
-    return `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`;
-  } else if(link.endsWith('.mp4')){
-    return `<video controls src="${link}"></video>`;
-  } else {
-    return `<a href="${link}" target="_blank">Open Video</a>`;
+  if(link.endsWith('.mp4') || link.endsWith('.webm')){
+    return `<video src="${link}" controls autoplay style="width:100%; max-width:500px; height:280px;"></video>`;
+  } else if(link.includes('moviebox.ph') || link.includes('animohub.com')){
+    return `<video src="${link}" controls autoplay style="width:100%; max-width:500px; height:280px;"></video>`;
+  } else{
+    return `<p>Video cannot be displayed. Please use direct video link (MP4/WebM).</p>`;
   }
-}
-
-function extractYouTubeID(url){
-  const reg = /(?:https?:\/\/)?(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w-]{11})/;
-  const match = url.match(reg);
-  return match ? match[1] : '';
 }
 
 function addFav(title,link,category){
