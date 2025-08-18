@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MovieBox</title>
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; }
+body { font-family: Arial; margin:0; padding:0; background:#f5f5f5; }
 header { background:#111; color:#fff; display:flex; justify-content:space-around; padding:10px; }
 header button { padding:10px 20px; cursor:pointer; background:#222; color:#fff; border:none; border-radius:5px; }
 section { padding:20px; display:none; }
@@ -17,6 +17,7 @@ input, button { margin:5px 0; padding:5px; width:90%; }
 .video-title { padding:5px; text-align:center; color:#fff; font-weight:bold; }
 #videoGallery, #searchResults, #favList, #adminVideoList { display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; }
 </style>
+<script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
 </head>
 <body>
 
@@ -53,9 +54,8 @@ input, button { margin:5px 0; padding:5px; width:90%; }
 
   <div id="adminTab" style="display:none;">
     <h3>Admin Upload</h3>
-    <input type="file" id="videoFile">
-    <button onclick="uploadVideo()">Upload Video</button>
-    <h4>Video List</h4>
+    <button id="upload_widget_opener">Upload Video</button>
+    <h4>Uploaded Videos</h4>
     <div id="adminVideoList"></div>
   </div>
 </section>
@@ -145,35 +145,27 @@ function searchVideo(){
   });
 }
 
-// Cloudinary Upload
-async function uploadVideo(){
-  if(!isAdmin){ alert('Only admin can upload'); return; }
-  const file = document.getElementById('videoFile').files[0];
-  if(!file){ alert('Select a video file'); return; }
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', 'Moviebox'); // তোমার unsigned preset
-  formData.append('folder', 'Moviebox'); 
-
-  try{
-    const res = await fetch('https://api.cloudinary.com/v1_1/dlxa4684c/video/upload', {
-      method:'POST',
-      body: formData
-    });
-    const data = await res.json();
-    allVideos.unshift({title:file.name, link:data.secure_url});
+// Cloudinary Upload Widget
+var myWidget = cloudinary.createUploadWidget({
+  cloudName: 'dlxa4684c', 
+  uploadPreset: 'Moviebox',
+  multiple: false,
+  resourceType: 'video',
+  folder: 'Moviebox'
+}, (error, result) => { 
+  if (!error && result && result.event === "success") { 
+    console.log('Done! Here is the video info: ', result.info); 
+    allVideos.unshift({title:result.info.original_filename, link:result.info.secure_url});
     renderGallery();
-    alert('Video Uploaded Successfully');
-  } catch(err){
-    console.error(err);
-    alert('Upload Failed');
   }
-}
+});
 
-// Initial empty gallery
+document.getElementById("upload_widget_opener").addEventListener("click", function(){
+  if(isAdmin) myWidget.open();
+  else alert('Only admin can upload');
+}, false);
+
 renderGallery();
 </script>
-
 </body>
 </html>
