@@ -2,146 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MovieBox</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
-  header { background: #222; color: #fff; padding: 10px; display: flex; justify-content: space-around; }
-  header button { background: none; border: none; color: #fff; font-size: 16px; cursor: pointer; }
-  #content { padding: 20px; }
-  .video-card { display: inline-block; margin: 10px; background: #fff; padding: 10px; border-radius: 5px; width: 200px; }
-  .video-card video { width: 100%; height: auto; }
-  #uploadSection { margin-top: 20px; padding: 10px; background: #eee; border-radius: 5px; }
-  #progressBar { width: 100%; background: #ccc; height: 20px; border-radius: 5px; margin-top: 10px; }
-  #progressBar div { height: 100%; width: 0%; background: green; border-radius: 5px; text-align: center; color: #fff; }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<nav>
+  <button onclick="showHome()">Home</button>
+  <button onclick="showSearch()">Search</button>
+  <button onclick="showFav()">Fvrt</button>
+  <button onclick="showProfile()">Profile</button>
+</nav>
 
-<header>
-  <button onclick="showSection('home')">Home</button>
-  <button onclick="showSection('fvrt')">Fvrt</button>
-  <button onclick="showSection('profile')">Profile</button>
-  <button onclick="showSection('search')">Search</button>
-</header>
-
-<div id="content">
-  <!-- Sections -->
-  <div id="homeSection"></div>
-  <div id="fvrtSection" style="display:none;">Favorites coming soon...</div>
-  <div id="profileSection" style="display:none;">
-    <h3>Admin Login</h3>
-    <input type="text" id="adminUser" placeholder="Username"><br><br>
-    <input type="password" id="adminPass" placeholder="Password"><br><br>
-    <button onclick="adminLogin()">Login</button>
-
-    <div id="uploadSection" style="display:none;">
-      <h4>Upload Video</h4>
-      <input type="text" id="videoTitle" placeholder="Enter video title"><br><br>
-      <input type="file" id="videoFile"><br><br>
-      <button onclick="uploadVideo()">Upload</button>
-      <div id="progressBar"><div id="progress"></div></div>
-      <div id="uploadStatus"></div>
-    </div>
-  </div>
-  <div id="searchSection" style="display:none;">
-    <input type="text" id="searchInput" placeholder="Search videos" onkeyup="searchVideos()"><br><br>
-    <div id="searchResults"></div>
-  </div>
+<div id="main">
+  <div id="home"></div>
+  <div id="search"></div>
+  <div id="fav"></div>
+  <div id="profile"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script>
-let adminLoggedIn = false;
-let allVideos = [];
-
-// Show section function
-function showSection(section) {
-  document.getElementById('homeSection').style.display = 'none';
-  document.getElementById('fvrtSection').style.display = 'none';
-  document.getElementById('profileSection').style.display = 'none';
-  document.getElementById('searchSection').style.display = 'none';
-
-  if(section==='home') { loadVideos(); document.getElementById('homeSection').style.display='block'; }
-  else if(section==='fvrt') { document.getElementById('fvrtSection').style.display='block'; }
-  else if(section==='profile') { document.getElementById('profileSection').style.display='block'; }
-  else if(section==='search') { document.getElementById('searchSection').style.display='block'; }
-}
-
-// Load videos from server
-async function loadVideos() {
-  try {
-    const res = await axios.get('/videos'); // Server should return JSON {url, title, public_id}
-    allVideos = res.data;
-    const container = document.getElementById('homeSection');
-    container.innerHTML = '';
-    allVideos.forEach(v => {
-      const div = document.createElement('div');
-      div.className = 'video-card';
-      div.innerHTML = `<video controls src="${v.url}"></video><p>${v.title}</p>`;
-      container.appendChild(div);
-    });
-  } catch(e) { console.log(e); }
-}
-
-// Admin login
-function adminLogin() {
-  const user = document.getElementById('adminUser').value;
-  const pass = document.getElementById('adminPass').value;
-  if(user==='admin' && pass==='1234') {
-    adminLoggedIn = true;
-    document.getElementById('uploadSection').style.display='block';
-    alert('Admin logged in');
-  } else { alert('Wrong credentials'); }
-}
-
-// Upload video
-async function uploadVideo() {
-  if(!adminLoggedIn) { alert('Login first'); return; }
-  const file = document.getElementById('videoFile').files[0];
-  const title = document.getElementById('videoTitle').value;
-  if(!file || !title) { alert('Select file and enter title'); return; }
-
-  const formData = new FormData();
-  formData.append('video', file);
-  formData.append('title', title);
-  formData.append('user', 'admin');
-  formData.append('pass', '1234');
-
-  const progressBar = document.getElementById('progress');
-  const status = document.getElementById('uploadStatus');
-  status.innerText = 'Uploading...';
-
-  try {
-    const res = await axios.post('/upload', formData, {
-      headers: {'Content-Type': 'multipart/form-data'},
-      onUploadProgress: function(progressEvent) {
-        let percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-        progressBar.style.width = percent + '%';
-        progressBar.innerText = percent + '%';
-      }
-    });
-    status.innerText = 'Uploaded successfully!';
-    loadVideos(); // Refresh home
-  } catch(e) { status.innerText = 'Upload failed'; console.log(e); }
-}
-
-// Search videos
-function searchVideos() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const container = document.getElementById('searchResults');
-  container.innerHTML = '';
-  allVideos.filter(v => v.title.toLowerCase().includes(q)).forEach(v=>{
-    const div = document.createElement('div');
-    div.className = 'video-card';
-    div.innerHTML = `<video controls src="${v.url}"></video><p>${v.title}</p>`;
-    container.appendChild(div);
-  });
-}
-
-// Load videos initially
-loadVideos();
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
