@@ -3,61 +3,155 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Video Hub</title>
+<title>MovieBox Web</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin:0; padding:0; background:#f4f4f4;
-}
-header { background:#333; color:#fff; padding:10px; text-align:center; }
-nav { display:flex; justify-content:space-around; background:#444; padding:10px 0; }
-nav button { color:#fff; background:none; border:none; font-size:16px; cursor:pointer; }
-nav button:hover { text-decoration:underline; }
-.container { padding:10px; max-width:800px; margin:auto; }
-.video-container { position:relative; width:100%; padding-bottom:56.25%; margin-bottom:20px; }
-.video-container iframe, .video-container video { position:absolute; top:0; left:0; width:100%; height:100%; }
-.admin-panel { display:none; background:#fff; padding:20px; margin-bottom:20px; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1);}
-input, select { width:100%; padding:8px; margin:5px 0; }
-button { padding:10px 15px; margin-top:10px; cursor:pointer; }
-.delete-btn { background:red; color:#fff; border:none; padding:5px 10px; margin-top:5px; cursor:pointer; }
+  body{ font-family: Arial; margin:0; padding:0; background:#f9f9f9;}
+  header{ background:#222; color:white; padding:10px; display:flex; justify-content:space-around;}
+  header div{ cursor:pointer; padding:5px 10px; }
+  header div.active{ background:#555; border-radius:5px; }
+  .container{ padding:10px; }
+  .video-card{ background:white; margin:10px 0; padding:10px; border-radius:5px; }
+  .video-card video{ width:100%; height:auto; }
+  .admin-panel{ background:#eee; padding:10px; margin:10px 0; border-radius:5px; }
+  input, button{ margin:5px 0; padding:8px; width:100%; box-sizing:border-box; }
+  button{ cursor:pointer; background:green; color:white; border:none; border-radius:5px; }
+  @media(max-width:600px){ header{ flex-direction:column; } }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Video Hub</h1>
+  <div id="homeBtn" class="active" onclick="showSection('home')">Home</div>
+  <div id="searchBtn" onclick="showSection('search')">Search</div>
+  <div id="favBtn" onclick="showSection('fav')">Favourite</div>
+  <div id="profileBtn" onclick="showSection('profile')">Profile</div>
 </header>
 
-<nav>
-  <button onclick="showSection('home')">Home</button>
-  <button onclick="showSection('search')">Search</button>
-  <button onclick="showSection('fvrt')">Favourites</button>
-  <button onclick="showAdmin()">Profile</button>
-</nav>
-
 <div class="container">
-
-  <!-- Admin Login / Panel -->
-  <div id="adminLogin" class="admin-panel">
-    <h3>Admin Login</h3>
-    <input type="text" id="adminUser" placeholder="Username">
-    <input type="password" id="adminPass" placeholder="Password">
-    <button onclick="loginAdmin()">Login</button>
+  <div id="home" class="section">
+    <h2>Home</h2>
+    <div id="videoList"></div>
   </div>
 
-  <div id="adminPanel" class="admin-panel">
-    <h3>Admin Panel</h3>
-    <input type="text" id="videoURL" placeholder="Video URL">
-    <input type="text" id="videoTitle" placeholder="Video Title">
-    <input type="text" id="videoCategory" placeholder="Category">
-    <button onclick="addVideo()">Add Video</button>
+  <div id="search" class="section" style="display:none;">
+    <h2>Search</h2>
+    <input type="text" id="searchInput" placeholder="Search by title..." oninput="searchVideos()">
+    <div id="searchResults"></div>
   </div>
 
-  <!-- Home / Videos -->
-  <div id="homeSection"></div>
+  <div id="fav" class="section" style="display:none;">
+    <h2>Favourite</h2>
+    <div id="favList"></div>
+  </div>
 
+  <div id="profile" class="section" style="display:none;">
+    <h2>Profile (Admin)</h2>
+    <div class="admin-panel">
+      <h3>Upload Video</h3>
+      <input type="text" id="videoURL" placeholder="Video URL">
+      <input type="text" id="videoTitle" placeholder="Video Title">
+      <input type="text" id="videoCategory" placeholder="Category">
+      <button onclick="uploadVideo()">Upload</button>
+
+      <div id="progressContainer" style="display:none; margin-top:10px; background:#ddd; height:20px; border-radius:10px;">
+        <div id="progressBar" style="height:100%; width:0%; background:green; border-radius:10px; text-align:center; color:white;">0%</div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<script src="script.js"></script>
+<script>
+const SHEETDB_API = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
+
+function showSection(section){
+  ['home','search','fav','profile'].forEach(s=>{
+    document.getElementById(s).style.display = (s===section) ? 'block' : 'none';
+    document.getElementById(s+'Btn').classList.toggle('active', s===section);
+  });
+}
+
+async function fetchVideos(){
+  const res = await fetch(SHEETDB_API);
+  const data = await res.json();
+  displayVideos(data);
+}
+
+function displayVideos(videos){
+  const container = document.getElementById('videoList');
+  container.innerHTML = '';
+  videos.forEach(video=>{
+    const div = document.createElement('div');
+    div.className = 'video-card';
+    div.innerHTML = `
+      <h4>${video.title} (${video.category})</h4>
+      <video src="${video.link}" controls></video>
+      <button onclick="deleteVideo('${video.id}')">Delete</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+async function uploadVideo(){
+  const link = document.getElementById('videoURL').value;
+  const title = document.getElementById('videoTitle').value;
+  const category = document.getElementById('videoCategory').value;
+
+  if(!link || !title){ alert("Enter link and title"); return; }
+
+  const progressContainer = document.getElementById('progressContainer');
+  const progressBar = document.getElementById('progressBar');
+  progressContainer.style.display = 'block';
+  progressBar.style.width = '0%';
+  progressBar.innerText = '0%';
+
+  // simulate upload progress
+  let progress = 0;
+  const interval = setInterval(()=>{
+    progress += 10;
+    progressBar.style.width = progress + '%';
+    progressBar.innerText = progress + '%';
+    if(progress >= 100){ clearInterval(interval); progressBar.innerText='Success!'; }
+  }, 100);
+
+  await fetch(SHEETDB_API, {
+    method:"POST",
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({data:{link,title,category}})
+  });
+
+  document.getElementById('videoURL').value='';
+  document.getElementById('videoTitle').value='';
+  document.getElementById('videoCategory').value='';
+
+  fetchVideos();
+}
+
+async function deleteVideo(id){
+  if(!confirm("Are you sure to delete?")) return;
+  await fetch(`${SHEETDB_API}/id/${id}`, { method:"DELETE" });
+  fetchVideos();
+}
+
+function searchVideos(){
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const container = document.getElementById('searchResults');
+  container.innerHTML='';
+  fetch(SHEETDB_API)
+    .then(res=>res.json())
+    .then(data=>{
+      const results = data.filter(v=>v.title.toLowerCase().includes(query));
+      results.forEach(video=>{
+        const div = document.createElement('div');
+        div.className='video-card';
+        div.innerHTML = `<h4>${video.title} (${video.category})</h4><video src="${video.link}" controls></video>`;
+        container.appendChild(div);
+      });
+    });
+}
+
+// Initial load
+fetchVideos();
+</script>
+
 </body>
 </html>
