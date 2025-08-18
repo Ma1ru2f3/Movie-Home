@@ -75,7 +75,7 @@ input { margin:5px 0; padding:5px; width:90%; }
     </pre>
   </div>
 
-  <div>
+  <div id="adminLoginDiv">
     <input type="text" id="adminId" placeholder="Admin ID"><br>
     <input type="password" id="adminPass" placeholder="Admin Password"><br>
     <button onclick="loginAdmin()">Login as Admin</button>
@@ -86,6 +86,7 @@ input { margin:5px 0; padding:5px; width:90%; }
 const apiURL = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
 let allVideos = [];
 let favVideos = JSON.parse(localStorage.getItem('favVideos')) || [];
+let isAdmin = false;
 
 function showSection(id){
   document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
@@ -97,7 +98,7 @@ function showSection(id){
 function showProfileTab(tab){
   document.getElementById('adminTab').style.display='none';
   document.getElementById('ownerTab').style.display='none';
-  if(tab==='admin') document.getElementById('adminTab').style.display='block';
+  if(tab==='admin' && isAdmin) document.getElementById('adminTab').style.display='block';
   if(tab==='owner') document.getElementById('ownerTab').style.display='block';
 }
 
@@ -113,7 +114,7 @@ async function fetchVideos(){
       div.className='video-card';
       const vidId = extractYouTubeID(v.Link);
       div.innerHTML = `<div>
-        <strong>${v.Title}</strong> [${v.Category}]<br>
+        <strong>${v.Title}</strong><br>
         <iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>
       </div>
       <div>
@@ -146,7 +147,7 @@ function showFavVideos(){
     div.className='video-card';
     const vidId = extractYouTubeID(v.Link);
     div.innerHTML = `<div>
-      <strong>${v.Title}</strong> [${v.Category}]<br>
+      <strong>${v.Title}</strong><br>
       <iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>
     </div>
     <div>
@@ -166,13 +167,16 @@ async function loginAdmin(){
   const id = document.getElementById('adminId').value;
   const pass = document.getElementById('adminPass').value;
   if(id==='112233445500' && pass==='123450'){
+    isAdmin = true;
     alert('Admin logged in');
+    document.getElementById('adminLoginDiv').style.display='none';
     showProfileTab('admin');
     fetchAdminVideos();
   } else alert('Invalid Admin');
 }
 
 async function uploadVideo(){
+  if(!isAdmin){ alert('Only admin can upload'); return; }
   const title = document.getElementById('videoTitle').value;
   const link = document.getElementById('videoLink').value;
   const cat = document.getElementById('videoCategory').value;
@@ -194,7 +198,7 @@ async function fetchAdminVideos(){
   data.forEach(v=>{
     const div = document.createElement('div');
     div.className='video-card';
-    div.innerHTML = `<strong>${v.Title}</strong> [${v.Category}] <button onclick="deleteVideo('${v.id}')">Delete</button>`;
+    div.innerHTML = `<strong>${v.Title}</strong> <button onclick="deleteVideo('${v.id}')">Delete</button>`;
     list.appendChild(div);
   });
 }
@@ -208,7 +212,7 @@ async function deleteVideo(id){
 
 function searchVideo(){
   const q = document.getElementById('searchInput').value.toLowerCase();
-  const results = allVideos.filter(v=>v.Title.toLowerCase().includes(q) || v.Category.toLowerCase().includes(q));
+  const results = allVideos.filter(v=>v.Title.toLowerCase().includes(q));
   const container = document.getElementById('searchResults');
   container.innerHTML='';
   results.forEach(v=>{
@@ -216,7 +220,7 @@ function searchVideo(){
     div.className='video-card';
     const vidId = extractYouTubeID(v.Link);
     div.innerHTML = `<div>
-      <strong>${v.Title}</strong> [${v.Category}]<br>
+      <strong>${v.Title}</strong><br>
       <iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>
     </div>
     <div>
