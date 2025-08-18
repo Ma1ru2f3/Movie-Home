@@ -1,64 +1,91 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="bn">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Movie Box</title>
-<style>
-body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #111; color: #eee; }
-header { background: #222; padding: 10px; display: flex; justify-content: space-around; }
-header button { background: #333; border: none; color: #eee; padding: 10px 20px; cursor: pointer; border-radius: 5px; }
-section { padding: 20px; }
-#profileOptions, #userDashboard, #adminDashboard { display: none; }
-.video-list, .user-list { margin-top: 20px; }
-.video-item, .user-item { background: #222; padding: 10px; margin: 10px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
-button.action { background: #555; padding: 5px 10px; cursor: pointer; border-radius: 5px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Box</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f0f0f0; }
+        header { background:#333; color:#fff; padding:10px; display:flex; justify-content:space-around; }
+        header button { background:#555; color:#fff; border:none; padding:10px 20px; cursor:pointer; border-radius:5px; }
+        header button:hover { background:#777; }
+        section { display:none; padding:20px; }
+        .active { display:block; }
+        .container { background:#fff; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); margin-top:20px; }
+        input, select { padding:8px; margin:5px 0; width:100%; box-sizing:border-box; }
+        button.submit { background:#333; color:#fff; border:none; padding:10px; width:100%; cursor:pointer; margin-top:10px; }
+        button.submit:hover { background:#555; }
+        .three-dots { cursor:pointer; float:right; }
+        .video-item, .user-item { padding:10px; border-bottom:1px solid #ccc; }
+    </style>
 </head>
 <body>
+
 <header>
-<button onclick="showSection('home')">Home</button>
-<button onclick="showSection('search')">Search</button>
-<button onclick="showSection('profile')">Profile</button>
-</header><section id="home">
-<h1>Welcome to Movie Box</h1>
-<p>Enjoy movies online!</p>
-</section><section id="search" style="display:none;">
-<input type="text" id="searchInput" placeholder="Search videos...">
-<div class="video-list" id="searchResults"></div>
-</section><section id="profile" style="display:none;">
-<div id="profileOptions">
-<h2>Profile Options</h2>
-<button onclick="showAccount()">Account Create/Login</button>
-<button onclick="showAdmin()">Admin Access</button>
-<button onclick="showOwnerInfo()">Owner Info</button>
-</div>
-<div id="accountSection" style="display:none;">
-<h3>Create Account / Login</h3>
-<input type="text" id="fullname" placeholder="Full Name"><br>
-<input type="email" id="email" placeholder="Email"><br>
-<input type="password" id="password" placeholder="Password"><br>
-<input type="password" id="confirmPassword" placeholder="Confirm Password"><br>
-<button onclick="createAccount()">Create Account</button>
-<button onclick="loginUser()">Login</button>
-</div><div id="userDashboard" style="display:none;">
-<h3>User Dashboard</h3>
-<p>Name: <span id="userName"></span></p>
-<p>Email: <span id="userEmail"></span></p>
-<button onclick="downloadVideos()">Downloaded Videos</button>
-<button onclick="logout()">Logout</button>
-</div><div id="adminDashboard" style="display:none;">
-<h3>Admin Dashboard</h3>
-<h4>Upload Video</h4>
-<input type="text" id="videoTitle" placeholder="Video Title"><br>
-<input type="text" id="videoLink" placeholder="Video URL"><br>
-<input type="text" id="videoCategory" placeholder="Category"><br>
-<button onclick="addVideo()">Add Video</button>
-<h4>Video List</h4>
-<div class="video-list" id="adminVideoList"></div>
-<h4>User List</h4>
-<div class="user-list" id="adminUserList"></div>
-</div><div id="ownerInfo" style="display:none;">
-<pre>
+    <button id="homeBtn">হোম</button>
+    <button id="searchBtn">সার্চ</button>
+    <button id="profileBtn">প্রোফাইল</button>
+</header>
+
+<!-- Home Section -->
+<section id="homeContent" class="active container">
+    <h2>হোম</h2>
+    <p>এখানে ভিডিও লিস্ট দেখানো হবে।</p>
+</section>
+
+<!-- Search Section -->
+<section id="searchContent" class="container">
+    <h2>সার্চ</h2>
+    <input type="text" id="searchInput" placeholder="ভিডিও খুঁজুন...">
+    <div id="searchResults"></div>
+</section>
+
+<!-- Profile Section -->
+<section id="profileContent" class="container">
+    <h2>প্রোফাইল</h2>
+
+    <!-- Account Create/Login -->
+    <div id="accountSection">
+        <h3>Account Create/Login</h3>
+        <div id="createAccountDiv">
+            <input type="text" id="fullName" placeholder="Full Name">
+            <input type="email" id="email" placeholder="E-mail">
+            <input type="password" id="password" placeholder="Password (8+ characters)">
+            <input type="password" id="confirmPassword" placeholder="Confirm Password">
+            <button class="submit" onclick="createAccount()">Create Account</button>
+        </div>
+        <div id="loginDiv" style="margin-top:20px;">
+            <input type="email" id="loginEmail" placeholder="E-mail">
+            <input type="password" id="loginPassword" placeholder="Password">
+            <button class="submit" onclick="loginUser()">Login</button>
+        </div>
+    </div>
+
+    <!-- Admin Access -->
+    <div id="adminSection" style="margin-top:30px;">
+        <h3>Admin Access</h3>
+        <input type="text" id="adminId" placeholder="Admin ID">
+        <input type="password" id="adminPass" placeholder="Admin Password">
+        <button class="submit" onclick="loginAdmin()">Login as Admin</button>
+        <div id="adminPanel" style="margin-top:20px; display:none;">
+            <h4>Upload Video</h4>
+            <input type="text" id="videoTitle" placeholder="Video Title">
+            <input type="text" id="videoLink" placeholder="Video Link (YouTube/Facebook)">
+            <input type="text" id="videoCategory" placeholder="Category">
+            <button class="submit" onclick="uploadVideo()">Upload</button>
+
+            <h4>Video List</h4>
+            <div id="videoList"></div>
+
+            <h4>User List</h4>
+            <div id="userList"></div>
+        </div>
+    </div>
+
+    <!-- Owner Info -->
+    <div id="ownerInfo" style="margin-top:30px;">
+        <h3>Owner Info</h3>
+        <pre>
 ┏━━━━━━━━━━━━━━━━━━━━━┓
 ┃      🌟 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 🌟      
 ┣━━━━━━━━━━━━━━━━━━━━━┫
@@ -75,78 +102,72 @@ button.action { background: #555; padding: 5px 10px; cursor: pointer; border-rad
 ┃ 🌐 𝐅𝐚𝐜𝐞𝐛𝐨𝐨𝐤 : fb.com/profile.php?id=100066542686904
 ┣━━━━━━━━━━━━━━
 ┗━━━━━━━━━━━━━━━━━━━┛
-</pre>
-</div>
-</section><script>
-const API_URL = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
+        </pre>
+    </div>
+</section>
 
-function showSection(section) {
-  document.querySelectorAll('section').forEach(sec => sec.style.display='none');
-  document.getElementById(section).style.display='block';
-}
+<script>
+    const homeBtn = document.getElementById("homeBtn");
+    const searchBtn = document.getElementById("searchBtn");
+    const profileBtn = document.getElementById("profileBtn");
 
-function showAccount() {
-  hideAllProfileSub();
-  document.getElementById('accountSection').style.display='block';
-}
-function showAdmin() {
-  hideAllProfileSub();
-  document.getElementById('adminDashboard').style.display='block';
-}
-function showOwnerInfo() {
-  hideAllProfileSub();
-  document.getElementById('ownerInfo').style.display='block';
-}
-function hideAllProfileSub() {
-  document.getElementById('accountSection').style.display='none';
-  document.getElementById('userDashboard').style.display='none';
-  document.getElementById('adminDashboard').style.display='none';
-  document.getElementById('ownerInfo').style.display='none';
-}
+    const homeContent = document.getElementById("homeContent");
+    const searchContent = document.getElementById("searchContent");
+    const profileContent = document.getElementById("profileContent");
 
-function createAccount() {
-  let name = document.getElementById('fullname').value;
-  let email = document.getElementById('email').value;
-  let pass = document.getElementById('password').value;
-  let confirm = document.getElementById('confirmPassword').value;
-  if(pass.length < 8) { alert('Password must be 8 characters'); return; }
-  if(pass !== confirm) { alert('Passwords do not match'); return; }
-  fetch(API_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({data:{fullname:name,email:email,password:pass}})})
-  .then(res => res.json()).then(data => alert('Account created successfully'));
-}
+    // Section Switch
+    homeBtn.addEventListener("click", () => {
+        homeContent.classList.add("active");
+        searchContent.classList.remove("active");
+        profileContent.classList.remove("active");
+    });
+    searchBtn.addEventListener("click", () => {
+        homeContent.classList.remove("active");
+        searchContent.classList.add("active");
+        profileContent.classList.remove("active");
+    });
+    profileBtn.addEventListener("click", () => {
+        homeContent.classList.remove("active");
+        searchContent.classList.remove("active");
+        profileContent.classList.add("active");
+    });
 
-function loginUser() {
-  let email = document.getElementById('email').value;
-  let pass = document.getElementById('password').value;
-  fetch(API_URL)
-  .then(res=>res.json())
-  .then(users => {
-    let user = users.find(u=>u.email===email && u.password===pass);
-    if(user){
-      hideAllProfileSub();
-      document.getElementById('userDashboard').style.display='block';
-      document.getElementById('userName').innerText = user.fullname;
-      document.getElementById('userEmail').innerText = user.email;
-    } else alert('Invalid credentials');
-  });
-}
+    // Dummy functions for account/admin actions
+    function createAccount() {
+        const fn = document.getElementById("fullName").value;
+        const email = document.getElementById("email").value;
+        const pass = document.getElementById("password").value;
+        const confirm = document.getElementById("confirmPassword").value;
+        if(fn && email && pass.length>=8 && pass===confirm){
+            alert("Account created successfully!");
+        } else {
+            alert("Fill all fields correctly. Password must be 8+ chars and match confirm.");
+        }
+    }
 
-function logout(){
-  hideAllProfileSub();
-  document.getElementById('profileOptions').style.display='block';
-}
+    function loginUser() {
+        const email = document.getElementById("loginEmail").value;
+        const pass = document.getElementById("loginPassword").value;
+        if(email && pass){
+            alert("User logged in!");
+            // এখানে ড্যাশবোর্ড দেখানো logic আসবে
+        } else {
+            alert("Fill email and password.");
+        }
+    }
 
-function addVideo(){
-  let title=document.getElementById('videoTitle').value;
-  let link=document.getElementById('videoLink').value;
-  let cat=document.getElementById('videoCategory').value;
-  fetch(API_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:{title:title,link:link,category:cat}})})
-  .then(res=>res.json()).then(()=> alert('Video added'));
-}
+    function loginAdmin() {
+        const id = document.getElementById("adminId").value;
+        const pass = document.getElementById("adminPass").value;
+        if(id==="112233445500" && pass==="123450"){
+            alert("Admin logged in!");
+            document.getElementById("adminPanel").style.display = "block";
+        } else {
+            alert("Invalid Admin credentials.");
+        }
+    }
 
-function downloadVideos(){
-  alert('Downloaded videos feature not implemented yet.');
-}
-
-</script></body>
-</html>
+    function uploadVideo() {
+        const title = document.getElementById("videoTitle").value;
+        const link = document.getElementById("videoLink").value;
+        const category =
