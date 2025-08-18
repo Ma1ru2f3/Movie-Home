@@ -2,192 +2,142 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MovieBox</title>
 <style>
-body{font-family:sans-serif; margin:20px;}
-video{width:300px; margin:10px;}
-button{padding:5px 10px; margin:5px;}
-#nav{margin-bottom:20px;}
-#nav button{margin-right:10px;}
-.favorite{color:red; cursor:pointer;}
+body { font-family: Arial, sans-serif; margin:20px; }
+nav { margin-bottom:20px; }
+nav button { margin-right:10px; padding:10px 15px; }
+#progress-container { width:100%; background:#eee; margin-top:10px; height:20px; }
+#progress-bar { width:0%; height:100%; background:green; }
+.video-card { margin-bottom:20px; }
+.video-card video { width:300px; display:block; }
 </style>
 </head>
 <body>
 
-<h1>MovieBox</h1>
-
-<!-- Navigation -->
-<div id="nav">
+<nav>
   <button onclick="showSection('home')">Home</button>
-  <button onclick="showSection('favorites')">Favorites</button>
+  <button onclick="showSection('favorite')">Favorite</button>
   <button onclick="showSection('profile')">Profile</button>
-  <input type="text" id="searchInput" placeholder="Search..." oninput="searchVideos()">
-</div>
+</nav>
 
-<!-- Admin login -->
-<div id="adminLogin">
-  <input id="adminUser" placeholder="Admin ID">
-  <input id="adminPass" type="password" placeholder="Password">
-  <button onclick="loginAdmin()">Login</button>
-</div>
+<div id="home" class="section"></div>
+<div id="favorite" class="section" style="display:none;">Favorite videos coming soon</div>
+<div id="profile" class="section" style="display:none;">
+  <h3>Admin Login</h3>
+  <input type="text" id="admin-user" placeholder="Username"><br><br>
+  <input type="password" id="admin-pass" placeholder="Password"><br><br>
+  <button id="login-btn">Login</button>
 
-<!-- Upload Section -->
-<div id="uploadSection" style="display:none;">
-  <h3>Upload Video</h3>
-  <input type="file" id="videoFile">
-  <input type="text" id="videoTitle" placeholder="Video Title">
-  <button onclick="uploadVideo()">Upload</button>
-  <p id="uploadStatus"></p>
-</div>
-
-<!-- Video Sections -->
-<div id="homeSection">
-  <h2>Home</h2>
-  <div id="videoList"></div>
-</div>
-
-<div id="favoritesSection" style="display:none;">
-  <h2>Favorites</h2>
-  <div id="favoriteList"></div>
-</div>
-
-<div id="profileSection" style="display:none;">
-  <h2>Profile</h2>
-  <p>Profile UI placeholder</p>
+  <div id="upload-section" style="display:none; margin-top:20px;">
+    <h3>Upload Video</h3>
+    <input type="file" id="video-file"><br><br>
+    <input type="text" id="video-title" placeholder="Enter video title"><br><br>
+    <button id="upload-btn">Upload</button>
+    <div id="progress-container" style="display:none;">
+      <div id="progress-bar"></div>
+    </div>
+    <p id="upload-status"></p>
+  </div>
 </div>
 
 <script>
-let adminLogged = false;
 let videos = [];
-let favorites = [];
-let currentSection = 'home';
-
-// Admin login
-function loginAdmin(){
-  const user = document.getElementById('adminUser').value;
-  const pass = document.getElementById('adminPass').value;
-  fetch('/upload', {
-    method:'POST',
-    body: (() => {
-      const fd = new FormData();
-      fd.append('user',user);
-      fd.append('pass',pass);
-      fd.append('video', new Blob(['temp'])); // dummy for login check
-      fd.append('title','test');
-      return fd;
-    })()
-  }).then(res=>{
-    if(res.status===401) alert("Invalid admin");
-    else{
-      adminLogged=true;
-      document.getElementById('uploadSection').style.display='block';
-      document.getElementById('adminLogin').style.display='none';
-    }
-  }).catch(err=>alert("Login check failed"));
+function showSection(sec){ 
+  document.querySelectorAll('.section').forEach(s => s.style.display='none');
+  document.getElementById(sec).style.display='block';
 }
 
-// Upload video
-async function uploadVideo(){
-  if(!adminLogged) return alert("Login first");
-  const file = document.getElementById('videoFile').files[0];
-  const title = document.getElementById('videoTitle').value || file.name;
-  const formData = new FormData();
-  formData.append('video', file);
-  formData.append('title', title);
-  formData.append('user','admin');
-  formData.append('pass','1234');
-
-  const statusP = document.getElementById('uploadStatus');
-  statusP.innerText="Uploading...";
-  
-  const res = await fetch('/upload',{method:'POST', body:formData});
-  const data = await res.json();
-  statusP.innerText="Upload Success";
-  videos.push(data);
-  renderVideos();
-}
-
-// Load all videos
-async function loadVideos(){
+// Fetch videos from server
+async function fetchVideos(){
   const res = await fetch("/videos");
   videos = await res.json();
   renderVideos();
 }
 
-// Render videos
-function renderVideos(filtered=videos){
-  const container = document.getElementById('videoList');
-  container.innerHTML='';
-  filtered.forEach(v=>{
-    const div = document.createElement('div');
-    const vid = document.createElement('video');
-    vid.src=v.url;
-    vid.controls=true;
-    vid.width=300;
-    const title = document.createElement('p');
-    title.innerText=v.title;
-
-    const favBtn = document.createElement('span');
-    favBtn.innerText = favorites.includes(v.public_id)? '♥':'♡';
-    favBtn.className = 'favorite';
-    favBtn.onclick = ()=>toggleFavorite(v.public_id, favBtn);
-    
-    div.appendChild(title);
-    div.appendChild(favBtn);
-    div.appendChild(vid);
-    container.appendChild(div);
+// Render videos on Home
+function renderVideos(){
+  const home = document.getElementById("home");
+  home.innerHTML = '';
+  videos.forEach(v=>{
+    const div = document.createElement("div");
+    div.className = "video-card";
+    div.innerHTML = `
+      <h4>${v.title}</h4>
+      <video src="${v.url}" controls></video>
+      <button onclick="deleteVideo('${v.public_id}')">Delete</button>
+    `;
+    home.appendChild(div);
   });
-  renderFavorites();
 }
 
-// Favorites
-function toggleFavorite(id, elem){
-  if(favorites.includes(id)){
-    favorites = favorites.filter(f=>f!==id);
-    elem.innerText='♡';
-  } else {
-    favorites.push(id);
-    elem.innerText='♥';
-  }
-  renderFavorites();
+// Delete video
+async function deleteVideo(id){
+  const form = new FormData();
+  form.append("user","admin");
+  form.append("pass","1234");
+  form.append("public_id",id);
+  await fetch("/delete", {method:"POST", body:form});
+  fetchVideos();
 }
 
-function renderFavorites(){
-  const container = document.getElementById('favoriteList');
-  container.innerHTML='';
-  favorites.forEach(fid=>{
-    const v = videos.find(vid=>vid.public_id===fid);
-    if(v){
-      const div = document.createElement('div');
-      const vid = document.createElement('video');
-      vid.src=v.url;
-      vid.controls=true;
-      vid.width=300;
-      const title = document.createElement('p');
-      title.innerText=v.title;
-      div.appendChild(title);
-      div.appendChild(vid);
-      container.appendChild(div);
+// Admin login
+document.getElementById("login-btn").addEventListener("click",()=>{
+  const u = document.getElementById("admin-user").value;
+  const p = document.getElementById("admin-pass").value;
+  if(u==="admin" && p==="1234"){
+    alert("Admin logged in");
+    document.getElementById("upload-section").style.display="block";
+  }else alert("Invalid credentials");
+});
+
+// Upload with progress
+const uploadBtn = document.getElementById("upload-btn");
+const fileInput = document.getElementById("video-file");
+const titleInput = document.getElementById("video-title");
+const progressBar = document.getElementById("progress-bar");
+const progressContainer = document.getElementById("progress-container");
+const uploadStatus = document.getElementById("upload-status");
+
+uploadBtn.addEventListener("click", () => {
+  const file = fileInput.files[0];
+  const title = titleInput.value;
+  if(!file) return alert("Select a video file");
+  const formData = new FormData();
+  formData.append("video",file);
+  formData.append("title",title);
+  formData.append("user","admin");
+  formData.append("pass","1234");
+
+  progressContainer.style.display="block";
+  uploadStatus.innerText="Uploading...";
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST","/upload");
+  xhr.upload.onprogress = (e)=>{
+    if(e.lengthComputable){
+      const percent = Math.round((e.loaded/e.total)*100);
+      progressBar.style.width = percent+"%";
     }
-  });
-}
+  };
+  xhr.onload = ()=>{
+    if(xhr.status===200){
+      const data = JSON.parse(xhr.response);
+      videos.push(data);
+      renderVideos();
+      uploadStatus.innerText="Uploaded Successfully ✅";
+      setTimeout(()=>{
+        progressContainer.style.display="none";
+        progressBar.style.width="0%";
+        uploadStatus.innerText="";
+      },2000);
+    }else uploadStatus.innerText="Upload Failed ❌";
+  };
+  xhr.send(formData);
+});
 
-// Navigation
-function showSection(section){
-  currentSection = section;
-  document.getElementById('homeSection').style.display= section==='home'? 'block':'none';
-  document.getElementById('favoritesSection').style.display= section==='favorites'? 'block':'none';
-  document.getElementById('profileSection').style.display= section==='profile'? 'block':'none';
-}
-
-// Search
-function searchVideos(){
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const filtered = videos.filter(v=>v.title.toLowerCase().includes(q));
-  renderVideos(filtered);
-}
-
-window.onload = loadVideos;
+fetchVideos();
 </script>
 
 </body>
