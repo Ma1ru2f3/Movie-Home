@@ -1,191 +1,190 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Movie Home</title>
+<title>MovieBox</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #121212; color: #fff; }
-  header { background: #1f1f1f; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
-  header h1 { margin: 0; font-size: 24px; }
-  nav button { margin-left: 10px; padding: 5px 10px; cursor: pointer; }
-  #searchBar { margin: 10px 20px; width: calc(100% - 40px); padding: 8px; }
-  #content { margin: 20px; }
-  .videoCard { background: #222; padding: 10px; margin-bottom: 15px; border-radius: 8px; position: relative; }
-  .videoCard iframe { width: 100%; height: 200px; }
-  .optionsBtn { position: absolute; top: 10px; right: 10px; cursor: pointer; }
-  #profileContent { margin: 10px 0; }
-  button { cursor: pointer; padding: 5px 8px; border-radius: 4px; border: none; background: #ff4444; color: #fff; margin-right: 5px;}
+body{font-family: Arial; margin:0; padding:0; background:#f0f0f0;}
+header{background:#333; color:white; padding:10px; display:flex; justify-content:space-between; align-items:center;}
+nav a{color:white; margin:0 10px; text-decoration:none;}
+.container{padding:20px;}
+input[type=text]{padding:5px; width:200px;}
+button{padding:5px 10px; margin:2px;}
+.video-item{background:white; padding:10px; margin:10px 0; border-radius:5px; display:flex; justify-content:space-between; align-items:center;}
+.dropdown{cursor:pointer;}
+.hidden{display:none;}
 </style>
 </head>
 <body>
+
 <header>
-  <h1>Movie Home</h1>
-  <div>
-    <button onclick="showSection('home')">Home</button>
-    <button onclick="showSection('history')">History</button>
-    <button onclick="showSection('profile')">Profile</button>
-  </div>
+    <div><strong>MovieBox</strong></div>
+    <nav>
+        <a href="#" onclick="showHome()">Home</a>
+        <a href="#" onclick="showSearch()">Search</a>
+        <a href="#" onclick="showHistory()">History</a>
+        <a href="#" onclick="showProfile()">Profile</a>
+    </nav>
 </header>
 
-<input type="text" id="searchBar" placeholder="Search video..." onkeyup="searchVideo()">
-
-<div id="content">
-  <div id="loginNotice">Please login and enjoy video.</div>
-
-  <div id="home" style="display:none"></div>
-  <div id="history" style="display:none"></div>
-  <div id="profile" style="display:none">
-    <div id="profileContent"></div>
-  </div>
+<div class="container" id="mainContent">
+<!-- Content will render here -->
 </div>
 
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- Profile content -->
+<div class="container hidden" id="profileContent"></div>
+
 <script>
-  // Admin info
-  const ADMIN_ID = "112233445500";
-  const ADMIN_PASS = "123450";
-  const ADMIN_CODE = "123450";
+// Sample Data
+let videos = [];
+let users = [{name:"Admin",email:"admin@movie.com",isAdmin:true,password:"123450",blocked:false}];
+let currentUser = null;
+let historyData = {};
 
-  // Users & videos storage
-  let videos = JSON.parse(localStorage.getItem("videos")) || [];
-  let users = JSON.parse(localStorage.getItem("users")) || [];
-  let historyData = JSON.parse(localStorage.getItem("history")) || {};
-  let currentUser = null;
-  let currentSection = "home";
+// Show Sections
+function clearContent(){
+    document.getElementById("mainContent").innerHTML="";
+    document.getElementById("profileContent").classList.add("hidden");
+}
 
-  // Section switch
-  function showSection(section) {
-    currentSection = section;
-    document.getElementById("home").style.display = section === 'home' ? 'block' : 'none';
-    document.getElementById("history").style.display = section === 'history' ? 'block' : 'none';
-    document.getElementById("profile").style.display = section === 'profile' ? 'block' : 'none';
-    if(section === 'home') renderHome();
-    if(section === 'history') renderHistory();
-    if(section === 'profile') renderProfile();
-  }
-
-  // Video ID extraction
-  function getYouTubeID(url) {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-  }
-
-  // Render Home
-  function renderHome() {
-    if(!currentUser) { document.getElementById("home").innerHTML = "<p>Please login to watch videos.</p>"; return; }
-    let html = '';
-    videos.forEach((v,i)=>{
-      html += `<div class="videoCard">
-        <h3>${v.title}</h3>
-        <iframe src="https://www.youtube.com/embed/${getYouTubeID(v.url)}" frameborder="0" allowfullscreen></iframe>`;
-      if(currentUser.isAdmin) html += `<div class="optionsBtn"><button onclick="deleteVideo(${i})">Delete</button></div>`;
-      html += `</div>`;
+function showHome(){
+    clearContent();
+    let html="<h2>Home</h2>";
+    if(videos.length===0) html+="<p>No videos uploaded yet.</p>";
+    else videos.forEach((v,i)=>{
+        html+=`<div class="video-item">
+        <div>${v.title}</div>
+        <div>
+            <button onclick="playVideo(${i})">Play</button>
+            ${currentUser && currentUser.isAdmin?`<button onclick="deleteVideo(${i})">Delete</button>`:""}
+        </div>
+        </div>`;
     });
-    document.getElementById("home").innerHTML = html;
-  }
+    document.getElementById("mainContent").innerHTML=html;
+}
 
-  // Render History
-  function renderHistory() {
-    if(!currentUser) { document.getElementById("history").innerHTML = "<p>Please login first.</p>"; return; }
-    let userHist = historyData[currentUser.email] || [];
-    if(userHist.length === 0) { document.getElementById("history").innerHTML = "<p>No history yet.</p>"; return; }
-    let html = '<ul>';
-    userHist.forEach(v=>{ html += `<li>${v}</li>`; });
-    html += '</ul>';
-    document.getElementById("history").innerHTML = html;
-  }
+function showSearch(){
+    clearContent();
+    let html=`<h2>Search</h2>
+    <input type="text" id="searchInput" placeholder="Search by title">
+    <button onclick="searchVideo()">Search</button>
+    <div id="searchResults"></div>`;
+    document.getElementById("mainContent").innerHTML=html;
+}
 
-  // Render Profile
-  function renderProfile() {
-    if(!currentUser) { 
-      document.getElementById("profileContent").innerHTML = "<p>Please login first.</p>"; 
-      return; 
+function showHistory(){
+    clearContent();
+    let html="<h2>History</h2>";
+    if(!currentUser){ html+="<p>Please login to see history.</p>"; }
+    else{
+        let h = historyData[currentUser.email] || [];
+        if(h.length===0) html+="<p>No history yet.</p>";
+        else html+="<ul>"+h.map(v=>`<li>${v}</li>`).join("")+"</ul>";
     }
-    let html = `<p>Welcome, ${currentUser.name} (${currentUser.email})</p>`;
-    if(currentUser.isAdmin){
-      html += `<h3>Admin Panel</h3>`;
-      html += `<button onclick="showVideoUpload()">Upload Video</button>`;
-      html += `<h4>Users List</h4>`;
-      users.forEach((u,i)=>{
-        html += `<div>${u.name} (${u.email}) - ${u.blocked ? 'Blocked':'Active'}
-        <button onclick="toggleBlock(${i})">${u.blocked ? 'Unblock':'Block'}</button></div>`;
-      });
-    }
-    document.getElementById("profileContent").innerHTML = html;
-  }
+    document.getElementById("mainContent").innerHTML=html;
+}
 
-  function showVideoUpload() {
-    const html = `<input type="text" id="videoTitle" placeholder="Video Title">
-      <input type="text" id="videoURL" placeholder="YouTube Link">
-      <input type="text" id="adminCode" placeholder="Admin Code">
-      <button onclick="addVideo()">Add Video</button>`;
-    document.getElementById("profileContent").innerHTML += html;
-  }
-
-  function addVideo() {
-    const title = document.getElementById("videoTitle").value.trim();
-    const url = document.getElementById("videoURL").value.trim();
-    const code = document.getElementById("adminCode").value.trim();
-    if(code !== ADMIN_CODE){ alert("Invalid admin code"); return; }
-    if(title && url){ 
-      videos.push({title,url}); 
-      localStorage.setItem("videos", JSON.stringify(videos));
-      renderHome(); showSection('home'); 
-    }
-  }
-
-  function deleteVideo(index){
-    if(!currentUser || !currentUser.isAdmin) return alert("Admin only");
-    videos.splice(index,1); localStorage.setItem("videos", JSON.stringify(videos)); renderHome();
-  }
-
-  function toggleBlock(index){
-    if(!currentUser || !currentUser.isAdmin) return;
-    users[index].blocked = !users[index].blocked;
-    localStorage.setItem("users", JSON.stringify(users));
+// Profile & Login
+function showProfile(){
+    clearContent();
+    document.getElementById("profileContent").classList.remove("hidden");
     renderProfile();
-  }
+}
 
-  function searchVideo() {
-    const q = document.getElementById("searchBar").value.toLowerCase();
-    const filtered = videos.filter(v=>v.title.toLowerCase().includes(q));
-    let html = '';
-    filtered.forEach((v,i)=>{
-      html += `<div class="videoCard">
-        <h3>${v.title}</h3>
-        <iframe src="https://www.youtube.com/embed/${getYouTubeID(v.url)}" frameborder="0" allowfullscreen></iframe>`;
-      if(currentUser?.isAdmin) html += `<div class="optionsBtn"><button onclick="deleteVideo(${i})">Delete</button></div>`;
-      html += `</div>`;
-    });
-    document.getElementById("home").innerHTML = html;
-  }
+function renderProfile(){
+    if(!currentUser){
+        document.getElementById("profileContent").innerHTML = `
+        <h2>Login</h2>
+        <input type="text" id="loginEmail" placeholder="Email"><br>
+        <input type="password" id="loginPass" placeholder="Password"><br>
+        <button onclick="login()">Login</button>`;
+        return;
+    }
 
-  // Google OAuth setup
-  function handleCredentialResponse(response){
-    const data = jwt_decode(response.credential);
-    currentUser = { name: data.name, email: data.email, isAdmin:false, blocked:false };
-    // Check blocked
-    const blockedUser = users.find(u=>u.email===currentUser.email);
-    if(blockedUser?.blocked){ alert("You are blocked."); currentUser=null; return; }
-    // Admin check
-    if(currentUser.email === ADMIN_ID) currentUser.isAdmin = true;
-    // Store user if new
-    if(!users.some(u=>u.email===currentUser.email)) users.push(currentUser);
-    localStorage.setItem("users", JSON.stringify(users));
-    document.getElementById("loginNotice").style.display = "none";
-    showSection('home');
-  }
+    let html = `<p>Welcome, ${currentUser.name} (${currentUser.email})</p>`;
 
-  window.onload = function(){
-    google.accounts.id.initialize({
-      client_id: "119036146469-3kdd5drvt8udga1qk028qbjqoaug0sfi.apps.googleusercontent.com",
-      callback: handleCredentialResponse
-    });
-    google.accounts.id.renderButton(document.getElementById("loginNotice"), {theme:"outline", size:"large"});
-  }
+    if(currentUser.isAdmin){
+        html += `<h3>Admin Panel</h3>
+        <h4>Upload Video</h4>
+        <input type="text" id="videoTitle" placeholder="Video Title"><br>
+        <input type="text" id="videoLink" placeholder="Video Link"><br>
+        <button onclick="uploadVideo()">Upload</button>
+        <h4>Users List</h4>`;
+        users.forEach((u,i)=>{
+            html += `<div>${u.name} (${u.email}) - ${u.blocked ? 'Blocked':'Active'}
+            <button onclick="toggleBlock(${i})">${u.blocked ? 'Unblock':'Block'}</button></div>`;
+        });
+    } else {
+        html += `<p>User Panel</p>
+        <h4>Your History</h4>`;
+        let userHist = historyData[currentUser.email] || [];
+        if(userHist.length === 0) html += "<p>No history yet.</p>";
+        else html += "<ul>"+userHist.map(v=>`<li>${v}</li>`).join("")+"</ul>";
+    }
+
+    html += `<br><button onclick="logout()">Logout</button>`;
+    document.getElementById("profileContent").innerHTML = html;
+}
+
+// Video Functions
+function uploadVideo(){
+    let title = document.getElementById("videoTitle").value;
+    let link = document.getElementById("videoLink").value;
+    if(!title || !link){ alert("Fill both fields"); return; }
+    videos.push({title:title,link:link});
+    alert("Video uploaded");
+    showHome();
+}
+
+function deleteVideo(i){
+    if(confirm("Delete this video?")){ videos.splice(i,1); showHome(); }
+}
+
+function playVideo(i){
+    let v = videos[i];
+    if(!currentUser){ alert("Please login to watch"); return; }
+    // Add to history
+    if(!historyData[currentUser.email]) historyData[currentUser.email]=[];
+    historyData[currentUser.email].push(v.title);
+    clearContent();
+    document.getElementById("mainContent").innerHTML = `
+    <h2>${v.title}</h2>
+    <iframe width="560" height="315" src="${v.link}" frameborder="0" allowfullscreen></iframe>
+    <br><button onclick="showHome()">Back</button>`;
+}
+
+// Search Function
+function searchVideo(){
+    let q=document.getElementById("searchInput").value.toLowerCase();
+    let results = videos.filter(v=>v.title.toLowerCase().includes(q));
+    let html="";
+    if(results.length===0) html="<p>No videos found.</p>";
+    else html = results.map((v,i)=>`<div class="video-item">
+        <div>${v.title}</div>
+        <div><button onclick="playVideo(${videos.indexOf(v)})">Play</button></div>
+    </div>`).join("");
+    document.getElementById("searchResults").innerHTML = html;
+}
+
+// User Functions
+function login(){
+    let email = document.getElementById("loginEmail").value;
+    let pass = document.getElementById("loginPass").value;
+    let user = users.find(u=>u.email===email && u.password===pass);
+    if(!user){ alert("Invalid credentials"); return; }
+    if(user.blocked){ alert("You are blocked"); return; }
+    currentUser = user;
+    renderProfile();
+    alert("Login successful");
+}
+
+function logout(){ currentUser=null; renderProfile(); showHome(); }
+
+function toggleBlock(i){ users[i].blocked = !users[i].blocked; renderProfile(); }
+
+showHome(); // initial load
 </script>
-<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+
 </body>
 </html>
