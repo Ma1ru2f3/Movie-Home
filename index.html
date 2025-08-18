@@ -1,120 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MovieBox Player</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f2f2f2; }
-    nav { display: flex; background: #333; color: #fff; padding: 10px; }
-    nav button { margin-right: 10px; background: #555; color: #fff; border: none; padding: 8px 12px; cursor: pointer; }
-    nav button:hover { background: #777; }
-    #video-section { padding: 20px; text-align: center; }
-    iframe { max-width: 100%; height: 480px; border: none; }
-    #video-list { margin: 20px; display: flex; flex-direction: column; gap: 10px; }
-    .video-item { padding: 10px; background: #fff; border-radius: 5px; cursor: pointer; }
-    #admin-panel { margin-top: 20px; display: none; }
-    input, select { padding: 8px; margin: 5px; }
-    button.upload { padding: 8px 12px; cursor: pointer; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Hub</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin:0; padding:0; background:#f4f4f4;
+}
+header { background:#333; color:#fff; padding:10px; text-align:center; }
+nav { display:flex; justify-content:space-around; background:#444; padding:10px 0; }
+nav button { color:#fff; background:none; border:none; font-size:16px; cursor:pointer; }
+nav button:hover { text-decoration:underline; }
+.container { padding:10px; max-width:800px; margin:auto; }
+.video-container { position:relative; width:100%; padding-bottom:56.25%; margin-bottom:20px; }
+.video-container iframe, .video-container video { position:absolute; top:0; left:0; width:100%; height:100%; }
+.admin-panel { display:none; background:#fff; padding:20px; margin-bottom:20px; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1);}
+input, select { width:100%; padding:8px; margin:5px 0; }
+button { padding:10px 15px; margin-top:10px; cursor:pointer; }
+.delete-btn { background:red; color:#fff; border:none; padding:5px 10px; margin-top:5px; cursor:pointer; }
+</style>
 </head>
 <body>
 
-  <nav>
-    <button onclick="showSection('home')">Home</button>
-    <button onclick="showSection('search')">Search</button>
-    <button onclick="showSection('fvrt')">Fvrt</button>
-    <button onclick="showSection('profile')">Profile</button>
-  </nav>
+<header>
+  <h1>Video Hub</h1>
+</header>
 
-  <div id="video-section">
-    <h2 id="video-title">Select a video</h2>
-    <iframe id="video-player" src="" allowfullscreen></iframe>
-  </div>
+<nav>
+  <button onclick="showSection('home')">Home</button>
+  <button onclick="showSection('search')">Search</button>
+  <button onclick="showSection('fvrt')">Favourites</button>
+  <button onclick="showAdmin()">Profile</button>
+</nav>
 
-  <div id="home" class="section">
-    <h3>All Videos</h3>
-    <div id="video-list"></div>
-  </div>
+<div class="container">
 
-  <div id="search" class="section" style="display:none;">Search here</div>
-  <div id="fvrt" class="section" style="display:none;">Your Favourites</div>
-  <div id="profile" class="section" style="display:none;">
+  <!-- Admin Login / Panel -->
+  <div id="adminLogin" class="admin-panel">
     <h3>Admin Login</h3>
-    <input type="text" id="admin-user" placeholder="Username">
-    <input type="password" id="admin-pass" placeholder="Password">
+    <input type="text" id="adminUser" placeholder="Username">
+    <input type="password" id="adminPass" placeholder="Password">
     <button onclick="loginAdmin()">Login</button>
-
-    <div id="admin-panel">
-      <h3>Upload Video</h3>
-      <input type="text" id="video-link" placeholder="Video Link (Streamable)">
-      <input type="text" id="video-title-input" placeholder="Video Title">
-      <input type="text" id="video-cat" placeholder="Category">
-      <button class="upload" onclick="addVideo()">Add Video</button>
-    </div>
   </div>
 
-  <script>
-    const ADMIN_USER = "admin";
-    const ADMIN_PASS = "1234";
+  <div id="adminPanel" class="admin-panel">
+    <h3>Admin Panel</h3>
+    <input type="text" id="videoURL" placeholder="Video URL">
+    <input type="text" id="videoTitle" placeholder="Video Title">
+    <input type="text" id="videoCategory" placeholder="Category">
+    <button onclick="addVideo()">Add Video</button>
+  </div>
 
-    let videos = []; // Store all videos
+  <!-- Home / Videos -->
+  <div id="homeSection"></div>
 
-    function showSection(section) {
-      document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
-      document.getElementById(section).style.display = 'block';
-    }
+</div>
 
-    function loginAdmin() {
-      const user = document.getElementById('admin-user').value;
-      const pass = document.getElementById('admin-pass').value;
-      if(user === ADMIN_USER && pass === ADMIN_PASS) {
-        document.getElementById('admin-panel').style.display = 'block';
-        alert('Admin logged in');
-      } else {
-        alert('Wrong credentials');
-      }
-    }
-
-    function addVideo() {
-      const link = document.getElementById('video-link').value;
-      const title = document.getElementById('video-title-input').value;
-      const cat = document.getElementById('video-cat').value;
-
-      if(!link || !title) {
-        alert('Please enter video link and title');
-        return;
-      }
-
-      const videoObj = { link, title, cat };
-      videos.push(videoObj);
-      renderVideos();
-
-      // Play immediately
-      playVideo(videoObj);
-
-      document.getElementById('video-link').value = '';
-      document.getElementById('video-title-input').value = '';
-      document.getElementById('video-cat').value = '';
-    }
-
-    function renderVideos() {
-      const list = document.getElementById('video-list');
-      list.innerHTML = '';
-      videos.forEach((v, index) => {
-        const div = document.createElement('div');
-        div.className = 'video-item';
-        div.innerText = `${v.title} [${v.cat}]`;
-        div.onclick = () => playVideo(v);
-        list.appendChild(div);
-      });
-    }
-
-    function playVideo(video) {
-      document.getElementById('video-player').src = video.link;
-      document.getElementById('video-title').innerText = video.title + " [" + video.cat + "]";
-    }
-  </script>
-
+<script src="script.js"></script>
 </body>
 </html>
