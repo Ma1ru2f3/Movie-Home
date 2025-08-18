@@ -1,99 +1,71 @@
-let adminLoggedIn = false;
+let isAdmin = false;
 
-function showHome() {
-  fetch("/videos").then(r=>r.json()).then(videos=>{
-    const home = document.getElementById("home");
-    home.innerHTML = "<h2>Home</h2>" + videos.map(v=>`
-      <div>
-        <h3>${v.title}</h3>
-        <video width="320" controls src="${v.url}"></video>
-      </div>
-    `).join("");
+// Fetch videos
+async function loadVideos() {
+  const res = await fetch("/videos");
+  const videos = await res.json();
+  const videoList = document.getElementById("videoList");
+  videoList.innerHTML = "";
+  videos.forEach(v => {
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <h4>${v.title}</h4>
+      <video width="320" controls>
+        <source src="${v.url}" type="video/mp4">
+      </video>
+      ${isAdmin ? `<button onclick="deleteVideo('${v.public_id}')">Delete</button>` : ""}
+      <hr>
+    `;
+    videoList.appendChild(div);
   });
 }
 
-function showSearch() { document.getElementById("search").innerHTML="<h2>Search</h2>"; }
-function showFav() { document.getElementById("fav").innerHTML="<h2>Fvrt</h2>"; }
-
-function showProfile() {
-  const profile = document.getElementById("profile");
-  if (!adminLoggedIn) {
-    profile.innerHTML = `
-      <h2>Admin Login</h2>
-      <input id="user" placeholder="User"/>
-      <input id="pass" placeholder="Pass" type="password"/>
-      <button onclick="loginAdmin()">Login</button>
-    `;
-  } else {
-    profile.innerHTML = `
-      <h2>Admin Panel</h2>
-      <input type="text" id="title" placeholder="Video Title"/>
-      <input type="file" id="videoFile"/>
-      <button onclick="uploadVideo()">Upload</button>
-      <div id="progress"></div>
-      <div id="videos"></div>
-    `;
-    loadAdminVideos();
-  }
+// Delete video
+async function deleteVideo(public_id) {
+  const form = new FormData();
+  form.append("user", prompt("Admin Username"));
+  form.append("pass", prompt("Admin Password"));
+  form.append("public_id", public_id);
+  const res = await fetch("/delete", { method: "POST", body: form });
+  if (res.ok) loadVideos();
 }
 
-function loginAdmin(){
-  const user=document.getElementById("user").value;
-  const pass=document.getElementById("pass").value;
-  fetch("/upload",{method:"POST", body: JSON.stringify({user, pass}), headers:{"Content-Type":"application/json"}})
-  .then(r=>{
-    if(r.status===401) alert("Unauthorized");
-    else { adminLoggedIn=true; showProfile(); }
-  });
-}
-
-function uploadVideo(){
+// Admin Upload
+document.getElementById("uploadBtn").onclick = async () => {
   const file = document.getElementById("videoFile").files[0];
-  const title = document.getElementById("title").value;
-  if(!file) return alert("Select file");
+  const title = document.getElementById("videoTitle").value;
+  if (!file) return alert("Select a video");
 
   const formData = new FormData();
   formData.append("video", file);
-  formData.append("user", "admin");
-  formData.append("pass", "1234");
   formData.append("title", title);
+  formData.append("user", prompt("Admin Username"));
+  formData.append("pass", prompt("Admin Password"));
+
+  const progressBarContainer = document.getElementById("progressBarContainer");
+  const progressBar = document.getElementById("progressBar");
+  progressBarContainer.style.display = "block";
+  progressBar.style.width = "0%";
 
   const xhr = new XMLHttpRequest();
-  xhr.open("POST","/upload");
-  xhr.upload.onprogress = function(e){
-    const percent = Math.round(e.loaded / e.total * 100);
-    document.getElementById("progress").innerText = `Uploading... ${percent}%`;
-  }
-  xhr.onload = function(){
-    document.getElementById("progress").innerText = "Upload Success";
-    loadAdminVideos();
-    showHome();
-  }
+  xhr.open("POST", "/upload");
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const percent = (e.loaded / e.total) * 100;
+      progressBar.style.width = percent + "%";
+    }
+  };
+  xhr.onload = () => {
+    if (xhr.status === 200) {
+      progressBar.style.width = "100%";
+      alert("Uploaded Successfully");
+      loadVideos();
+    } else {
+      alert("Upload failed");
+    }
+  };
   xhr.send(formData);
-}
+};
 
-function loadAdminVideos(){
-  fetch("/videos").then(r=>r.json()).then(videos=>{
-    const div = document.getElementById("videos");
-    div.innerHTML = videos.map(v=>`
-      <div>
-        <h3>${v.title}</h3>
-        <video width="320" controls src="${v.url}"></video>
-        <button onclick="deleteVideo('${v.title}')">Delete</button>
-      </div>
-    `).join("");
-  });
-}
-
-function deleteVideo(filename){
-  fetch("/delete", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({filename, user:"admin", pass:"1234"})
-  }).then(r=>r.json()).then(res=>{
-    if(res.success){ loadAdminVideos(); showHome(); }
-  });
-}
-
-// Initially show home
-showHome();
+// Initial load
+loadVideos();
