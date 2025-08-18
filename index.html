@@ -1,198 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MovieBox</title>
-<style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    background: #f9f9f9;
-  }
-  nav {
-    background: #1a1a1a;
-    color: white;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  nav .menu a {
-    color: white;
-    margin-right: 20px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: color 0.2s;
-  }
-  nav .menu a:hover {
-    color: #ff4d4d;
-  }
-  .container {
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px #ccc;
-  }
-  #adminPanel { display: none; }
-  input, button {
-    padding: 10px;
-    margin-bottom: 10px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  #progress { width: 100%; height: 20px; display: none; margin-bottom:10px;}
-  #message { font-weight: bold; margin-bottom: 10px; }
-  h2 { margin-top: 0; color: #333; }
-</style>
+  <meta charset="UTF-8">
+  <title>MovieBox</title>
+  <style>
+    body { font-family: Arial; }
+    header { display: flex; gap: 20px; margin-bottom: 20px; }
+    .video-card { display: inline-block; margin: 10px; border: 1px solid #ccc; padding: 10px; }
+    video { width: 250px; height: 150px; display: block; }
+  </style>
 </head>
 <body>
+  <header>
+    <button onclick="showHome()">Home</button>
+    <button onclick="showAdminLogin()">Admin</button>
+  </header>
 
-<nav>
-  <div class="logo">MovieBox</div>
-  <div class="menu">
-    <a href="#" id="homeBtn">Home</a>
-    <a href="#" id="searchBtn">Search</a>
-    <a href="#" id="favBtn">Favorite</a>
-    <a href="#" id="profileBtn">Profile</a>
-  </div>
-</nav>
+  <div id="content"></div>
 
-<div class="container">
-  <div id="homePage">
-    <h2>Welcome to MovieBox</h2>
-    <p>This is the Home page.</p>
-  </div>
+  <script>
+    let isAdmin = false;
 
-  <div id="searchPage" style="display:none;">
-    <h2>Search Movies</h2>
-    <input type="text" id="searchInput" placeholder="Search...">
-  </div>
+    function showHome() {
+      fetch("/videos")
+        .then(res => res.json())
+        .then(videos => {
+          let html = "";
+          videos.forEach(v => {
+            html += `<div class="video-card">
+              <video src="${v.url}" controls></video>
+              <strong>${v.title}</strong>`;
+            if (isAdmin) {
+              html += `<br><button onclick="deleteVideo('${v.public_id}')">Delete</button>`;
+            }
+            html += `</div>`;
+          });
+          document.getElementById("content").innerHTML = html;
+        });
+    }
 
-  <div id="favPage" style="display:none;">
-    <h2>Favorite Movies</h2>
-    <p>No favorites yet.</p>
-  </div>
+    function showAdminLogin() {
+      document.getElementById("content").innerHTML = `
+        <h3>Admin Login</h3>
+        <input type="text" id="user" placeholder="Username"><br>
+        <input type="password" id="pass" placeholder="Password"><br>
+        <button onclick="loginAdmin()">Login</button>
+      `;
+    }
 
-  <div id="profilePage" style="display:none;">
-    <h2>Admin Login</h2>
-    <input type="text" id="adminUser" placeholder="Username">
-    <input type="password" id="adminPass" placeholder="Password">
-    <button id="loginBtn">Login</button>
-    <div id="loginMessage" style="margin-bottom:10px;"></div>
+    function loginAdmin() {
+      const user = document.getElementById("user").value;
+      const pass = document.getElementById("pass").value;
+      fetch("/upload", {
+        method: "POST",
+        body: JSON.stringify({ user, pass }),
+        headers: { "Content-Type": "application/json" }
+      }).then(res => {
+        if (res.status === 401) alert("Wrong credentials");
+        else {
+          isAdmin = true;
+          showAdminPanel();
+        }
+      });
+    }
 
-    <div id="adminPanel">
-      <h3>Upload Video</h3>
-      <input type="file" id="videoFile" accept="video/*">
-      <button id="uploadBtn">Upload</button>
-      <progress id="progress" value="0" max="100"></progress>
-      <div id="message"></div>
+    function showAdminPanel() {
+      document.getElementById("content").innerHTML = `
+        <h3>Upload Video</h3>
+        <input type="file" id="video"><br>
+        <input type="text" id="title" placeholder="Video Title"><br>
+        <button onclick="uploadVideo()">Upload</button>
+        <hr>
+        <button onclick="showHome()">View Videos</button>
+      `;
+    }
 
-      <h3>Delete Video</h3>
-      <input type="text" id="publicId" placeholder="Enter Public ID to delete">
-      <button id="deleteBtn">Delete</button>
-      <div id="deleteMessage"></div>
-    </div>
-  </div>
-</div>
+    function uploadVideo() {
+      const file = document.getElementById("video").files[0];
+      const title = document.getElementById("title").value;
+      const formData = new FormData();
+      formData.append("video", file);
+      formData.append("title", title);
+      formData.append("user", "admin");
+      formData.append("pass", "1234");
 
-<script>
-  // Navigation buttons
-  const pages = {
-    homeBtn: "homePage",
-    searchBtn: "searchPage",
-    favBtn: "favPage",
-    profileBtn: "profilePage"
-  };
+      fetch("/upload", { method: "POST", body: formData })
+        .then(res => res.json())
+        .then(data => {
+          alert("Upload Successful");
+          showHome();
+        })
+        .catch(err => alert(err));
+    }
 
-  Object.keys(pages).forEach(btn => {
-    document.getElementById(btn).addEventListener("click", ()=>{
-      Object.values(pages).forEach(p=>document.getElementById(p).style.display="none");
-      document.getElementById(pages[btn]).style.display="block";
-    });
-  });
+    function deleteVideo(public_id) {
+      const formData = new FormData();
+      formData.append("public_id", public_id);
+      formData.append("user", "admin");
+      formData.append("pass", "1234");
 
-  // Admin login & panel
-  const loginBtn = document.getElementById('loginBtn');
-  const adminPanel = document.getElementById('adminPanel');
-  const loginMessage = document.getElementById('loginMessage');
+      fetch("/delete", { method: "POST", body: formData })
+        .then(res => res.json())
+        .then(data => {
+          alert("Deleted");
+          showHome();
+        });
+    }
 
-  loginBtn.addEventListener('click', () => {
-    const user = document.getElementById('adminUser').value;
-    const pass = document.getElementById('adminPass').value;
-
-    fetch('/admin/login', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({user, pass})
-    }).then(res => {
-      if(res.status === 200){
-        adminPanel.style.display = 'block';
-        loginMessage.textContent = "Login Successful!";
-        loginMessage.style.color = "green";
-      } else {
-        loginMessage.textContent = "Invalid credentials";
-        loginMessage.style.color = "red";
-      }
-    });
-  });
-
-  // Upload video
-  const uploadBtn = document.getElementById('uploadBtn');
-  const videoFile = document.getElementById('videoFile');
-  const progress = document.getElementById('progress');
-  const message = document.getElementById('message');
-
-  uploadBtn.addEventListener('click', () => {
-    if(!videoFile.files.length){ alert("Select a video file"); return; }
-    const file = videoFile.files[0];
-    const formData = new FormData();
-    formData.append("video", file);
-    formData.append("user", "admin");
-    formData.append("pass", "1234");
-
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/upload");
-
-    xhr.upload.onprogress = (e) => {
-      if(e.lengthComputable){
-        progress.style.display = "block";
-        progress.value = (e.loaded / e.total) * 100;
-      }
-    };
-
-    xhr.onload = () => {
-      progress.style.display = "none";
-      if(xhr.status === 200){
-        message.style.color = "green";
-        message.textContent = "Success! Video uploaded.";
-      } else {
-        message.style.color = "red";
-        message.textContent = "Upload failed: " + xhr.responseText;
-      }
-    };
-    xhr.send(formData);
-  });
-
-  // Delete video
-  const deleteBtn = document.getElementById('deleteBtn');
-  const publicIdInput = document.getElementById('publicId');
-  const deleteMessage = document.getElementById('deleteMessage');
-
-  deleteBtn.addEventListener('click', () => {
-    const public_id = publicIdInput.value;
-    if(!public_id){ alert("Enter Public ID"); return; }
-    fetch('/delete', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({user:"admin", pass:"1234", public_id})
-    }).then(res => res.json())
-      .then(data => deleteMessage.textContent = "Deleted: " + JSON.stringify(data))
-      .catch(err => deleteMessage.textContent = "Error: " + err);
-  });
-
-</script>
+    showHome();
+  </script>
 </body>
 </html>
