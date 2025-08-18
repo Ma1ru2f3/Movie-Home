@@ -48,7 +48,7 @@ input { margin:5px 0; padding:5px; width:90%; }
   <div id="adminTab" style="display:none;">
     <h3>Admin Dashboard</h3>
     <input type="text" id="videoTitle" placeholder="Video Title"><br>
-    <input type="text" id="videoLink" placeholder="Video Link (YouTube, MovieBox, MP4, etc)"><br>
+    <input type="text" id="videoLink" placeholder="Video Link (YouTube, MP4, MovieBox etc)"><br>
     <input type="text" id="videoCategory" placeholder="Category"><br>
     <button onclick="uploadVideo()">Upload Video</button>
     <h4>Video List</h4>
@@ -122,25 +122,15 @@ async function fetchVideos(){
   } catch(err){ console.error('Fetch error', err); }
 }
 
-// ✅ Universal embed function (MovieBox সহ)
+// Universal embed function
 function embedVideo(link){
   if(link.includes('youtube.com') || link.includes('youtu.be')){
     const id = extractYouTubeID(link);
     return `<iframe src="https://www.youtube.com/embed/${id}?modestbranding=1" frameborder="0" allowfullscreen></iframe>`;
-  } 
-  else if(link.includes('facebook.com')){
-    return `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`;
-  } 
-  else if(link.includes('tiktok.com')){
-    return `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`;
-  } 
-  else if(link.includes('moviebox.ph') || link.includes('v.moviebox.ph')){
-    return `<iframe src="${link}" frameborder="0" allowfullscreen style="width:100%;height:280px;"></iframe>`;
-  }
-  else if(link.endsWith('.mp4')){
-    return `<video controls src="${link}" style="width:100%;height:280px;"></video>`;
-  } 
-  else {
+  } else if(link.endsWith('.mp4') || link.includes('moviebox.ph')){
+    // MovieBox / MP4 videos play directly inside website
+    return `<video controls src="${link}"></video>`;
+  } else {
     return `<a href="${link}" target="_blank">Open Video</a>`;
   }
 }
