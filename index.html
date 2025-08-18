@@ -48,7 +48,7 @@ input { margin:5px 0; padding:5px; width:90%; }
   <div id="adminTab" style="display:none;">
     <h3>Admin Dashboard</h3>
     <input type="text" id="videoTitle" placeholder="Video Title"><br>
-    <input type="text" id="videoLink" placeholder="Video Link"><br>
+    <input type="text" id="videoLink" placeholder="Video Link (YouTube, MovieBox, MP4, etc)"><br>
     <input type="text" id="videoCategory" placeholder="Category"><br>
     <button onclick="uploadVideo()">Upload Video</button>
     <h4>Video List</h4>
@@ -82,7 +82,6 @@ input { margin:5px 0; padding:5px; width:90%; }
   </div>
 </section>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
 const apiURL = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
 let allVideos = [];
@@ -123,16 +122,11 @@ async function fetchVideos(){
   } catch(err){ console.error('Fetch error', err); }
 }
 
-function extractYouTubeID(url){
-  const reg = /(?:https?:\/\/)?(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w-]{11})/;
-  const match = url.match(reg);
-  return match ? match[1] : '';
-}
-
+// ✅ Universal embed function (MovieBox সহ)
 function embedVideo(link){
   if(link.includes('youtube.com') || link.includes('youtu.be')){
     const id = extractYouTubeID(link);
-    return `<iframe src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>`;
+    return `<iframe src="https://www.youtube.com/embed/${id}?modestbranding=1" frameborder="0" allowfullscreen></iframe>`;
   } 
   else if(link.includes('facebook.com')){
     return `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`;
@@ -140,26 +134,21 @@ function embedVideo(link){
   else if(link.includes('tiktok.com')){
     return `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`;
   } 
-  else if(link.endsWith('.mp4') || link.includes('.mp4?')){
-    return `<video controls src="${link}" width="100%" height="300"></video>`;
+  else if(link.includes('moviebox.ph') || link.includes('v.moviebox.ph')){
+    return `<iframe src="${link}" frameborder="0" allowfullscreen style="width:100%;height:280px;"></iframe>`;
   }
-  else if(link.endsWith('.m3u8')){
-    return `
-      <video id="hlsPlayer" controls width="100%" height="300"></video>
-      <script>
-        if(Hls.isSupported()){
-          var hls = new Hls();
-          hls.loadSource('${link}');
-          hls.attachMedia(document.getElementById('hlsPlayer'));
-        } else {
-          document.getElementById('hlsPlayer').src = '${link}';
-        }
-      </script>
-    `;
-  }
+  else if(link.endsWith('.mp4')){
+    return `<video controls src="${link}" style="width:100%;height:280px;"></video>`;
+  } 
   else {
-    return `<iframe src="${link}" width="100%" height="300" frameborder="0" allowfullscreen></iframe>`;
+    return `<a href="${link}" target="_blank">Open Video</a>`;
   }
+}
+
+function extractYouTubeID(url){
+  const reg = /(?:https?:\/\/)?(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w-]{11})/;
+  const match = url.match(reg);
+  return match ? match[1] : '';
 }
 
 function addFav(title,link,category){
