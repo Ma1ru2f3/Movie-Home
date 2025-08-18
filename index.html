@@ -89,7 +89,9 @@ document.getElementById("uploadBtn").addEventListener("click", async () => {
     const response = await fetch(SHEETDB_API, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ data: { title: title, category: category, link: videoLink } })
+      // Note: The body data here uses lowercase keys to match the input fields,
+      // which SheetDB will correctly map to the uppercase columns.
+      body: JSON.stringify({ data: { Title: title, category: category, Link: videoLink } })
     });
     if(response.ok) {
       statusDiv.textContent = "✅ Uploaded Successfully!";
@@ -122,6 +124,8 @@ async function loadVideos() {
       const card = document.createElement("div");
       card.className = "video-card";
 
+      // THIS IS THE MAIN CHANGE:
+      // We now use video.Title and video.Link to match the Google Sheet column names.
       card.innerHTML = `
         <video controls>
           <source src="${video.Link}" type="video/mp4">
