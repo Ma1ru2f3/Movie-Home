@@ -3,25 +3,25 @@ const fileUpload = require("express-fileupload");
 const cloudinary = require("cloudinary").v2;
 const bodyParser = require("body-parser");
 require("dotenv").config();
-const app = express();
 
+const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.use(fileUpload());
 
-// Cloudinary configuration
+// Cloudinary config
 cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME || "dlxa4684c",
-  api_key: process.env.API_KEY || "614488499354894",
-  api_secret: process.env.API_SECRET || "v5qLsHvcETVr5ptyLl3N9zuHd_A"
+  cloud_name: "dlxa4684c",
+  api_key: "614488499354894",
+  api_secret: "v5qLsHvcETVr5ptyLl3N9zuHd_A"
 });
 
 // Admin credentials
-const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "1234";
 
-// Admin login middleware
+// Admin middleware
 const checkAdmin = (req, res, next) => {
   const { user, pass } = req.body;
   if (user === ADMIN_USER && pass === ADMIN_PASS) {
@@ -34,9 +34,6 @@ const checkAdmin = (req, res, next) => {
 // Upload route
 app.post("/upload", checkAdmin, async (req, res) => {
   try {
-    if (!req.files || !req.files.video) {
-      return res.status(400).send("No file uploaded");
-    }
     const file = req.files.video;
     const { title } = req.body;
     const result = await cloudinary.uploader.upload(file.tempFilePath, {
@@ -45,7 +42,7 @@ app.post("/upload", checkAdmin, async (req, res) => {
       use_filename: true,
       unique_filename: false
     });
-    res.json({ public_id: result.public_id, url: result.secure_url, title: title || result.public_id.split("/").pop() });
+    res.json({ public_id: result.public_id, url: result.secure_url, title });
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -62,7 +59,7 @@ app.post("/delete", checkAdmin, async (req, res) => {
   }
 });
 
-// Fetch videos route
+// Fetch videos
 app.get("/videos", async (req, res) => {
   try {
     const result = await cloudinary.api.resources({
