@@ -11,15 +11,13 @@
   nav a { margin-left:20px; color:#fff; text-decoration:none; }
   nav a:hover { text-decoration:underline; }
   .container { padding:20px; }
-  input[type=text] { padding:8px; width:60%; border-radius:5px; border:none; }
-  button { padding:8px 12px; margin-left:5px; border:none; border-radius:5px; background:#ffcc00; cursor:pointer; }
+  input[type=text], input[type=email], input[type=password] { padding:8px; width:60%; margin-bottom:5px; border-radius:5px; border:none; display:block; }
+  button { padding:8px 12px; margin-top:5px; border:none; border-radius:5px; background:#ffcc00; cursor:pointer; }
   button:hover { background:#e6b800; }
   .hidden { display:none; }
-  .video-card { background:#222; padding:10px; border-radius:10px; margin:10px 0; display:flex; justify-content:space-between; align-items:center; }
-  .video-card span { font-weight:bold; }
-  .video-actions { cursor:pointer; }
-  .owner-info pre { background:#222; padding:15px; border-radius:10px; font-family:'Courier New', monospace; }
   .section-title { color:#ffcc00; margin-bottom:10px; font-size:20px; }
+  .owner-info pre { background:#222; padding:15px; border-radius:10px; font-family:'Courier New', monospace; }
+  .video-card { background:#222; padding:10px; border-radius:10px; margin:10px 0; display:flex; justify-content:space-between; align-items:center; }
 </style>
 </head>
 <body>
@@ -47,45 +45,39 @@
   <!-- Videos Section -->
   <div id="videos" class="section hidden">
     <h2 class="section-title">Uploaded Videos</h2>
-    <div id="videoList">
-      <!-- Video cards will appear here -->
-    </div>
-    <div>
-      <h3>Add Video (Admin Only)</h3>
-      <input type="text" id="videoTitle" placeholder="Video Title">
-      <input type="text" id="videoLink" placeholder="YouTube Link">
-      <input type="text" id="videoCat" placeholder="Category/Tags">
-      <input type="text" id="adminPass" placeholder="Admin Pass">
-      <button onclick="addVideo()">Add Video</button>
-    </div>
+    <div id="videoList"></div>
   </div>
 
   <!-- History Section -->
   <div id="history" class="section hidden">
     <h2 class="section-title">Watch History</h2>
-    <div id="historyList">
-      <!-- Watched videos appear here -->
-    </div>
+    <div id="historyList"></div>
   </div>
 
   <!-- Profile Section -->
   <div id="profile" class="section hidden">
     <h2 class="section-title">Profile</h2>
-    
-    <!-- User Login -->
-    <div>
-      <h3>User Login</h3>
-      <input type="text" id="userEmail" placeholder="Google Email">
-      <button onclick="userLogin()">Login</button>
+
+    <!-- Account Create/Login -->
+    <div id="accountSection">
+      <h3>Account</h3>
+      <input type="text" id="fullName" placeholder="Full Name">
+      <input type="email" id="email" placeholder="Email">
+      <input type="password" id="password" placeholder="Password (min 8 char)">
+      <input type="password" id="confirmPassword" placeholder="Confirm Password">
+      <button onclick="createAccount()">Create Account</button>
+      <p>Already have account?</p>
+      <input type="email" id="loginEmail" placeholder="Email">
+      <input type="password" id="loginPassword" placeholder="Password">
+      <button onclick="loginUser()">Login</button>
       <p id="loginStatus"></p>
     </div>
 
-    <!-- Admin Panel -->
-    <div>
-      <h3>Admin Panel</h3>
-      <p>Admin ID: 112233445500 | Password: 123450</p>
-      <input type="text" id="adminId" placeholder="Admin ID">
-      <input type="text" id="adminPassword" placeholder="Password">
+    <!-- Admin Access -->
+    <div id="adminSection">
+      <h3>Admin Access</h3>
+      <input type="text" id="adminId" placeholder="ID">
+      <input type="password" id="adminPass" placeholder="Password">
       <button onclick="adminLogin()">Login as Admin</button>
       <p id="adminStatus"></p>
     </div>
@@ -113,110 +105,91 @@
         </pre>
       </div>
     </div>
-  </div>
 
+  </div>
 </div>
 
 <script>
 let videos = [];
 let history = [];
-let isAdmin = false;
 let loggedUser = null;
 
+// Section Toggle
 function showSection(sectionId){
   document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
   document.getElementById(sectionId).classList.remove('hidden');
 }
 
+// Account Create
+function createAccount(){
+  const name = document.getElementById('fullName').value;
+  const email = document.getElementById('email').value;
+  const pass = document.getElementById('password').value;
+  const confirmPass = document.getElementById('confirmPassword').value;
+
+  if(!name || !email || !pass || !confirmPass){
+    alert('All fields required');
+    return;
+  }
+  if(pass.length < 8){
+    alert('Password must be at least 8 characters');
+    return;
+  }
+  if(pass !== confirmPass){
+    alert('Passwords do not match');
+    return;
+  }
+
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  if(users.find(u=>u.email===email)){
+    alert('Email already registered');
+    return;
+  }
+  users.push({name, email, password: pass});
+  localStorage.setItem('users', JSON.stringify(users));
+  alert('Account created successfully!');
+}
+
 // User Login
-function userLogin(){
-  const email = document.getElementById('userEmail').value;
-  if(email){
+function loginUser(){
+  const email = document.getElementById('loginEmail').value;
+  const pass = document.getElementById('loginPassword').value;
+
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  const user = users.find(u=>u.email===email && u.password===pass);
+  if(user){
     loggedUser = email;
     document.getElementById('loginStatus').innerText = 'Logged in as: ' + email;
   } else {
-    alert('Enter email');
+    alert('Invalid credentials');
   }
 }
 
 // Admin Login
 function adminLogin(){
   const id = document.getElementById('adminId').value;
-  const pass = document.getElementById('adminPassword').value;
+  const pass = document.getElementById('adminPass').value;
   if(id==='112233445500' && pass==='123450'){
-    isAdmin = true;
-    document.getElementById('adminStatus').innerText = 'Admin Access Granted';
+    document.getElementById('adminStatus').innerText = 'Admin logged in';
   } else {
-    alert('Wrong Admin ID/Password');
+    alert('Invalid Admin ID/Pass');
   }
 }
 
-// Add Video
-function addVideo(){
-  const title = document.getElementById('videoTitle').value;
-  const link = document.getElementById('videoLink').value;
-  const cat = document.getElementById('videoCat').value;
-  const adminPass = document.getElementById('adminPass').value;
-
-  if(adminPass!=='123450'){
-    alert('Admin pass required');
-    return;
-  }
-
-  if(title && link){
-    const video = {title, link, cat};
-    videos.push(video);
-    renderVideos();
-    document.getElementById('videoTitle').value='';
-    document.getElementById('videoLink').value='';
-    document.getElementById('videoCat').value='';
-  } else {
-    alert('Title and Link required');
-  }
-}
-
-// Render Videos
+// Video Render
 function renderVideos(){
   const list = document.getElementById('videoList');
   list.innerHTML = '';
-  videos.forEach((v,i)=>{
+  videos.forEach((v)=>{
     const div = document.createElement('div');
     div.className = 'video-card';
     div.innerHTML = `<span>${v.title}</span>
-      <div>
-        <a href="${v.link}" target="_blank">Watch</a>
-        ${isAdmin ? `<button onclick="deleteVideo(${i})">Delete</button>` : ''}
-      </div>`;
+      <div><a href="${v.link}" target="_blank">Watch</a></div>`;
     list.appendChild(div);
   });
-}
-
-// Delete Video
-function deleteVideo(index){
-  if(confirm('Delete this video?')){
-    videos.splice(index,1);
-    renderVideos();
-  }
 }
 
 // Search Video
 function searchVideo(){
   const query = document.getElementById('searchInput').value.toLowerCase();
-  const filtered = videos.filter(v => v.title.toLowerCase().includes(query) || (v.cat && v.cat.toLowerCase().includes(query)));
-  const list = document.getElementById('videoList');
-  list.innerHTML = '';
-  filtered.forEach((v,i)=>{
-    const div = document.createElement('div');
-    div.className = 'video-card';
-    div.innerHTML = `<span>${v.title}</span>
-      <div>
-        <a href="${v.link}" target="_blank">Watch</a>
-        ${isAdmin ? `<button onclick="deleteVideo(${i})">Delete</button>` : ''}
-      </div>`;
-    list.appendChild(div);
-  });
-}
-</script>
-
-</body>
-</html>
+  const filtered = videos.filter(v => v.title.to
