@@ -13,6 +13,7 @@ section.active { display:block; }
 .video-card { border:1px solid #ccc; padding:10px; margin:10px 0; background:#fff; display:flex; justify-content:space-between; align-items:center; border-radius:5px; }
 .video-card iframe { width:300px; height:170px; }
 button.fav-btn { background:#ff4081; color:#fff; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; }
+input { margin:5px 0; padding:5px; width:90%; }
 </style>
 </head>
 <body>
@@ -61,16 +62,15 @@ button.fav-btn { background:#ff4081; color:#fff; border:none; padding:5px 10px; 
 ┣━━━━━━━━━━━━━━━━━━━━━┫
 ┃ 👤 Name      : Maruf Hossain
 ┃ 🚹 Gender    : Male
-┃ ❤ Relation : single
+┃ ❤ Relation : Single
 ┃ 🎂 Age       : 17+
 ┃ 🕌 Religion : Islam
 ┃ 🏫 Education : SSC 25
-┃ 🏡 Address : Meherpur, Bangladesh
+┃ 🏡 Address  : Meherpur, Bangladesh
 ┣━━━━━━━━━━━━━━━━━━━━━┫
-┃ 🎭 Tiktok  : Srotoshini
+┃ 🎭 Tiktok   : Srotoshini
 ┃ 📢 Telegram : ×
 ┃ 🌐 Facebook : fb.com/profile.php?id=100066542686904
-┣━━━━━━━━━━━━━━
 ┗━━━━━━━━━━━━━━━━━━━┛
     </pre>
   </div>
@@ -102,24 +102,26 @@ function showProfileTab(tab){
 }
 
 async function fetchVideos(){
-  const res = await fetch(apiURL);
-  const data = await res.json();
-  allVideos = data;
-  const list = document.getElementById('videoList');
-  list.innerHTML = '';
-  data.forEach(v=>{
-    const div = document.createElement('div');
-    div.className='video-card';
-    const vidId = extractYouTubeID(v.Link);
-    div.innerHTML = `<div>
-      <strong>${v.Title}</strong> [${v.Category}]<br>
-      <iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>
-    </div>
-    <div>
-      <button class="fav-btn" onclick="addFav('${v.Title}','${v.Link}','${v.Category}')">Favourite</button>
-    </div>`;
-    list.appendChild(div);
-  });
+  try{
+    const res = await fetch(apiURL);
+    const data = await res.json();
+    allVideos = data;
+    const list = document.getElementById('videoList');
+    list.innerHTML = '';
+    data.forEach(v=>{
+      const div = document.createElement('div');
+      div.className='video-card';
+      const vidId = extractYouTubeID(v.Link);
+      div.innerHTML = `<div>
+        <strong>${v.Title}</strong> [${v.Category}]<br>
+        <iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>
+      </div>
+      <div>
+        <button class="fav-btn" onclick="addFav('${v.Title}','${v.Link}','${v.Category}')">Favourite</button>
+      </div>`;
+      list.appendChild(div);
+    });
+  } catch(err){ console.error('Fetch error', err); }
 }
 
 function extractYouTubeID(url){
@@ -175,7 +177,11 @@ async function uploadVideo(){
   const link = document.getElementById('videoLink').value;
   const cat = document.getElementById('videoCategory').value;
   if(!title || !link){ alert('Enter title and link'); return; }
-  await fetch(apiURL, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({data:{Title:title, Link:link, Category:cat}})});
+  await fetch(apiURL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({data:{Title:title, Link:link, Category:cat}})
+  });
   alert('Video Uploaded');
   fetchAdminVideos();
 }
@@ -214,4 +220,14 @@ function searchVideo(){
       <iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>
     </div>
     <div>
-      <button class="fav-btn" onclick
+      <button class="fav-btn" onclick="addFav('${v.Title}','${v.Link}','${v.Category}')">Favourite</button>
+    </div>`;
+    container.appendChild(div);
+  });
+}
+
+// Initial load
+fetchVideos();
+</script>
+</body>
+</html>
