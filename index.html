@@ -5,188 +5,159 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Video Platform</title>
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; }
-.navbar { display:flex; background:#333; color:white; padding:10px; }
-.navbar div { margin-right:20px; cursor:pointer; }
-.container { padding:20px; }
-video { width:100%; max-width:400px; margin:10px 0; }
-#progress { width:100%; background:#ccc; height:20px; display:none; }
-#progress-bar { width:0%; height:100%; background:green; }
+body{font-family:sans-serif;margin:0;padding:0;}
+nav{background:#222;color:#fff;padding:10px;display:flex;gap:15px;}
+nav button{background:none;color:#fff;border:none;cursor:pointer;font-size:16px;}
+#content{padding:20px;}
+video{width:300px;height:200px;margin:10px;}
+#progress{display:none;width:100%;background:#eee;margin-top:10px;}
+#progress-bar{width:0%;height:20px;background:green;}
+.admin-section{margin-top:20px;}
 </style>
 </head>
 <body>
 
-<div class="navbar">
-  <div id="homeBar">Home</div>
-  <div id="searchBar">Search</div>
-  <div id="favBar">Favourites</div>
-  <div id="profileBar">Profile</div>
-</div>
+<nav>
+  <button onclick="showHome()">Home</button>
+  <button onclick="showFavourites()">Favourites</button>
+  <button onclick="showSearch()">Search</button>
+  <button onclick="showProfile()">Profile</button>
+</nav>
 
-<div class="container" id="content">
-  <h2>Welcome to Video Platform</h2>
+<div id="content">
+  <div id="home"></div>
+  <div id="favourites" style="display:none;">Favourites content</div>
+  <div id="search" style="display:none;">
+    Search: <input type="text" id="searchInput" oninput="renderSearch()">
+    <div id="searchResults"></div>
+  </div>
+  <div id="profile" style="display:none;">
+    <div id="adminLoginDiv">
+      Admin Login:<br>
+      User: <input type="text" id="adminUser"><br>
+      Pass: <input type="password" id="adminPass"><br>
+      <button onclick="adminLogin()">Login</button>
+    </div>
+    <div id="adminSection" class="admin-section" style="display:none;">
+      Upload Video:<br>
+      Title: <input type="text" id="title"><br>
+      File: <input type="file" id="videoFile"><br>
+      <button onclick="uploadVideo()">Upload</button>
+      <div id="progress"><div id="progress-bar"></div></div>
+      <h3>Admin Videos</h3>
+      <div id="adminVideos"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-const content = document.getElementById("content");
 let videos = [];
-let favs = [];
+let adminLoggedIn = false;
 
-function renderHome() {
-  content.innerHTML = "<h2>Home</h2>";
+// Navigation
+function showHome(){hideAll();document.getElementById("home").style.display="block"; renderHome();}
+function showFavourites(){hideAll();document.getElementById("favourites").style.display="block";}
+function showSearch(){hideAll();document.getElementById("search").style.display="block"; renderSearch();}
+function showProfile(){hideAll();document.getElementById("profile").style.display="block";}
+function hideAll(){document.getElementById("home").style.display="none";document.getElementById("favourites").style.display="none";document.getElementById("search").style.display="none";document.getElementById("profile").style.display="none";}
+
+// Render
+function renderHome(){
+  const container = document.getElementById("home");
+  container.innerHTML="";
   videos.forEach(v=>{
+    const vid = document.createElement("video");
+    vid.src = v.url;
+    vid.controls = true;
+    container.appendChild(vid);
+    const title = document.createElement("div");
+    title.textContent = v.title;
+    container.appendChild(title);
+  });
+}
+
+function renderSearch(){
+  const query = document.getElementById("searchInput").value.toLowerCase();
+  const container = document.getElementById("searchResults");
+  container.innerHTML="";
+  videos.filter(v=>v.title.toLowerCase().includes(query))
+        .forEach(v=>{
+          const vid = document.createElement("video");
+          vid.src = v.url;
+          vid.controls = true;
+          container.appendChild(vid);
+          const title = document.createElement("div");
+          title.textContent = v.title;
+          container.appendChild(title);
+        });
+}
+
+function renderAdminVideos(){
+  const container = document.getElementById("adminVideos");
+  container.innerHTML="";
+  videos.forEach((v,i)=>{
     const div = document.createElement("div");
-    div.innerHTML = `<h4>${v.title}</h4>
-      <video controls src="${v.url}"></video>
-      <button onclick="addFav('${v.filename}')">Fav</button>`;
-    content.appendChild(div);
+    div.innerHTML = `<strong>${v.title}</strong> <button onclick="deleteVideo(${i})">Delete</button>`;
+    container.appendChild(div);
   });
 }
 
-function renderFav() {
-  content.innerHTML = "<h2>Favourites</h2>";
-  favs.forEach(v=>{
-    const div = document.createElement("div");
-    div.innerHTML = `<h4>${v.title}</h4>
-      <video controls src="${v.url}"></video>`;
-    content.appendChild(div);
-  });
+// Admin login
+function adminLogin(){
+  const user = document.getElementById("adminUser").value;
+  const pass = document.getElementById("adminPass").value;
+  if(user==="admin" && pass==="1234"){
+    adminLoggedIn = true;
+    document.getElementById("adminLoginDiv").style.display="none";
+    document.getElementById("adminSection").style.display="block";
+    renderAdminVideos();
+    alert("Admin logged in!");
+  } else alert("Wrong credentials");
 }
 
-function renderSearch() {
-  content.innerHTML = `<h2>Search</h2>
-    <input type="text" id="searchInput" placeholder="Search video by title">
-    <button onclick="doSearch()">Search</button>
-    <div id="searchResults"></div>`;
-}
-
-function doSearch() {
-  const q = document.getElementById("searchInput").value.toLowerCase();
-  const resDiv = document.getElementById("searchResults");
-  resDiv.innerHTML = "";
-  videos.filter(v=>v.title.toLowerCase().includes(q)).forEach(v=>{
-    const div = document.createElement("div");
-    div.innerHTML = `<h4>${v.title}</h4>
-      <video controls src="${v.url}"></video>`;
-    resDiv.appendChild(div);
-  });
-}
-
-function renderProfile() {
-  content.innerHTML = `<h2>Profile / Admin</h2>
-    <div id="loginDiv">
-      <input type="text" id="user" placeholder="Username">
-      <input type="password" id="pass" placeholder="Password">
-      <button onclick="loginAdmin()">Login</button>
-    </div>
-    <div id="adminDiv" style="display:none;">
-      <h3>Upload Video</h3>
-      <input type="text" id="title" placeholder="Video Title"><br><br>
-      <input type="file" id="videoFile"><br><br>
-      <div id="progress"><div id="progress-bar"></div></div>
-      <button onclick="uploadVideo()">Upload</button>
-      <h3>Manage Videos</h3>
-      <div id="adminVideos"></div>
-    </div>`;
-}
-
-function addFav(filename){
-  const v = videos.find(v=>v.filename===filename);
-  if(!favs.includes(v)) favs.push(v);
-  alert("Added to favourites!");
-}
-
-let isAdmin = false;
-
-function loginAdmin(){
-  const user = document.getElementById("user").value;
-  const pass = document.getElementById("pass").value;
-  fetch("/upload",{method:"POST", body: new FormData()})
-  // just to check login
-  fetch("/upload",{
-    method:"POST",
-    body:JSON.stringify({user,pass}),
-    headers:{"Content-Type":"application/json"}
-  }).then(res=>{
-    if(res.status===401) alert("Unauthorized");
-    else {
-      isAdmin=true;
-      document.getElementById("loginDiv").style.display="none";
-      document.getElementById("adminDiv").style.display="block";
-      loadAdminVideos();
-    }
-  });
-}
-
+// Upload video (internal storage simulation)
 function uploadVideo(){
-  const file = document.getElementById("videoFile").files[0];
-  const title = document.getElementById("title").value;
+  const fileInput = document.getElementById("videoFile");
+  const file = fileInput.files[0];
+  const title = document.getElementById("title").value || file.name;
   if(!file){ alert("Select video"); return; }
-  const formData = new FormData();
-  formData.append("video",file);
-  formData.append("title",title);
-  formData.append("user","admin");
-  formData.append("pass","1234");
 
+  const reader = new FileReader();
   const progress = document.getElementById("progress");
   const bar = document.getElementById("progress-bar");
   progress.style.display="block";
   bar.style.width="0%";
 
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST","/upload",true);
-  xhr.upload.onprogress = e => {
+  reader.onprogress = (e)=>{
     if(e.lengthComputable){
       const percent = (e.loaded/e.total)*100;
       bar.style.width = percent+"%";
     }
   };
-  xhr.onload = ()=>{
-    if(xhr.status===200){
-      alert("Upload Success!");
-      loadVideos();
-      loadAdminVideos();
-      progress.style.display="none";
-    } else alert("Upload Failed");
+
+  reader.onloadend = ()=>{
+    const url = reader.result;
+    videos.push({url, title});
+    progress.style.display="none";
+    alert("Upload Success!");
+    renderHome();
+    renderAdminVideos();
   };
-  xhr.send(formData);
+
+  reader.readAsDataURL(file);
 }
 
-function loadVideos(){
-  fetch("/videos").then(r=>r.json()).then(data=>{
-    videos = data;
-  });
+// Delete video
+function deleteVideo(index){
+  if(confirm("Delete this video?")){
+    videos.splice(index,1);
+    renderHome();
+    renderAdminVideos();
+  }
 }
-
-function loadAdminVideos(){
-  const div = document.getElementById("adminVideos");
-  div.innerHTML="";
-  videos.forEach(v=>{
-    const d = document.createElement("div");
-    d.innerHTML = `<h4>${v.title}</h4>
-      <video controls src="${v.url}"></video>
-      <button onclick="deleteVideo('${v.filename}')">Delete</button>`;
-    div.appendChild(d);
-  });
-}
-
-function deleteVideo(filename){
-  fetch("/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({filename,"user":"admin","pass":"1234"})})
-  .then(r=>r.json()).then(res=>{
-    alert("Deleted");
-    loadVideos();
-    loadAdminVideos();
-  });
-}
-
-// Navbar events
-document.getElementById("homeBar").onclick = ()=>renderHome();
-document.getElementById("favBar").onclick = ()=>renderFav();
-document.getElementById("searchBar").onclick = ()=>renderSearch();
-document.getElementById("profileBar").onclick = ()=>renderProfile();
 
 // Initial load
-loadVideos();
+renderHome();
 </script>
 
 </body>
