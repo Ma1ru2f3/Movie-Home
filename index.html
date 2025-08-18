@@ -5,147 +5,151 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Moviebox</title>
 <style>
-  body { font-family: Arial; background: #f2f2f2; margin:0; padding:0; }
-  header { background:#111; color:white; display:flex; justify-content:space-around; padding:10px;}
-  header button { background:#333; border:none; color:white; padding:10px; cursor:pointer; }
-  header button:hover { background:#555; }
-  #content { padding:20px; }
-  .video-card { margin:10px; padding:10px; background:white; display:inline-block; width:300px; vertical-align:top; border-radius:5px; }
-  video { width:100%; height:180px; }
-  .progress-bar { width:100%; background:#ddd; border-radius:5px; overflow:hidden; margin-top:5px; }
-  .progress { width:0%; height:10px; background:#4caf50; }
-  #loginForm,#uploadForm{ margin-bottom:20px; }
-  #uploadForm{ display:none; }
-  #deleteBtn{ margin-top:5px; background:red; color:white; border:none; padding:5px; cursor:pointer; }
+  body{ font-family: Arial; padding:20px; background:#f4f4f4; }
+  .nav{ margin-bottom:20px; }
+  .nav button{ margin-right:10px; padding:10px; }
+  #videoList video{ width:200px; margin:10px; display:block; }
+  .progress-container{ width:100%; background:#ccc; height:10px; margin-top:5px; }
+  .progress-bar{ height:10px; width:0; background:green; }
 </style>
 </head>
 <body>
 
-<header>
-<button onclick="showPage('home')">Home</button>
-<button onclick="showPage('search')">Search</button>
-<button onclick="showPage('fav')">Favorite</button>
-<button onclick="showPage('profile')">Profile</button>
-</header>
-
-<div id="content">
-
-<div id="homePage"><h2>Home</h2><div id="videosContainer"></div></div>
-
-<div id="searchPage" style="display:none;">
-<h2>Search</h2>
-<input type="text" id="searchInput" placeholder="Search by title">
-<div id="searchResults"></div>
+<div class="nav">
+  <button onclick="showSection('home')">Home</button>
+  <button onclick="showSection('search')">Search</button>
+  <button onclick="showSection('fvrt')">Favorite</button>
+  <button onclick="showSection('profile')">Profile</button>
 </div>
 
-<div id="favPage" style="display:none;">
-<h2>Favorites</h2>
-<div id="favContainer"></div>
+<div id="home" class="section">
+  <h2>Home</h2>
+  <div id="videoList"></div>
 </div>
 
-<div id="profilePage" style="display:none;">
-<h2>Admin Login</h2>
-<form id="loginForm">
-<input type="text" id="adminUser" placeholder="Username"><br><br>
-<input type="password" id="adminPass" placeholder="Password"><br><br>
-<button type="submit">Login</button>
-</form>
-
-<form id="uploadForm">
-<input type="text" id="videoTitle" placeholder="Video Title"><br><br>
-<input type="file" id="videoFile"><br><br>
-<button type="button" onclick="uploadVideo()">Upload Video</button>
-<div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
-<p id="uploadStatus"></p>
-</form>
+<div id="search" class="section" style="display:none;">
+  <h2>Search</h2>
+  <input type="text" id="searchInput" placeholder="Search video..." onkeyup="searchVideos()">
+  <div id="searchResults"></div>
 </div>
 
+<div id="fvrt" class="section" style="display:none;">
+  <h2>Favorite</h2>
+  <div id="favoriteList"></div>
+</div>
+
+<div id="profile" class="section" style="display:none;">
+  <h2>Admin Profile</h2>
+  <input type="text" id="adminUser" placeholder="Admin Username"><br>
+  <input type="password" id="adminPass" placeholder="Admin Password"><br>
+  <button onclick="adminLogin()">Login</button>
+
+  <div id="adminPanel" style="display:none; margin-top:20px;">
+    <h3>Upload Video</h3>
+    <input type="file" id="videoFile"><br>
+    <input type="text" id="videoTitle" placeholder="Video Title"><br>
+    <button onclick="uploadVideo()">Upload</button>
+    <div class="progress-container">
+      <div id="uploadProgress" class="progress-bar"></div>
+    </div>
+    <div id="uploadStatus"></div>
+  </div>
 </div>
 
 <script>
-let isAdmin = false;
 let videos = [];
-let favorites = [];
+let loggedIn = false;
 
-function showPage(page){
-document.getElementById('homePage').style.display = page==='home'?'block':'none';
-document.getElementById('searchPage').style.display = page==='search'?'block':'none';
-document.getElementById('favPage').style.display = page==='fav'?'block':'none';
-document.getElementById('profilePage').style.display = page==='profile'?'block':'none';
+// Show sections
+function showSection(section){
+  document.querySelectorAll('.section').forEach(s => s.style.display='none');
+  document.getElementById(section).style.display='block';
 }
 
-// Load videos from server
-async function loadVideos(){
-const res = await fetch("/videos");
-videos = await res.json();
-renderVideos();
+// Admin login
+function adminLogin(){
+  const user = document.getElementById('adminUser').value;
+  const pass = document.getElementById('adminPass').value;
+  if(user==='admin' && pass==='1234'){ 
+    loggedIn=true;
+    document.getElementById('adminPanel').style.display='block';
+    alert("Admin logged in");
+  }else{
+    alert("Invalid credentials");
+  }
 }
 
-document.getElementById('loginForm').addEventListener('submit', async function(e){
-e.preventDefault();
-const user = document.getElementById('adminUser').value;
-const pass = document.getElementById('adminPass').value;
-if(user==="admin" && pass==="1234"){
-isAdmin=true;
-document.getElementById('loginForm').style.display='none';
-document.getElementById('uploadForm').style.display='block';
-alert("Admin Login Successful");
-}else alert("Invalid credentials");
-});
-
+// Upload video with live progress
 function uploadVideo(){
-const file=document.getElementById('videoFile').files[0];
-const title=document.getElementById('videoTitle').value;
-if(!file||!title){alert("Select file and enter title"); return;}
-const formData=new FormData();
-formData.append("video", file);
-formData.append("title", title);
-formData.append("user","admin"); // login
-formData.append("pass","1234");
-const xhr=new XMLHttpRequest();
-xhr.open("POST","/upload",true);
-xhr.upload.addEventListener("progress", e=>{
-if(e.lengthComputable){
-document.getElementById('uploadProgress').style.width=(e.loaded/e.total*100)+"%";
-}
-});
-xhr.onload=function(){
-if(xhr.status===200){
-const response=JSON.parse(xhr.responseText);
-videos.unshift(response);
-document.getElementById('uploadStatus').innerText="Upload Successful!";
-renderVideos();
-}else alert("Upload failed");
-}
-xhr.send(formData);
+  if(!loggedIn){ alert("Admin not logged in"); return; }
+  const file = document.getElementById('videoFile').files[0];
+  const title = document.getElementById('videoTitle').value;
+  if(!file || !title){ alert("Select file and enter title"); return; }
+
+  const formData = new FormData();
+  formData.append("video", file);
+  formData.append("title", title);
+  formData.append("user","admin");
+  formData.append("pass","1234");
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST","/upload",true);
+
+  xhr.upload.addEventListener("progress", e => {
+    if(e.lengthComputable){
+      const percent = (e.loaded/e.total)*100;
+      document.getElementById('uploadProgress').style.width = percent+"%";
+      document.getElementById('uploadStatus').innerText = "Uploading: "+Math.round(percent)+"%";
+    }
+  });
+
+  xhr.onload = function(){
+    if(xhr.status===200){
+      const res = JSON.parse(xhr.responseText);
+      document.getElementById('uploadStatus').innerText = "Upload Successful!";
+      document.getElementById('uploadProgress').style.width="100%";
+      videos.unshift(res);
+      renderVideos();
+    } else {
+      document.getElementById('uploadStatus').innerText = "Upload Failed!";
+    }
+  }
+
+  xhr.send(formData);
 }
 
+// Render videos on home
 function renderVideos(){
-const container=document.getElementById('videosContainer');
-container.innerHTML="";
-videos.forEach(v=>{
-const card=document.createElement('div');
-card.className="video-card";
-card.innerHTML=`<video src="${v.url}" controls></video>
-<h4>${v.title}</h4>
-<button onclick="addFav('${v.url}','${v.title}')">Favorite</button>
-${isAdmin?`<button id="deleteBtn" onclick="deleteVideo('${v.public_id}')">Delete</button>`:''}`;
-container.appendChild(card);
-});
-renderFavorites();
+  const container = document.getElementById('videoList');
+  container.innerHTML='';
+  videos.forEach(v=>{
+    const vid = document.createElement('video');
+    vid.src=v.url;
+    vid.controls=true;
+    const title = document.createElement('p');
+    title.innerText = v.title;
+    container.appendChild(title);
+    container.appendChild(vid);
+  });
 }
 
-function deleteVideo(public_id){
-if(confirm("Are you sure to delete?")){
-fetch("/delete",{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({public_id, user:"admin", pass:"1234"})
-}).then(res=>res.json()).then(res=>{
-videos=videos.filter(v=>v.public_id!==public_id);
-renderVideos();
-}).catch(err=>alert("Delete Failed"));
+// Search videos
+function searchVideos(){
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const container = document.getElementById('searchResults');
+  container.innerHTML='';
+  videos.filter(v=>v.title.toLowerCase().includes(query))
+        .forEach(v=>{
+          const vid = document.createElement('video');
+          vid.src=v.url;
+          vid.controls=true;
+          const title = document.createElement('p');
+          title.innerText=v.title;
+          container.appendChild(title);
+          container.appendChild(vid);
+        });
 }
+</script>
 
-function addFav(url,title){favorites.push({url,title});renderFavorites();}
-function renderFavorites(){const favContainer=document.getElementById('favContainer');favContainer.innerHTML="";favorites.forEach(v=>{const div=document.createElement('div');div.className="video-card";div.innerHTML=`<video src="${v.url}" controls></video><h4>${v.title}</h4>`;favContainer.appendChild
+</body>
+</html>
