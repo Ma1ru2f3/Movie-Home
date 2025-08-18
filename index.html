@@ -10,10 +10,10 @@ header { background:#111; color:#fff; display:flex; justify-content:space-around
 header button { padding:10px 20px; cursor:pointer; background:#222; color:#fff; border:none; border-radius:5px; }
 section { padding:20px; display:none; }
 section.active { display:block; }
-.video-card { border:1px solid #ccc; padding:10px; margin:10px 0; background:#fff; display:flex; justify-content:space-between; align-items:center; border-radius:5px; }
-.video-card iframe { width:300px; height:170px; }
-button.fav-btn { background:#ff4081; color:#fff; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; }
+.video-card { border:1px solid #ccc; padding:10px; margin:10px 0; background:#fff; border-radius:5px; }
+.video-card iframe { width:100%; max-width:500px; height:280px; }
 input { margin:5px 0; padding:5px; width:90%; }
+.fav-btn { display:block; margin-top:5px; background:#ff4081; color:#fff; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -113,13 +113,11 @@ async function fetchVideos(){
       const div = document.createElement('div');
       div.className='video-card';
       const vidId = extractYouTubeID(v.Link);
-      div.innerHTML = `<div>
+      div.innerHTML = `
         <strong>${v.Title}</strong><br>
         <iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>
-      </div>
-      <div>
         <button class="fav-btn" onclick="addFav('${v.Title}','${v.Link}','${v.Category}')">Favourite</button>
-      </div>`;
+      `;
       list.appendChild(div);
     });
   } catch(err){ console.error('Fetch error', err); }
@@ -146,13 +144,11 @@ function showFavVideos(){
     const div = document.createElement('div');
     div.className='video-card';
     const vidId = extractYouTubeID(v.Link);
-    div.innerHTML = `<div>
+    div.innerHTML = `
       <strong>${v.Title}</strong><br>
       <iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>
-    </div>
-    <div>
-      <button onclick="removeFav('${v.Link}')">Remove</button>
-    </div>`;
+      <button class="fav-btn" onclick="removeFav('${v.Link}')">Remove</button>
+    `;
     list.appendChild(div);
   });
 }
@@ -219,13 +215,11 @@ function searchVideo(){
     const div = document.createElement('div');
     div.className='video-card';
     const vidId = extractYouTubeID(v.Link);
-    div.innerHTML = `<div>
+    div.innerHTML = `
       <strong>${v.Title}</strong><br>
       <iframe src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>
-    </div>
-    <div>
       <button class="fav-btn" onclick="addFav('${v.Title}','${v.Link}','${v.Category}')">Favourite</button>
-    </div>`;
+    `;
     container.appendChild(div);
   });
 }
