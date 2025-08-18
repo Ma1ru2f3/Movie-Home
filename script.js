@@ -1,115 +1,96 @@
-let isAdmin = false;
-let favourites = [];
+let isAdmin=false;
+let favourites=[];
 
-// Navigation
-function showPage(pageId){
+function showPage(id){
   document.querySelectorAll(".page").forEach(p=>p.style.display="none");
-  document.getElementById(pageId).style.display="block";
+  document.getElementById(id).style.display="block";
 }
 
 document.getElementById("homeBtn").onclick=()=>{showPage("homeDiv"); loadVideos();};
 document.getElementById("searchBtn").onclick=()=>{showPage("searchDiv");};
-document.getElementById("favBtn").onclick=()=>{showPage("favDiv"); loadFavourites();};
+document.getElementById("favBtn").onclick=()=>{showPage("favDiv"); loadFavs();};
 document.getElementById("profileBtn").onclick=()=>{showPage("profileDiv");};
 
-// Login
-document.getElementById("loginBtn").addEventListener("click", ()=>{
-  const user=document.getElementById("user").value;
-  const pass=document.getElementById("pass").value;
-  if(user==="admin" && pass==="1234"){
-    isAdmin=true;
+document.getElementById("loginBtn").onclick=()=>{
+  const u=document.getElementById("user").value;
+  const p=document.getElementById("pass").value;
+  if(u==="admin" && p==="1234"){isAdmin=true;
     document.getElementById("loginDiv").style.display="none";
     document.getElementById("adminDiv").style.display="block";
-  } else alert("Wrong credentials");
-});
+  } else alert("Wrong login");
+};
 
-// Upload
-document.getElementById("uploadBtn").addEventListener("click", ()=>{
-  const file=document.getElementById("videoFile").files[0];
-  const title=document.getElementById("videoTitle").value;
-  if(!file) return alert("Choose a file");
+document.getElementById("uploadBtn").onclick=()=>{
+  const f=document.getElementById("videoFile").files[0];
+  const t=document.getElementById("videoTitle").value;
+  if(!f) return alert("Choose file");
 
-  const formData=new FormData();
-  formData.append("video",file);
-  formData.append("title",title);
-  formData.append("user","admin");
-  formData.append("pass","1234");
+  const fd=new FormData();
+  fd.append("video",f);
+  fd.append("title",t);
+  fd.append("user","admin"); fd.append("pass","1234");
 
   const xhr=new XMLHttpRequest();
-  xhr.open("POST","/upload",true);
-
-  document.getElementById("progressDiv").style.display="block";
-  xhr.upload.onprogress=(e)=>{
-    const percent=Math.round((e.loaded/e.total)*100);
-    document.getElementById("progressBar").value=percent;
-    document.getElementById("progressText").innerText=percent+"%";
+  xhr.open("POST","/upload");
+  xhr.upload.onprogress=e=>{
+    const pct=Math.round((e.loaded/e.total)*100);
+    document.getElementById("progressDiv").style.display="block";
+    document.getElementById("progressBar").value=pct;
+    document.getElementById("progressText").innerText=pct+"%";
   };
-
   xhr.onload=()=>{
     if(xhr.status===200){
-      alert("Upload Success!");
-      document.getElementById("progressDiv").style.display="none";
+      alert("Success!");
       loadVideos();
     } else alert("Upload failed");
   };
-  xhr.send(formData);
-});
+  xhr.send(fd);
+};
 
-// Load Videos
 async function loadVideos(){
   const res=await fetch("/videos");
-  const videos=await res.json();
+  const vids=await res.json();
   const list=document.getElementById("videoList");
   list.innerHTML="";
-  videos.forEach(v=>{
-    const div=document.createElement("div");
-    div.innerHTML=`
-      <h4>${v.title}</h4>
-      <video width="320" controls src="${v.url}"></video>
-      <button onclick="addFav('${v.public_id}','${v.url}','${v.title}')">❤ Fav</button>
-      ${isAdmin?`<button onclick="deleteVideo('${v.public_id}')">Delete</button>`:""}
-    `;
-    list.appendChild(div);
+  vids.forEach(v=>{
+    const d=document.createElement("div");
+    d.innerHTML=`<h4>${v.title}</h4>
+      <video width="300" controls src="${v.url}"></video>
+      <button onclick="addFav('${v.public_id}','${v.url}','${v.title}')">❤</button>
+      ${isAdmin?`<button onclick="deleteVid('${v.public_id}')">Delete</button>`:""}`;
+    list.appendChild(d);
   });
 }
 
-// Search
-document.getElementById("searchGo").addEventListener("click", async ()=>{
+document.getElementById("searchGo").onclick=async()=>{
   const term=document.getElementById("searchInput").value.toLowerCase();
   const res=await fetch("/videos");
-  const videos=await res.json();
-  const results=document.getElementById("searchResults");
-  results.innerHTML="";
-  videos.filter(v=>v.title.toLowerCase().includes(term))
-        .forEach(v=>{
-          const div=document.createElement("div");
-          div.innerHTML=`<h4>${v.title}</h4><video width="320" controls src="${v.url}"></video>`;
-          results.appendChild(div);
-        });
-});
+  const vids=await res.json();
+  const out=document.getElementById("searchResults");
+  out.innerHTML="";
+  vids.filter(v=>v.title.toLowerCase().includes(term))
+      .forEach(v=>{
+        out.innerHTML+=`<h4>${v.title}</h4><video width="300" controls src="${v.url}"></video>`;
+      });
+};
 
-// Favourites
 function addFav(id,url,title){
   favourites.push({id,url,title});
-  alert("Added to favourites!");
+  alert("Added to favourites");
 }
-function loadFavourites(){
-  const favList=document.getElementById("favList");
-  favList.innerHTML="";
+function loadFavs(){
+  const out=document.getElementById("favList");
+  out.innerHTML="";
   favourites.forEach(v=>{
-    const div=document.createElement("div");
-    div.innerHTML=`<h4>${v.title}</h4><video width="320" controls src="${v.url}"></video>`;
-    favList.appendChild(div);
+    out.innerHTML+=`<h4>${v.title}</h4><video width="300" controls src="${v.url}"></video>`;
   });
 }
 
-// Delete
-async function deleteVideo(public_id){
-  if(!confirm("Delete video?")) return;
+async function deleteVid(id){
   await fetch("/delete",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({public_id,user:"admin",pass:"1234"})
+    body:JSON.stringify({public_id:id,user:"admin",pass:"1234"})
   });
   loadVideos();
 }
