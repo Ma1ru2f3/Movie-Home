@@ -3,187 +3,200 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MovieBox</title>
+<title>MovieBox Web</title>
 <style>
-body{font-family: Arial; margin:0; padding:0; background:#f0f0f0;}
-header{background:#333; color:white; padding:10px; display:flex; justify-content:space-between; align-items:center;}
-nav a{color:white; margin:0 10px; text-decoration:none;}
-.container{padding:20px;}
-input[type=text]{padding:5px; width:200px;}
-button{padding:5px 10px; margin:2px;}
-.video-item{background:white; padding:10px; margin:10px 0; border-radius:5px; display:flex; justify-content:space-between; align-items:center;}
-.dropdown{cursor:pointer;}
-.hidden{display:none;}
+body {font-family: Arial, sans-serif; background:#111; color:#fff; margin:0; padding:0;}
+header {background:#222; padding:10px; display:flex; justify-content:space-between; align-items:center;}
+nav button {margin:0 5px; padding:8px 12px; background:#333; color:#fff; border:none; cursor:pointer;}
+.container {padding:20px;}
+.hidden {display:none;}
+.video-card {background:#222; padding:10px; margin:10px 0; border-radius:8px; display:flex; justify-content:space-between; align-items:center;}
+.video-card button {margin-left:5px; padding:5px;}
+input, button {padding:5px; margin:5px 0;}
 </style>
 </head>
 <body>
 
 <header>
-    <div><strong>MovieBox</strong></div>
-    <nav>
-        <a href="#" onclick="showHome()">Home</a>
-        <a href="#" onclick="showSearch()">Search</a>
-        <a href="#" onclick="showHistory()">History</a>
-        <a href="#" onclick="showProfile()">Profile</a>
-    </nav>
+  <h1>MovieBox</h1>
+  <nav>
+    <button onclick="showSection('home')">Home</button>
+    <button onclick="showSection('history')">History</button>
+    <button onclick="showSection('profile')">Profile</button>
+  </nav>
 </header>
 
-<div class="container" id="mainContent">
-<!-- Content will render here -->
-</div>
+<div class="container">
 
-<!-- Profile content -->
-<div class="container hidden" id="profileContent"></div>
+  <!-- Home Section -->
+  <div id="homeSection">
+    <h2>Home</h2>
+    <input type="text" id="searchInput" placeholder="Search video..." oninput="searchVideo()">
+    <div id="videoList"></div>
+  </div>
 
-<script>
-// Sample Data
-let videos = [];
-let users = [{name:"Admin",email:"admin@movie.com",isAdmin:true,password:"123450",blocked:false}];
-let currentUser = null;
-let historyData = {};
+  <!-- History Section -->
+  <div id="historySection" class="hidden">
+    <h2>History</h2>
+    <div id="historyList"></div>
+  </div>
 
-// Show Sections
-function clearContent(){
-    document.getElementById("mainContent").innerHTML="";
-    document.getElementById("profileContent").classList.add("hidden");
-}
+  <!-- Profile Section -->
+  <div id="profileSection" class="hidden">
+    <h2>Profile</h2>
+    <button onclick="showUserLogin()">User Login</button>
+    <button onclick="showAdminPanel()">Admin Panel</button>
 
-function showHome(){
-    clearContent();
-    let html="<h2>Home</h2>";
-    if(videos.length===0) html+="<p>No videos uploaded yet.</p>";
-    else videos.forEach((v,i)=>{
-        html+=`<div class="video-item">
-        <div>${v.title}</div>
-        <div>
-            <button onclick="playVideo(${i})">Play</button>
-            ${currentUser && currentUser.isAdmin?`<button onclick="deleteVideo(${i})">Delete</button>`:""}
-        </div>
-        </div>`;
-    });
-    document.getElementById("mainContent").innerHTML=html;
-}
+    <!-- User Login -->
+    <div id="userLoginSection" class="hidden">
+      <h3>User Login</h3>
+      <div id="gSignInButton"></div>
+      <div id="currentUser" class="hidden">
+        Logged in as: <span id="userName"></span>
+      </div>
+    </div>
 
-function showSearch(){
-    clearContent();
-    let html=`<h2>Search</h2>
-    <input type="text" id="searchInput" placeholder="Search by title">
-    <button onclick="searchVideo()">Search</button>
-    <div id="searchResults"></div>`;
-    document.getElementById("mainContent").innerHTML=html;
-}
+    <!-- Admin Panel -->
+    <div id="adminPanelSection" class="hidden">
+      <h3>Admin Panel</h3>
+      <input type="text" id="adminID" placeholder="Admin ID"><br>
+      <input type="password" id="adminPass" placeholder="Password"><br>
+      <button onclick="adminLogin()">Login</button>
 
-function showHistory(){
-    clearContent();
-    let html="<h2>History</h2>";
-    if(!currentUser){ html+="<p>Please login to see history.</p>"; }
-    else{
-        let h = historyData[currentUser.email] || [];
-        if(h.length===0) html+="<p>No history yet.</p>";
-        else html+="<ul>"+h.map(v=>`<li>${v}</li>`).join("")+"</ul>";
-    }
-    document.getElementById("mainContent").innerHTML=html;
-}
-
-// Profile & Login
-function showProfile(){
-    clearContent();
-    document.getElementById("profileContent").classList.remove("hidden");
-    renderProfile();
-}
-
-function renderProfile(){
-    if(!currentUser){
-        document.getElementById("profileContent").innerHTML = `
-        <h2>Login</h2>
-        <input type="text" id="loginEmail" placeholder="Email"><br>
-        <input type="password" id="loginPass" placeholder="Password"><br>
-        <button onclick="login()">Login</button>`;
-        return;
-    }
-
-    let html = `<p>Welcome, ${currentUser.name} (${currentUser.email})</p>`;
-
-    if(currentUser.isAdmin){
-        html += `<h3>Admin Panel</h3>
+      <div id="adminControls" class="hidden">
         <h4>Upload Video</h4>
         <input type="text" id="videoTitle" placeholder="Video Title"><br>
         <input type="text" id="videoLink" placeholder="Video Link"><br>
         <button onclick="uploadVideo()">Upload</button>
-        <h4>Users List</h4>`;
-        users.forEach((u,i)=>{
-            html += `<div>${u.name} (${u.email}) - ${u.blocked ? 'Blocked':'Active'}
-            <button onclick="toggleBlock(${i})">${u.blocked ? 'Unblock':'Block'}</button></div>`;
-        });
-    } else {
-        html += `<p>User Panel</p>
-        <h4>Your History</h4>`;
-        let userHist = historyData[currentUser.email] || [];
-        if(userHist.length === 0) html += "<p>No history yet.</p>";
-        else html += "<ul>"+userHist.map(v=>`<li>${v}</li>`).join("")+"</ul>";
-    }
 
-    html += `<br><button onclick="logout()">Logout</button>`;
-    document.getElementById("profileContent").innerHTML = html;
+        <h4>Users List</h4>
+        <div id="userList"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Sections
+function showSection(sec){
+  document.getElementById("homeSection").classList.add("hidden");
+  document.getElementById("historySection").classList.add("hidden");
+  document.getElementById("profileSection").classList.add("hidden");
+  if(sec==='home') document.getElementById("homeSection").classList.remove("hidden");
+  if(sec==='history') document.getElementById("historySection").classList.remove("hidden");
+  if(sec==='profile') document.getElementById("profileSection").classList.remove("hidden");
 }
 
-// Video Functions
+// Profile Tabs
+function showUserLogin(){
+  document.getElementById("userLoginSection").classList.remove("hidden");
+  document.getElementById("adminPanelSection").classList.add("hidden");
+}
+function showAdminPanel(){
+  document.getElementById("adminPanelSection").classList.remove("hidden");
+  document.getElementById("userLoginSection").classList.add("hidden");
+}
+
+// Admin Login
+let videos = [];
+let users = [];
+function adminLogin(){
+  let id = document.getElementById("adminID").value;
+  let pass = document.getElementById("adminPass").value;
+  if(id==="112233445500" && pass==="123450"){
+    alert("Admin login successful");
+    document.getElementById("adminControls").classList.remove("hidden");
+    renderUsersList();
+    renderVideos();
+  } else {
+    alert("Invalid credentials");
+  }
+}
+
+// Upload Video
 function uploadVideo(){
-    let title = document.getElementById("videoTitle").value;
-    let link = document.getElementById("videoLink").value;
-    if(!title || !link){ alert("Fill both fields"); return; }
-    videos.push({title:title,link:link});
-    alert("Video uploaded");
-    showHome();
+  let title = document.getElementById("videoTitle").value;
+  let link = document.getElementById("videoLink").value;
+  if(title && link){
+    videos.push({title, link});
+    alert("Video uploaded!");
+    renderVideos();
+  }
 }
 
-function deleteVideo(i){
-    if(confirm("Delete this video?")){ videos.splice(i,1); showHome(); }
+// Render Videos
+function renderVideos(){
+  let list = document.getElementById("videoList");
+  list.innerHTML="";
+  videos.forEach((v,i)=>{
+    let div = document.createElement("div");
+    div.className="video-card";
+    div.innerHTML=`<span>${v.title}</span>
+                   <div>
+                   <button onclick="playVideo(${i})">Play</button>
+                   <button onclick="deleteVideo(${i})">Delete</button>
+                   </div>`;
+    list.appendChild(div);
+  });
 }
 
-function playVideo(i){
-    let v = videos[i];
-    if(!currentUser){ alert("Please login to watch"); return; }
-    // Add to history
-    if(!historyData[currentUser.email]) historyData[currentUser.email]=[];
-    historyData[currentUser.email].push(v.title);
-    clearContent();
-    document.getElementById("mainContent").innerHTML = `
-    <h2>${v.title}</h2>
-    <iframe width="560" height="315" src="${v.link}" frameborder="0" allowfullscreen></iframe>
-    <br><button onclick="showHome()">Back</button>`;
+// Play Video
+function playVideo(index){
+  let v = videos[index];
+  let url = v.link;
+  let playerWindow = window.open("", "_blank", "width=800,height=500");
+  playerWindow.document.write(`<h2>${v.title}</h2><iframe width="780" height="450" src="${url}" frameborder="0" allowfullscreen></iframe>`);
+  addToHistory(v);
 }
 
-// Search Function
+// Delete Video
+function deleteVideo(index){
+  if(confirm("Delete this video?")){
+    videos.splice(index,1);
+    renderVideos();
+  }
+}
+
+// User List for Admin
+function renderUsersList(){
+  let ul = document.getElementById("userList");
+  ul.innerHTML="";
+  users.forEach((u,i)=>{
+    let div = document.createElement("div");
+    div.innerHTML=`${u.name} - <button onclick="blockUser(${i})">Block/Unblock</button>`;
+    ul.appendChild(div);
+  });
+}
+
+// Block/Unblock User
+function blockUser(i){
+  users[i].blocked = !users[i].blocked;
+  renderUsersList();
+}
+
+// Search
 function searchVideo(){
-    let q=document.getElementById("searchInput").value.toLowerCase();
-    let results = videos.filter(v=>v.title.toLowerCase().includes(q));
-    let html="";
-    if(results.length===0) html="<p>No videos found.</p>";
-    else html = results.map((v,i)=>`<div class="video-item">
-        <div>${v.title}</div>
-        <div><button onclick="playVideo(${videos.indexOf(v)})">Play</button></div>
-    </div>`).join("");
-    document.getElementById("searchResults").innerHTML = html;
+  let q = document.getElementById("searchInput").value.toLowerCase();
+  let filtered = videos.filter(v=>v.title.toLowerCase().includes(q));
+  let list = document.getElementById("videoList");
+  list.innerHTML="";
+  filtered.forEach((v,i)=>{
+    let div = document.createElement("div");
+    div.className="video-card";
+    div.innerHTML=`<span>${v.title}</span>
+                   <div><button onclick="playVideo(${i})">Play</button></div>`;
+    list.appendChild(div);
+  });
 }
 
-// User Functions
-function login(){
-    let email = document.getElementById("loginEmail").value;
-    let pass = document.getElementById("loginPass").value;
-    let user = users.find(u=>u.email===email && u.password===pass);
-    if(!user){ alert("Invalid credentials"); return; }
-    if(user.blocked){ alert("You are blocked"); return; }
-    currentUser = user;
-    renderProfile();
-    alert("Login successful");
+// History
+function addToHistory(v){
+  let h = document.getElementById("historyList");
+  let div = document.createElement("div");
+  div.textContent = v.title;
+  h.appendChild(div);
 }
-
-function logout(){ currentUser=null; renderProfile(); showHome(); }
-
-function toggleBlock(i){ users[i].blocked = !users[i].blocked; renderProfile(); }
-
-showHome(); // initial load
 </script>
 
 </body>
