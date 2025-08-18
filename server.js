@@ -1,81 +1,67 @@
 const express = require("express");
-const fileUpload = require("express-fileupload");
-const cloudinary = require("cloudinary").v2;
-const bodyParser = require("body-parser");
-require("dotenv").config();
+const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
+const cors = require("cors");
 
 const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+const PORT = 3000;
+
+app.use(cors());
+app.use(express.json());
 app.use(express.static("public"));
-app.use(fileUpload());
 
-// Cloudinary Config
-cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME || "dlxa4684c",
-  api_key: process.env.API_KEY || "614488499354894",
-  api_secret: process.env.API_SECRET || "v5qLsHvcETVr5ptyLl3N9zuHd_A"
+// Create videos folder if not exists
+const videoDir = path.join(__dirname, "public", "videos");
+if (!fs.existsSync(videoDir)) fs.mkdirSync(videoDir, { recursive: true });
+
+// Multer setup for uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, videoDir),
+  filename: (req, file, cb) => {
+    const unique = Date.now() + "_" + file.originalname;
+    cb(null, unique);
+  }
+});
+const upload = multer({ storage });
+
+// Upload endpoint
+app.post("/upload", upload.single("video"), (req, res) => {
+  const { user, pass, title } = req.body;
+  if (user !== "admin" || pass !== "1234") return res.status(401).send("Unauthorized");
+
+  const file = req.file;
+  if (!file) return res.status(400).send("No file uploaded");
+
+  res.send({ message: "Upload success", filename: file.filename, url: "/videos/" + file.filename, title });
 });
 
-// Admin credentials
-const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
+// Get all videos
+app.get("/videos", (req, res) => {
+  fs.readdir(videoDir, (err, files) => {
+    if (err) return res.status(500).send("Error reading videos");
 
-// Admin login middleware
-const checkAdmin = (req, res, next) => {
-  const { user, pass } = req.body;
-  if (user === ADMIN_USER && pass === ADMIN_PASS) {
-    next();
-  } else {
-    res.status(401).send("Unauthorized");
-  }
-};
-
-// Upload video route
-app.post("/upload", checkAdmin, async (req, res) => {
-  try {
-    const file = req.files.video;
-    const { title } = req.body;
-    const result = await cloudinary.uploader.upload(file.tempFilePath, {
-      resource_type: "video",
-      folder: "Moviebox",
-      use_filename: true,
-      unique_filename: false
+    const videoData = files.map(f => {
+      const title = f.split("_").slice(1).join("_"); // original name
+      return { public_id: f, title, url: "/videos/" + f };
     });
-    res.json({ url: result.secure_url, public_id: result.public_id, title });
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
+
+    res.json(videoData);
+  });
 });
 
-// Delete video route
-app.post("/delete", checkAdmin, async (req, res) => {
-  try {
-    const { public_id } = req.body;
-    const result = await cloudinary.uploader.destroy(public_id, { resource_type: "video" });
-    res.json(result);
-  } catch (err) {
-    res.status(500).send(err.message);
+// Delete video
+app.post("/delete", (req, res) => {
+  const { user, pass, public_id } = req.body;
+  if (user !== "admin" || pass !== "1234") return res.status(401).send("Unauthorized");
+
+  const filePath = path.join(videoDir, public_id);
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+    return res.send({ message: "Deleted" });
   }
+  res.status(404).send("File not found");
 });
 
-// Fetch videos
-app.get("/videos", async (req, res) => {
-  try {
-    const result = await cloudinary.api.resources({
-      type: "upload",
-      resource_type: "video",
-      prefix: "Moviebox"
-    });
-    const videos = result.resources.map(v => ({
-      url: v.secure_url,
-      public_id: v.public_id,
-      title: v.public_id.split("/").pop()
-    }));
-    res.json(videos);
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
-
-app.listen(3000, () => console.log("Server running on port 3000"));
+// Start server
+app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
