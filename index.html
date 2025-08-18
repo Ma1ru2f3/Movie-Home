@@ -5,140 +5,178 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MovieBox</title>
 <style>
-body { font-family: Arial, sans-serif; margin:20px; }
-nav { margin-bottom:20px; }
-nav button { margin-right:10px; padding:10px 15px; }
-#progress-container { width:100%; background:#eee; margin-top:10px; height:20px; }
-#progress-bar { width:0%; height:100%; background:green; }
-.video-card { margin-bottom:20px; }
-.video-card video { width:300px; display:block; }
+body{font-family:sans-serif; margin:0; padding:0;}
+nav{background:#333;color:#fff;padding:10px;display:flex;gap:20px;}
+nav button{background:#444;color:#fff;border:none;padding:5px 10px;cursor:pointer;}
+section{padding:10px;}
+.video-card{border:1px solid #ccc;padding:10px;margin:10px 0;}
+.progress-container{width:100%;background:#eee;height:20px;margin:5px 0;display:none;}
+.progress-bar{height:100%;background:#4caf50;width:0%;}
 </style>
 </head>
 <body>
 
 <nav>
-  <button onclick="showSection('home')">Home</button>
-  <button onclick="showSection('favorite')">Favorite</button>
-  <button onclick="showSection('profile')">Profile</button>
+  <button id="homeBtn">Home</button>
+  <button id="searchBtn">Search</button>
+  <button id="favBtn">Favorite</button>
+  <button id="profileBtn">Profile</button>
 </nav>
 
-<div id="home" class="section"></div>
-<div id="favorite" class="section" style="display:none;">Favorite videos coming soon</div>
-<div id="profile" class="section" style="display:none;">
-  <h3>Admin Login</h3>
-  <input type="text" id="admin-user" placeholder="Username"><br><br>
-  <input type="password" id="admin-pass" placeholder="Password"><br><br>
-  <button id="login-btn">Login</button>
-
-  <div id="upload-section" style="display:none; margin-top:20px;">
-    <h3>Upload Video</h3>
-    <input type="file" id="video-file"><br><br>
-    <input type="text" id="video-title" placeholder="Enter video title"><br><br>
-    <button id="upload-btn">Upload</button>
-    <div id="progress-container" style="display:none;">
-      <div id="progress-bar"></div>
-    </div>
-    <p id="upload-status"></p>
+<section id="content">
+  <div id="homeView">
+    <h2>Home</h2>
+    <div id="videosContainer"></div>
   </div>
-</div>
+
+  <div id="searchView" style="display:none;">
+    <h2>Search</h2>
+    <input type="text" id="searchInput" placeholder="Search title...">
+    <div id="searchResults"></div>
+  </div>
+
+  <div id="favView" style="display:none;">
+    <h2>Favorite</h2>
+    <div id="favContainer"></div>
+  </div>
+
+  <div id="profileView" style="display:none;">
+    <h2>Admin Login</h2>
+    <input type="text" id="adminUser" placeholder="Username"><br>
+    <input type="password" id="adminPass" placeholder="Password"><br>
+    <button id="loginBtn">Login</button>
+
+    <div id="uploadSection" style="display:none;">
+      <h3>Upload Video</h3>
+      <input type="text" id="titleInput" placeholder="Video Title"><br>
+      <input type="file" id="fileInput"><br>
+      <button id="uploadBtn">Upload</button>
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div id="uploadStatus"></div>
+    </div>
+  </div>
+</section>
 
 <script>
-let videos = [];
-function showSection(sec){ 
-  document.querySelectorAll('.section').forEach(s => s.style.display='none');
-  document.getElementById(sec).style.display='block';
+const homeBtn=document.getElementById("homeBtn");
+const searchBtn=document.getElementById("searchBtn");
+const favBtn=document.getElementById("favBtn");
+const profileBtn=document.getElementById("profileBtn");
+
+const homeView=document.getElementById("homeView");
+const searchView=document.getElementById("searchView");
+const favView=document.getElementById("favView");
+const profileView=document.getElementById("profileView");
+
+const videosContainer=document.getElementById("videosContainer");
+const searchInput=document.getElementById("searchInput");
+const searchResults=document.getElementById("searchResults");
+const favContainer=document.getElementById("favContainer");
+
+const adminUser=document.getElementById("adminUser");
+const adminPass=document.getElementById("adminPass");
+const loginBtn=document.getElementById("loginBtn");
+const uploadSection=document.getElementById("uploadSection");
+const fileInput=document.getElementById("fileInput");
+const uploadBtn=document.getElementById("uploadBtn");
+const progressContainer=document.getElementById("progressContainer");
+const progressBar=document.getElementById("progressBar");
+const uploadStatus=document.getElementById("uploadStatus");
+const titleInput=document.getElementById("titleInput");
+
+let isAdmin=false;
+let videos=[];
+
+// Navigation
+homeBtn.onclick=()=>{showView(homeView); renderVideos();}
+searchBtn.onclick=()=>{showView(searchView);}
+favBtn.onclick=()=>{showView(favView);}
+profileBtn.onclick=()=>{showView(profileView);}
+
+function showView(view){
+  [homeView,searchView,favView,profileView].forEach(v=>v.style.display="none");
+  view.style.display="block";
+}
+
+// Render videos
+function renderVideos(){
+  videosContainer.innerHTML="";
+  videos.forEach(v=>{
+    const div=document.createElement("div");
+    div.className="video-card";
+    div.innerHTML=`<h4>${v.title}</h4><video width="320" controls src="${v.url}"></video>`;
+    if(isAdmin){
+      const delBtn=document.createElement("button");
+      delBtn.innerText="Delete";
+      delBtn.onclick=()=>deleteVideo(v.public_id);
+      div.appendChild(delBtn);
+    }
+    videosContainer.appendChild(div);
+  });
 }
 
 // Fetch videos from server
 async function fetchVideos(){
-  const res = await fetch("/videos");
-  videos = await res.json();
+  const res=await fetch("/videos");
+  videos=await res.json();
   renderVideos();
 }
-
-// Render videos on Home
-function renderVideos(){
-  const home = document.getElementById("home");
-  home.innerHTML = '';
-  videos.forEach(v=>{
-    const div = document.createElement("div");
-    div.className = "video-card";
-    div.innerHTML = `
-      <h4>${v.title}</h4>
-      <video src="${v.url}" controls></video>
-      <button onclick="deleteVideo('${v.public_id}')">Delete</button>
-    `;
-    home.appendChild(div);
-  });
-}
-
-// Delete video
-async function deleteVideo(id){
-  const form = new FormData();
-  form.append("user","admin");
-  form.append("pass","1234");
-  form.append("public_id",id);
-  await fetch("/delete", {method:"POST", body:form});
-  fetchVideos();
-}
+fetchVideos();
 
 // Admin login
-document.getElementById("login-btn").addEventListener("click",()=>{
-  const u = document.getElementById("admin-user").value;
-  const p = document.getElementById("admin-pass").value;
-  if(u==="admin" && p==="1234"){
-    alert("Admin logged in");
-    document.getElementById("upload-section").style.display="block";
-  }else alert("Invalid credentials");
-});
+loginBtn.onclick=()=>{
+  if(adminUser.value==="admin" && adminPass.value==="1234"){
+    isAdmin=true;
+    uploadSection.style.display="block";
+    alert("Admin logged in ✅");
+  }else alert("Invalid credentials ❌");
+}
 
-// Upload with progress
-const uploadBtn = document.getElementById("upload-btn");
-const fileInput = document.getElementById("video-file");
-const titleInput = document.getElementById("video-title");
-const progressBar = document.getElementById("progress-bar");
-const progressContainer = document.getElementById("progress-container");
-const uploadStatus = document.getElementById("upload-status");
+// Upload video
+uploadBtn.onclick=()=>{
+  const file=fileInput.files[0];
+  const title=titleInput.value || file.name;
+  if(!file) return alert("Select a video");
 
-uploadBtn.addEventListener("click", () => {
-  const file = fileInput.files[0];
-  const title = titleInput.value;
-  if(!file) return alert("Select a video file");
-  const formData = new FormData();
+  progressContainer.style.display="block";
+  progressBar.style.width="0%";
+  uploadStatus.innerText="Uploading...";
+
+  const formData=new FormData();
   formData.append("video",file);
   formData.append("title",title);
   formData.append("user","admin");
   formData.append("pass","1234");
 
-  progressContainer.style.display="block";
-  uploadStatus.innerText="Uploading...";
+  const xhr=new XMLHttpRequest();
+  xhr.open("POST","/upload",true);
 
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST","/upload");
-  xhr.upload.onprogress = (e)=>{
+  xhr.upload.addEventListener("progress",(e)=>{
     if(e.lengthComputable){
-      const percent = Math.round((e.loaded/e.total)*100);
-      progressBar.style.width = percent+"%";
+      const percent=Math.round((e.loaded/e.total)*100);
+      progressBar.style.width=percent+"%";
     }
-  };
-  xhr.onload = ()=>{
-    if(xhr.status===200){
-      const data = JSON.parse(xhr.response);
-      videos.push(data);
-      renderVideos();
-      uploadStatus.innerText="Uploaded Successfully ✅";
-      setTimeout(()=>{
-        progressContainer.style.display="none";
-        progressBar.style.width="0%";
-        uploadStatus.innerText="";
-      },2000);
-    }else uploadStatus.innerText="Upload Failed ❌";
-  };
+  });
+
+  xhr.onreadystatechange=()=>{
+    if(xhr.readyState===4){
+      if(xhr.status===200){
+        const data=JSON.parse(xhr.responseText);
+        videos.push(data);
+        renderVideos();
+        uploadStatus.innerText="Uploaded Successfully ✅";
+        setTimeout(()=>{
+          progressContainer.style.display="none";
+          progressBar.style.width="0%";
+          uploadStatus.innerText="";
+        },2000);
+      }else uploadStatus.innerText="Upload Failed ❌";
+    }
+  }
   xhr.send(formData);
-});
+}
 
-fetchVideos();
-</script>
-
-</body>
-</html>
+// Delete video
+async function deleteVideo
