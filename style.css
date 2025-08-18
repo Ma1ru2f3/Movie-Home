@@ -1,4 +1,5 @@
-nav button { margin: 5px; padding: 10px; }
-#progressBarContainer { width: 100%; background: #ddd; height: 20px; margin-top: 10px; }
-#progressBar { height: 20px; background: green; width: 0%; }
-video { display: block; margin-bottom: 10px; }
+body{font-family:sans-serif; padding:10px;}
+nav{margin-bottom:20px;}
+nav button{margin-right:10px;}
+#videoList div{margin-bottom:20px; border:1px solid #ccc; padding:10px;}
+progress{width:100%;}
