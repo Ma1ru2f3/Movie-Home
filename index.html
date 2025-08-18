@@ -1,186 +1,181 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MovieBox Web</title>
+  <title>Movie Home</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #121212; color: #fff; }
-    nav { display: flex; background: #1f1f1f; padding: 10px; }
-    nav button { margin-right: 10px; padding: 10px 15px; cursor: pointer; background: #333; color: #fff; border: none; border-radius: 5px; }
+    body { font-family: Arial, sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
+    header { background: #1a1a1a; color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 24px; }
+    nav button { margin-left: 10px; padding: 8px 12px; border: none; cursor: pointer; background: #333; color: #fff; border-radius: 5px; }
     nav button:hover { background: #555; }
-    .tab { display: none; padding: 20px; }
-    .tab.active { display: block; }
-    .video-item { margin: 10px 0; background: #222; padding: 10px; border-radius: 5px; }
-    .video-item button { margin-left: 10px; }
-    input[type=text], input[type=password], input[type=email] { padding: 8px; width: 100%; margin: 5px 0 10px 0; border-radius: 5px; border: none; }
-    button.submit { padding: 10px 20px; background: #ff5722; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
-    button.submit:hover { background: #e64a19; }
-    .owner-info { background: #333; padding: 10px; border-radius: 5px; }
+    #search-bar { margin: 20px; display: flex; justify-content: center; }
+    #search-bar input { width: 60%; padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+    #video-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
+    .video-item { background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    .video-item h3 { margin-top: 0; font-size: 18px; }
+    .video-item p { margin: 5px 0; font-size: 14px; color: #555; }
+    .video-item a { display: inline-block; margin-top: 10px; padding: 8px 12px; background: #1a73e8; color: #fff; text-decoration: none; border-radius: 5px; }
+    .video-item a:hover { background: #155ab6; }
+
+    /* Profile Modal */
+    #profileModal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+    #profileModal .modal-content { background: #fff; padding: 20px; border-radius: 10px; width: 90%; max-width: 500px; }
+    #profileModal .modal-content h2 { margin-top: 0; }
+    #profileModal .close-btn { float: right; cursor: pointer; color: #333; font-weight: bold; }
+    #profileModal .form-group { margin-bottom: 15px; }
+    #profileModal input { width: 100%; padding: 10px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc; }
+    #profileModal button { padding: 10px 15px; border: none; background: #1a73e8; color: #fff; border-radius: 5px; cursor: pointer; }
+    #profileModal button:hover { background: #155ab6; }
+
+    /* History List */
+    #history-list { padding: 20px; }
+    #history-list h2 { font-size: 20px; }
+    #history-list ul { list-style: none; padding-left: 0; }
+    #history-list li { padding: 8px 0; border-bottom: 1px solid #ccc; }
   </style>
 </head>
 <body>
 
+<header>
+  <h1>Movie Home</h1>
   <nav>
-    <button onclick="showTab('home')">Home</button>
-    <button onclick="showTab('search')">Search</button>
-    <button onclick="showTab('profile')">Profile</button>
+    <button onclick="showHome()">Home</button>
+    <button onclick="showProfile()">Profile</button>
+    <button onclick="showHistory()">History</button>
   </nav>
+</header>
 
-  <!-- HOME TAB -->
-  <div id="home-tab" class="tab active">
-    <h2>Uploaded Videos</h2>
-    <div id="video-list"></div>
-    <h3>Add Video (Admin/Owner Only)</h3>
-    <input type="text" id="video-title" placeholder="Video Title">
-    <input type="text" id="video-link" placeholder="YouTube/Drive Link">
-    <input type="text" id="video-category" placeholder="Category">
-    <button onclick="addVideo()" class="submit">Add Video</button>
-  </div>
+<div id="search-bar">
+  <input type="text" id="searchInput" placeholder="ভিডিও খুঁজুন..." onkeyup="searchVideo()">
+</div>
 
-  <!-- SEARCH TAB -->
-  <div id="search-tab" class="tab">
-    <h2>Search Videos</h2>
-    <input type="text" id="search-input" placeholder="Search by title or category">
-    <button onclick="searchVideo()">Search</button>
-    <div id="search-results"></div>
-  </div>
+<div id="video-list">
+  <!-- ভিডিও লিস্ট এখানে লোড হবে -->
+</div>
 
-  <!-- PROFILE TAB -->
-  <div id="profile-tab" class="tab">
+<!-- Profile Modal -->
+<div id="profileModal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeProfile()">&times;</span>
     <h2>Profile</h2>
-    
-    <div id="account-section">
-      <h3>Account Create</h3>
-      <input type="text" id="full-name" placeholder="Full Name">
+
+    <h3>Account</h3>
+    <div class="form-group">
+      <input type="text" id="fullName" placeholder="Full Name">
+    </div>
+    <div class="form-group">
       <input type="email" id="email" placeholder="Email">
-      <input type="password" id="password" placeholder="Password (min 8 char)">
-      <input type="password" id="confirm-password" placeholder="Confirm Password">
-      <button onclick="createAccount()" class="submit">Create Account</button>
-      <h3>Login</h3>
-      <input type="email" id="login-email" placeholder="Email">
-      <input type="password" id="login-password" placeholder="Password">
-      <button onclick="loginAccount()" class="submit">Login</button>
     </div>
+    <div class="form-group">
+      <input type="password" id="password" placeholder="Password (8+ characters)">
+    </div>
+    <div class="form-group">
+      <input type="password" id="confirmPassword" placeholder="Confirm Password">
+    </div>
+    <button onclick="createAccount()">Create Account</button>
 
-    <div id="admin-section">
-      <h3>Admin Access</h3>
-      <input type="text" id="admin-id" placeholder="Admin ID">
-      <input type="password" id="admin-pass" placeholder="Admin Password">
-      <button onclick="adminLogin()" class="submit">Login as Admin</button>
-    </div>
-
-    <div id="owner-info-section">
-      <h3>Owner Info</h3>
-      <div class="owner-info">
-        ┏━━━━━━━━━━━━━━━━━━━━━┓<br>
-        ┃      🌟 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 🌟      ┃<br>
-        ┣━━━━━━━━━━━━━━━━━━━━━┫<br>
-        ┃ 👤 Name      : Maruf Hossain<br>
-        ┃ 🚹 Gender    : Male<br>
-        ┃ ❤ Relation  : single 🙁<br>
-        ┃ 🎂 Age       : 17+<br>
-        ┃ 🕌 Religion  : Islam<br>
-        ┃ 🏫 Education : SSC 25<br>
-        ┃ 🏡 Address   : Meherpur, Bangladesh<br>
-        ┣━━━━━━━━━━━━━━━━━━━━━┫<br>
-        ┃ 🎭 Tiktok    : Srotoshini-স্রোত্বোসিনী<br>
-        ┃ 🌐 Facebook : fb.com/profile.php?id=100066542686904<br>
-        ┗━━━━━━━━━━━━━━━━━━━━━┛
-      </div>
-    </div>
+    <h3>Owner Info</h3>
+    <pre>
+┏━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🌟 OWNER INFO 🌟
+┃ 👤 Name      : Maruf Hossain
+┃ 🏡 Address   : Meherpur, Bangladesh
+┃ 🚹 Gender    : Male
+┃ 🌐 Language  : Bangla / English
+┗━━━━━━━━━━━━━━━━━━━━━┛
+    </pre>
   </div>
+</div>
 
-  <script>
-    // Tabs
-    function showTab(tab) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.getElementById(tab+'-tab').classList.add('active');
+<!-- History -->
+<div id="history-list" style="display:none;">
+  <h2>History</h2>
+  <ul id="history-ul"></ul>
+</div>
+
+<script>
+  const sheetAPI = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
+  let videos = [];
+  let history = JSON.parse(localStorage.getItem('history')) || [];
+
+  // ভিডিও লিস্ট লোড
+  fetch(sheetAPI)
+    .then(res => res.json())
+    .then(data => {
+      videos = data;
+      renderVideos(videos);
+    });
+
+  function renderVideos(list) {
+    const videoList = document.getElementById('video-list');
+    videoList.innerHTML = '';
+    list.forEach(video => {
+      const div = document.createElement('div');
+      div.className = 'video-item';
+      div.innerHTML = `
+        <h3>${video.title}</h3>
+        <p>Category: ${video.category || 'Uncategorized'}</p>
+        <a href="${video.link}" target="_blank" onclick="addHistory('${video.title}')">Watch Video</a>
+      `;
+      videoList.appendChild(div);
+    });
+  }
+
+  function searchVideo() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = videos.filter(v => v.title.toLowerCase().includes(query));
+    renderVideos(filtered);
+  }
+
+  function showProfile() { document.getElementById('profileModal').style.display = 'flex'; }
+  function closeProfile() { document.getElementById('profileModal').style.display = 'none'; }
+  function showHome() { 
+    document.getElementById('video-list').style.display = 'grid';
+    document.getElementById('history-list').style.display = 'none';
+    renderVideos(videos);
+  }
+
+  function showHistory() {
+    document.getElementById('video-list').style.display = 'none';
+    document.getElementById('history-list').style.display = 'block';
+    const ul = document.getElementById('history-ul');
+    ul.innerHTML = '';
+    history.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      ul.appendChild(li);
+    });
+  }
+
+  // Account create
+  function createAccount() {
+    const fullName = document.getElementById('fullName').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if(password.length < 8){
+      alert('Password must be at least 8 characters');
+      return;
+    }
+    if(password !== confirmPassword){
+      alert('Passwords do not match');
+      return;
     }
 
-    // Local storage for videos
-    let videos = JSON.parse(localStorage.getItem('videos')) || [];
+    localStorage.setItem('user', JSON.stringify({fullName, email, password}));
+    alert(`Account created for ${fullName} (${email})`);
+  }
 
-    function renderVideos() {
-      const list = document.getElementById('video-list');
-      list.innerHTML = '';
-      videos.forEach((v, idx) => {
-        const div = document.createElement('div');
-        div.className = 'video-item';
-        div.innerHTML = `
-          <strong>${v.title}</strong> (${v.category}) 
-          <a href="${v.link}" target="_blank">Watch</a>
-          <button onclick="deleteVideo(${idx})">Delete</button>
-        `;
-        list.appendChild(div);
-      });
-    }
+  // History Add
+  function addHistory(title) {
+    history.push(title);
+    localStorage.setItem('history', JSON.stringify(history));
+  }
 
-    function addVideo() {
-      const title = document.getElementById('video-title').value.trim();
-      const link = document.getElementById('video-link').value.trim();
-      const category = document.getElementById('video-category').value.trim();
-      if(!title || !link) { alert('Fill title and link'); return; }
-      videos.push({title, link, category});
-      localStorage.setItem('videos', JSON.stringify(videos));
-      renderVideos();
-      document.getElementById('video-title').value = '';
-      document.getElementById('video-link').value = '';
-      document.getElementById('video-category').value = '';
-    }
-
-    function deleteVideo(idx) {
-      videos.splice(idx,1);
-      localStorage.setItem('videos', JSON.stringify(videos));
-      renderVideos();
-    }
-
-    function searchVideo() {
-      const query = document.getElementById('search-input').value.toLowerCase();
-      const resultsDiv = document.getElementById('search-results');
-      resultsDiv.innerHTML = '';
-      const results = videos.filter(v => v.title.toLowerCase().includes(query) || (v.category && v.category.toLowerCase().includes(query)));
-      if(results.length===0){ resultsDiv.innerHTML = 'No results found'; return; }
-      results.forEach(v=>{
-        const div = document.createElement('div');
-        div.className='video-item';
-        div.innerHTML = `<strong>${v.title}</strong> (${v.category}) <a href="${v.link}" target="_blank">Watch</a>`;
-        resultsDiv.appendChild(div);
-      });
-    }
-
-    // Account Create/Login
-    let users = JSON.parse(localStorage.getItem('users')) || [];
-
-    function createAccount() {
-      const name = document.getElementById('full-name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const pass = document.getElementById('password').value;
-      const cpass = document.getElementById('confirm-password').value;
-      if(pass.length < 8){ alert('Password min 8 char'); return; }
-      if(pass !== cpass){ alert('Password mismatch'); return; }
-      if(users.some(u=>u.email===email)){ alert('Email already registered'); return; }
-      users.push({name,email,pass});
-      localStorage.setItem('users', JSON.stringify(users));
-      alert('Account created');
-    }
-
-    function loginAccount() {
-      const email = document.getElementById('login-email').value.trim();
-      const pass = document.getElementById('login-password').value;
-      const user = users.find(u=>u.email===email && u.pass===pass);
-      if(user){ alert('Login successful'); } else { alert('Invalid login'); }
-    }
-
-    function adminLogin() {
-      const id = document.getElementById('admin-id').value.trim();
-      const pass = document.getElementById('admin-pass').value;
-      if(id==='112233445500' && pass==='123450'){ alert('Admin logged in'); } else { alert('Invalid admin'); }
-    }
-
-    // Initial render
-    renderVideos();
-  </script>
+</script>
 
 </body>
 </html>
