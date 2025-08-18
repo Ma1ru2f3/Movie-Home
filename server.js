@@ -1,8 +1,8 @@
 const express = require("express");
 const fileUpload = require("express-fileupload");
-const cloudinary = require("cloudinary").v2;
 const bodyParser = require("body-parser");
-require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 app.use(bodyParser.json());
@@ -10,69 +10,59 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.use(fileUpload());
 
-// Cloudinary config
-cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME || "dlxa4684c",
-  api_key: process.env.API_KEY || "488983136699335",
-  api_secret: process.env.API_SECRET || "Q0pMZ3qtVHouepBUcWzPaDpZ7lI"
-});
+// Ensure uploads folder exists
+const uploadFolder = path.join(__dirname, "public/uploads");
+if (!fs.existsSync(uploadFolder)) fs.mkdirSync(uploadFolder, { recursive: true });
+
+// In-memory video list (will reset on server restart)
+let videos = [];
 
 // Admin credentials
-const ADMIN_USER = process.env.ADMIN_USER || "admin";
-const ADMIN_PASS = process.env.ADMIN_PASS || "1234";
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "1234";
 
-// Admin login middleware
-const checkAdmin = (req,res,next)=>{
-  const {user,pass} = req.body;
-  if(user===ADMIN_USER && pass===ADMIN_PASS) next();
+// Admin middleware
+const checkAdmin = (req, res, next) => {
+  const { user, pass } = req.body;
+  if (user === ADMIN_USER && pass === ADMIN_PASS) next();
   else res.status(401).send("Unauthorized");
-}
+};
 
 // Upload route
-app.post("/upload", checkAdmin, async(req,res)=>{
-  try{
-    const file = req.files.video;
-    const title = req.body.title || file.name;
-    const result = await cloudinary.uploader.upload(file.tempFilePath,{
-      resource_type:"video",
-      folder:"Moviebox",
-      use_filename:true,
-      unique_filename:false
-    });
-    res.json({public_id:result.public_id, url:result.secure_url, title});
-  }catch(err){
-    res.status(500).send(err.message);
-  }
+app.post("/upload", checkAdmin, (req, res) => {
+  if (!req.files || !req.files.video) return res.status(400).send("No file uploaded");
+  const file = req.files.video;
+  const title = req.body.title || file.name;
+  const uploadPath = path.join(uploadFolder, file.name);
+
+  file.mv(uploadPath, (err) => {
+    if (err) return res.status(500).send(err);
+    const videoData = {
+      title,
+      url: `/uploads/${file.name}`
+    };
+    videos.push(videoData);
+    res.json(videoData);
+  });
 });
 
-// Delete route
-app.post("/delete", checkAdmin, async(req,res)=>{
-  try{
-    const {public_id} = req.body;
-    const result = await cloudinary.uploader.destroy(public_id,{resource_type:"video"});
-    res.json(result);
-  }catch(err){
-    res.status(500).send(err.message);
-  }
+// Get all videos
+app.get("/videos", (req, res) => {
+  res.json(videos);
 });
 
-// Fetch videos
-app.get("/videos", async(req,res)=>{
-  try{
-    const result = await cloudinary.api.resources({
-      type:"upload",
-      resource_type:"video",
-      prefix:"Moviebox"
-    });
-    const videos = result.resources.map(v=>({
-      public_id:v.public_id,
-      url:v.secure_url,
-      title:v.public_id.split("/").pop()
-    }));
-    res.json(videos);
-  }catch(err){
-    res.status(500).send(err.message);
-  }
+// Delete video
+app.post("/delete", checkAdmin, (req, res) => {
+  const { title } = req.body;
+  const videoIndex = videos.findIndex(v => v.title === title);
+  if (videoIndex === -1) return res.status(404).send("Video not found");
+
+  const filePath = path.join(uploadFolder, path.basename(videos[videoIndex].url));
+  fs.unlink(filePath, (err) => {
+    if (err) return res.status(500).send(err);
+    videos.splice(videoIndex, 1);
+    res.json({ message: "Deleted successfully" });
+  });
 });
 
-app.listen(3000,()=>console.log("Server running on port 3000"));
+app.listen(3000, () => console.log("Server running on http://localhost:3000"));
