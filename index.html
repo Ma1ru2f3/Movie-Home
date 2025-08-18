@@ -1,129 +1,191 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Movie Home</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #1a1a1a; color: #fff; }
-    header { background: #111; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
-    header h1 { margin: 0; font-size: 24px; }
-    nav button { margin-left: 10px; padding: 5px 10px; cursor: pointer; }
-    #searchBar { margin: 10px 20px; width: calc(100% - 40px); padding: 8px; }
-    #videoForm { margin: 10px 20px; }
-    #videoForm input { padding: 5px; margin-right: 5px; width: 200px; }
-    #videoList { margin: 20px; display: flex; flex-wrap: wrap; gap: 15px; }
-    .videoCard { background: #222; padding: 10px; width: 300px; border-radius: 8px; }
-    .videoCard h3 { margin: 0 0 5px 0; font-size: 16px; }
-    .videoCard iframe { width: 100%; height: 170px; }
-    .videoCard button { margin-top: 5px; padding: 5px; cursor: pointer; background: #ff4444; border: none; color: #fff; border-radius: 4px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Home</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #121212; color: #fff; }
+  header { background: #1f1f1f; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { margin: 0; font-size: 24px; }
+  nav button { margin-left: 10px; padding: 5px 10px; cursor: pointer; }
+  #searchBar { margin: 10px 20px; width: calc(100% - 40px); padding: 8px; }
+  #content { margin: 20px; }
+  .videoCard { background: #222; padding: 10px; margin-bottom: 15px; border-radius: 8px; position: relative; }
+  .videoCard iframe { width: 100%; height: 200px; }
+  .optionsBtn { position: absolute; top: 10px; right: 10px; cursor: pointer; }
+  #profileContent { margin: 10px 0; }
+  button { cursor: pointer; padding: 5px 8px; border-radius: 4px; border: none; background: #ff4444; color: #fff; margin-right: 5px;}
+</style>
 </head>
 <body>
-  <header>
-    <h1>Movie Home</h1>
-    <div id="g_id_signin"></div>
-    <button onclick="logout()">Logout</button>
-  </header>
-
-  <input type="text" id="searchBar" placeholder="Search video by title..." onkeyup="searchVideo()">
-
-  <div id="videoForm">
-    <input type="text" id="videoTitle" placeholder="Video Title">
-    <input type="text" id="videoURL" placeholder="YouTube Link">
-    <input type="text" id="adminCode" placeholder="Admin Code">
-    <button onclick="addVideo()">Add Video</button>
+<header>
+  <h1>Movie Home</h1>
+  <div>
+    <button onclick="showSection('home')">Home</button>
+    <button onclick="showSection('history')">History</button>
+    <button onclick="showSection('profile')">Profile</button>
   </div>
+</header>
 
-  <div id="videoList"></div>
+<input type="text" id="searchBar" placeholder="Search video..." onkeyup="searchVideo()">
 
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script>
-    const ADMIN_CODE = "123450"; // Video delete/add protection
-    let videos = JSON.parse(localStorage.getItem("videos")) || [];
-    let user = null;
+<div id="content">
+  <div id="loginNotice">Please login and enjoy video.</div>
 
-    function renderVideos() {
-      const container = document.getElementById("videoList");
-      container.innerHTML = "";
-      videos.forEach((v, index) => {
-        const div = document.createElement("div");
-        div.className = "videoCard";
-        div.innerHTML = `
-          <h3>${v.title}</h3>
-          <iframe src="https://www.youtube.com/embed/${getYouTubeID(v.url)}" frameborder="0" allowfullscreen></iframe>
-          <button onclick="deleteVideo(${index})">Delete</button>
-        `;
-        container.appendChild(div);
+  <div id="home" style="display:none"></div>
+  <div id="history" style="display:none"></div>
+  <div id="profile" style="display:none">
+    <div id="profileContent"></div>
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+  // Admin info
+  const ADMIN_ID = "112233445500";
+  const ADMIN_PASS = "123450";
+  const ADMIN_CODE = "123450";
+
+  // Users & videos storage
+  let videos = JSON.parse(localStorage.getItem("videos")) || [];
+  let users = JSON.parse(localStorage.getItem("users")) || [];
+  let historyData = JSON.parse(localStorage.getItem("history")) || {};
+  let currentUser = null;
+  let currentSection = "home";
+
+  // Section switch
+  function showSection(section) {
+    currentSection = section;
+    document.getElementById("home").style.display = section === 'home' ? 'block' : 'none';
+    document.getElementById("history").style.display = section === 'history' ? 'block' : 'none';
+    document.getElementById("profile").style.display = section === 'profile' ? 'block' : 'none';
+    if(section === 'home') renderHome();
+    if(section === 'history') renderHistory();
+    if(section === 'profile') renderProfile();
+  }
+
+  // Video ID extraction
+  function getYouTubeID(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  }
+
+  // Render Home
+  function renderHome() {
+    if(!currentUser) { document.getElementById("home").innerHTML = "<p>Please login to watch videos.</p>"; return; }
+    let html = '';
+    videos.forEach((v,i)=>{
+      html += `<div class="videoCard">
+        <h3>${v.title}</h3>
+        <iframe src="https://www.youtube.com/embed/${getYouTubeID(v.url)}" frameborder="0" allowfullscreen></iframe>`;
+      if(currentUser.isAdmin) html += `<div class="optionsBtn"><button onclick="deleteVideo(${i})">Delete</button></div>`;
+      html += `</div>`;
+    });
+    document.getElementById("home").innerHTML = html;
+  }
+
+  // Render History
+  function renderHistory() {
+    if(!currentUser) { document.getElementById("history").innerHTML = "<p>Please login first.</p>"; return; }
+    let userHist = historyData[currentUser.email] || [];
+    if(userHist.length === 0) { document.getElementById("history").innerHTML = "<p>No history yet.</p>"; return; }
+    let html = '<ul>';
+    userHist.forEach(v=>{ html += `<li>${v}</li>`; });
+    html += '</ul>';
+    document.getElementById("history").innerHTML = html;
+  }
+
+  // Render Profile
+  function renderProfile() {
+    if(!currentUser) { 
+      document.getElementById("profileContent").innerHTML = "<p>Please login first.</p>"; 
+      return; 
+    }
+    let html = `<p>Welcome, ${currentUser.name} (${currentUser.email})</p>`;
+    if(currentUser.isAdmin){
+      html += `<h3>Admin Panel</h3>`;
+      html += `<button onclick="showVideoUpload()">Upload Video</button>`;
+      html += `<h4>Users List</h4>`;
+      users.forEach((u,i)=>{
+        html += `<div>${u.name} (${u.email}) - ${u.blocked ? 'Blocked':'Active'}
+        <button onclick="toggleBlock(${i})">${u.blocked ? 'Unblock':'Block'}</button></div>`;
       });
     }
+    document.getElementById("profileContent").innerHTML = html;
+  }
 
-    function getYouTubeID(url) {
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-      const match = url.match(regExp);
-      return (match && match[2].length === 11) ? match[2] : null;
-    }
+  function showVideoUpload() {
+    const html = `<input type="text" id="videoTitle" placeholder="Video Title">
+      <input type="text" id="videoURL" placeholder="YouTube Link">
+      <input type="text" id="adminCode" placeholder="Admin Code">
+      <button onclick="addVideo()">Add Video</button>`;
+    document.getElementById("profileContent").innerHTML += html;
+  }
 
-    function addVideo() {
-      const title = document.getElementById("videoTitle").value.trim();
-      const url = document.getElementById("videoURL").value.trim();
-      const code = document.getElementById("adminCode").value.trim();
-      if(code !== ADMIN_CODE) { alert("Invalid admin code"); return; }
-      if(title && url) {
-        videos.push({title, url});
-        localStorage.setItem("videos", JSON.stringify(videos));
-        document.getElementById("videoTitle").value = "";
-        document.getElementById("videoURL").value = "";
-        document.getElementById("adminCode").value = "";
-        renderVideos();
-      }
-    }
-
-    function deleteVideo(index) {
-      const code = prompt("Enter admin code to delete:");
-      if(code !== ADMIN_CODE) { alert("Wrong code"); return; }
-      videos.splice(index, 1);
+  function addVideo() {
+    const title = document.getElementById("videoTitle").value.trim();
+    const url = document.getElementById("videoURL").value.trim();
+    const code = document.getElementById("adminCode").value.trim();
+    if(code !== ADMIN_CODE){ alert("Invalid admin code"); return; }
+    if(title && url){ 
+      videos.push({title,url}); 
       localStorage.setItem("videos", JSON.stringify(videos));
-      renderVideos();
+      renderHome(); showSection('home'); 
     }
+  }
 
-    function searchVideo() {
-      const q = document.getElementById("searchBar").value.toLowerCase();
-      const container = document.getElementById("videoList");
-      container.innerHTML = "";
-      videos.filter(v => v.title.toLowerCase().includes(q)).forEach((v, index) => {
-        const div = document.createElement("div");
-        div.className = "videoCard";
-        div.innerHTML = `
-          <h3>${v.title}</h3>
-          <iframe src="https://www.youtube.com/embed/${getYouTubeID(v.url)}" frameborder="0" allowfullscreen></iframe>
-          <button onclick="deleteVideo(${index})">Delete</button>
-        `;
-        container.appendChild(div);
-      });
-    }
+  function deleteVideo(index){
+    if(!currentUser || !currentUser.isAdmin) return alert("Admin only");
+    videos.splice(index,1); localStorage.setItem("videos", JSON.stringify(videos)); renderHome();
+  }
 
-    function handleCredentialResponse(response) {
-      console.log("JWT ID token:", response.credential);
-      user = response.credential;
-      alert("Logged in successfully!");
-    }
+  function toggleBlock(index){
+    if(!currentUser || !currentUser.isAdmin) return;
+    users[index].blocked = !users[index].blocked;
+    localStorage.setItem("users", JSON.stringify(users));
+    renderProfile();
+  }
 
-    window.onload = function() {
-      google.accounts.id.initialize({
-        client_id: "119036146469-3kdd5drvt8udga1qk028qbjqoaug0sfi.apps.googleusercontent.com",
-        callback: handleCredentialResponse
-      });
-      google.accounts.id.renderButton(document.getElementById("g_id_signin"), { theme: "outline", size: "large" });
-      google.accounts.id.prompt();
-      renderVideos();
-    }
+  function searchVideo() {
+    const q = document.getElementById("searchBar").value.toLowerCase();
+    const filtered = videos.filter(v=>v.title.toLowerCase().includes(q));
+    let html = '';
+    filtered.forEach((v,i)=>{
+      html += `<div class="videoCard">
+        <h3>${v.title}</h3>
+        <iframe src="https://www.youtube.com/embed/${getYouTubeID(v.url)}" frameborder="0" allowfullscreen></iframe>`;
+      if(currentUser?.isAdmin) html += `<div class="optionsBtn"><button onclick="deleteVideo(${i})">Delete</button></div>`;
+      html += `</div>`;
+    });
+    document.getElementById("home").innerHTML = html;
+  }
 
-    function logout() {
-      user = null;
-      alert("Logged out");
-      window.location.reload();
-    }
-  </script>
+  // Google OAuth setup
+  function handleCredentialResponse(response){
+    const data = jwt_decode(response.credential);
+    currentUser = { name: data.name, email: data.email, isAdmin:false, blocked:false };
+    // Check blocked
+    const blockedUser = users.find(u=>u.email===currentUser.email);
+    if(blockedUser?.blocked){ alert("You are blocked."); currentUser=null; return; }
+    // Admin check
+    if(currentUser.email === ADMIN_ID) currentUser.isAdmin = true;
+    // Store user if new
+    if(!users.some(u=>u.email===currentUser.email)) users.push(currentUser);
+    localStorage.setItem("users", JSON.stringify(users));
+    document.getElementById("loginNotice").style.display = "none";
+    showSection('home');
+  }
+
+  window.onload = function(){
+    google.accounts.id.initialize({
+      client_id: "119036146469-3kdd5drvt8udga1qk028qbjqoaug0sfi.apps.googleusercontent.com",
+      callback: handleCredentialResponse
+    });
+    google.accounts.id.renderButton(document.getElementById("loginNotice"), {theme:"outline", size:"large"});
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
 </body>
 </html>
