@@ -13,6 +13,8 @@ nav button {margin:0 5px; padding:8px 12px; background:#333; color:#fff; border:
 .video-card {background:#222; padding:10px; margin:10px 0; border-radius:8px; display:flex; justify-content:space-between; align-items:center;}
 .video-card button {margin-left:5px; padding:5px;}
 input, button {padding:5px; margin:5px 0;}
+.owner-info {background:#222; padding:15px; border-radius:8px; width:300px;}
+.owner-info h4 {margin-bottom:10px; text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -46,6 +48,7 @@ input, button {padding:5px; margin:5px 0;}
     <h2>Profile</h2>
     <button onclick="showUserLogin()">User Login</button>
     <button onclick="showAdminPanel()">Admin Panel</button>
+    <button onclick="showOwnerInfo()">Owner Info</button>
 
     <!-- User Login -->
     <div id="userLoginSection" class="hidden">
@@ -73,6 +76,19 @@ input, button {padding:5px; margin:5px 0;}
         <div id="userList"></div>
       </div>
     </div>
+
+    <!-- Owner Info -->
+    <div id="ownerInfoSection" class="hidden">
+      <h3>Owner Info</h3>
+      <div class="owner-info">
+        <h4>Maruf Hossain</h4>
+        <p><strong>Address:</strong> Meherpur</p>
+        <p><strong>Country:</strong> Bangladesh</p>
+        <p><strong>Gender:</strong> Male</p>
+        <p><strong>Language:</strong> Bangla / English</p>
+      </div>
+    </div>
+
   </div>
 
 </div>
@@ -92,10 +108,17 @@ function showSection(sec){
 function showUserLogin(){
   document.getElementById("userLoginSection").classList.remove("hidden");
   document.getElementById("adminPanelSection").classList.add("hidden");
+  document.getElementById("ownerInfoSection").classList.add("hidden");
 }
 function showAdminPanel(){
   document.getElementById("adminPanelSection").classList.remove("hidden");
   document.getElementById("userLoginSection").classList.add("hidden");
+  document.getElementById("ownerInfoSection").classList.add("hidden");
+}
+function showOwnerInfo(){
+  document.getElementById("ownerInfoSection").classList.remove("hidden");
+  document.getElementById("userLoginSection").classList.add("hidden");
+  document.getElementById("adminPanelSection").classList.add("hidden");
 }
 
 // Admin Login
