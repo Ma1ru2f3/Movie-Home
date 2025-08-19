@@ -4,14 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie World</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-  body {font-family: Arial; margin:0; padding:0; background:#f2f2f2;}
+  body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
   nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
   nav div {cursor:pointer;}
   nav div:hover {text-decoration:underline;}
-  .section {display:none; padding:20px;}
-  .active {display:block;}
-  #loginBtn, #logoutBtn {padding:5px 10px; margin-top:10px;}
+  #content {padding:20px;}
+  #profileSection {margin-top:20px;}
+  input {margin:5px; padding:5px;}
+  .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
+  .progress {width:0%; height:100%; background:green; border-radius:5px;}
+  .video-card {background:white; padding:10px; margin:10px 0; border-radius:5px;}
+  video, iframe {width:100%; max-height:400px;}
 </style>
 </head>
 <body>
@@ -24,60 +29,148 @@
   <div id="profileBtn">👤 Profile</div>
 </nav>
 
-<div id="homeSection" class="section active">Home content...</div>
-<div id="searchSection" class="section">Search content...</div>
-<div id="historySection" class="section">History content...</div>
-<div id="favSection" class="section">Favorites content...</div>
-<div id="profileSection" class="section">
-  <div id="userInfo">Please login</div>
-  <button id="loginBtn">Sign in with Google</button>
-  <button id="logoutBtn" style="display:none;">Logout</button>
+<div id="content">
+  <h2>Welcome to Movie World</h2>
+  
+  <div id="homeSection"></div>
+  <div id="searchSection" style="display:none;">Search bar will work here...</div>
+  <div id="historySection" style="display:none;">History videos...</div>
+  <div id="favSection" style="display:none;">Favourite videos...</div>
+  
+  <div id="profileSection" style="display:none;">
+    <div id="userInfo"></div>
+    <div id="adminPanel" style="display:none;">
+      <h3>Admin Dashboard</h3>
+      <input type="text" id="videoTitle" placeholder="Title">
+      <input type="text" id="videoLink" placeholder="MP4/YouTube/Facebook link">
+      <input type="text" id="videoCategory" placeholder="Category">
+      <button onclick="uploadVideo()">Upload Video</button>
+      <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
+      <div id="uploadStatus"></div>
+    </div>
+    <div id="loginDiv">
+      <p>Please login with Google:</p>
+      <div id="g_id_onload"
+           data-client_id="36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com"
+           data-callback="handleCredentialResponse"
+           data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin" data-type="standard"></div>
+    </div>
+    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer; display:none;">Logout</button>
+  </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
-  // Firebase Config
-  const firebaseConfig = { /* তোমার config */ };
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+  // Navbar click events
+  const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
+  for(let btn in sections){
+    document.getElementById(btn).onclick = () => {
+      for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
+      document.getElementById(sections[btn]).style.display = 'block';
+    };
+  }
 
-  // Navbar click
-  const sections = ['home','search','history','fav','profile'];
-  sections.forEach(name=>{
-    document.getElementById(name+'Btn').addEventListener('click', ()=>{
-      sections.forEach(n=>document.getElementById(n+'Section').classList.remove('active'));
-      document.getElementById(name+'Section').classList.add('active');
-      if(name==='profile') showProfile();
-    });
-  });
+  // User login state
+  let currentUser = null;
 
-  const provider = new firebase.auth.GoogleAuthProvider();
+  function handleCredentialResponse(response) {
+    // Decode JWT to get user info
+    const base64Url = response.credential.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    currentUser = JSON.parse(jsonPayload);
+    showUser(currentUser);
+  }
 
-  document.getElementById('loginBtn').addEventListener('click', ()=>{
-    auth.signInWithPopup(provider).then(()=>showProfile()).catch(err=>alert(err));
-  });
-
-  document.getElementById('logoutBtn').addEventListener('click', ()=>{
-    auth.signOut().then(()=>showProfile());
-  });
-
-  function showProfile(){
-    const user = auth.currentUser;
-    if(user){
-      document.getElementById('userInfo').innerHTML = `<p>Name: ${user.displayName}</p><p>Email: ${user.email}</p>`;
-      document.getElementById('loginBtn').style.display='none';
-      document.getElementById('logoutBtn').style.display='inline-block';
-    } else{
-      document.getElementById('userInfo').innerHTML = 'Please login';
-      document.getElementById('loginBtn').style.display='inline-block';
-      document.getElementById('logoutBtn').style.display='none';
+  function showUser(user){
+    document.getElementById('profileSection').style.display='block';
+    document.getElementById('loginDiv').style.display='none';
+    document.getElementById('userInfo').innerHTML = `
+      <p>Name: ${user.name}</p>
+      <p>Email: ${user.email}</p>
+      <p>ID: ${user.sub}</p>
+    `;
+    document.getElementById('logoutBtn').style.display='inline-block';
+    if(user.email === 'mymaruf94@gmail.com'){
+      document.getElementById('adminPanel').style.display='block';
+    } else {
+      document.getElementById('adminPanel').style.display='none';
     }
   }
 
-  auth.onAuthStateChanged(()=>showProfile());
-</script>
+  document.getElementById('logoutBtn').onclick = () => {
+    currentUser = null;
+    document.getElementById('profileSection').style.display='block';
+    document.getElementById('userInfo').innerHTML='';
+    document.getElementById('loginDiv').style.display='block';
+    document.getElementById('logoutBtn').style.display='none';
+    document.getElementById('adminPanel').style.display='none';
+  };
 
+  document.getElementById('profileBtn').onclick = () => {
+    for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
+    document.getElementById('profileSection').style.display='block';
+  };
+
+  // Video upload
+  async function uploadVideo(){
+    const title = document.getElementById('videoTitle').value;
+    const link = document.getElementById('videoLink').value;
+    const category = document.getElementById('videoCategory').value;
+    if(!title||!link||!category) return alert('Fill all fields');
+    const data = {title, link, category};
+    const url = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
+    const progressElem = document.getElementById('uploadProgress');
+    const statusElem = document.getElementById('uploadStatus');
+    progressElem.style.width='0%';
+    statusElem.innerText='Uploading...';
+    let width=0;
+    const interval = setInterval(()=>{width+=10; progressElem.style.width=width+'%';},100);
+    try{
+      await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data})});
+      clearInterval(interval);
+      progressElem.style.width='100%';
+      statusElem.innerText='Upload Success ✅';
+      loadVideos();
+    }catch(e){
+      clearInterval(interval);
+      statusElem.innerText='Upload Failed ❌';
+      console.error(e);
+    }
+  }
+
+  // Load videos from sheet
+  async function loadVideos(){
+    const home = document.getElementById('homeSection');
+    home.innerHTML = 'Loading videos...';
+    const url = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
+    try{
+      const res = await fetch(url);
+      const data = await res.json();
+      home.innerHTML='';
+      data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        card.innerHTML = `<h4>${item.Title}</h4>`;
+        if(item.Link.includes('youtube.com') || item.Link.includes('youtu.be')){
+          card.innerHTML += `<iframe src="${item.Link.replace('watch?v=','embed/')}" frameborder="0" allowfullscreen></iframe>`;
+        } else if(item.Link.includes('facebook.com')){
+          card.innerHTML += `<iframe src="${item.Link}" frameborder="0" allowfullscreen></iframe>`;
+        } else {
+          card.innerHTML += `<video controls><source src="${item.Link}" type="video/mp4">Your browser does not support the video tag.</video>`;
+        }
+        home.appendChild(card);
+      });
+    }catch(e){
+      home.innerHTML='Failed to load videos ❌';
+      console.error(e);
+    }
+  }
+
+  loadVideos();
+</script>
 </body>
 </html>
