@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,8 +15,9 @@
   input {margin:5px; padding:5px;}
   .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
   .progress {width:0%; height:100%; background:green; border-radius:5px;}
-  video {width:100%; max-width:600px; margin-bottom:20px;}
-  iframe {width:100%; max-width:600px; height:340px; margin-bottom:20px;}
+  .video-card {margin-bottom:20px;}
+  iframe, video {max-width:100%; height:auto;}
+  button {cursor:pointer;}
 </style>
 </head>
 <body>
@@ -32,10 +32,12 @@
 
 <div id="content">
   <h2>Welcome to Movie World</h2>
-  <div id="homeSection"></div>
+
+  <div id="homeSection">Loading videos...</div>
   <div id="searchSection" style="display:none;">Search bar will work here...</div>
   <div id="historySection" style="display:none;">History videos...</div>
   <div id="favSection" style="display:none;">Favourite videos...</div>
+
   <div id="profileSection" style="display:none;">
     <div id="userInfo"></div>
     <div id="adminPanel" style="display:none;">
@@ -47,117 +49,111 @@
       <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
       <div id="uploadStatus"></div>
     </div>
-    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer;">Logout</button>
+    <div id="g_id_signin"></div>
+    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;display:none;">Logout</button>
   </div>
 </div>
 
 <script>
-  // ----------------- Navbar -----------------
+  // Navbar click
   const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
   for(let btn in sections){
     document.getElementById(btn).onclick = () => {
-      for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
-      document.getElementById(sections[btn]).style.display = 'block';
+      for(let s in sections) document.getElementById(sections[s]).style.display='none';
+      document.getElementById(sections[btn]).style.display='block';
     };
   }
 
-  // ----------------- Google Sign-In -----------------
-  let currentUser = null;
-  const adminEmail = 'mymaruf94@gmail.com';
-  
-  function handleCredentialResponse(response) {
-    // Decode credential
-    const userObject = JSON.parse(atob(response.credential.split('.')[1]));
-    currentUser = userObject;
-    localStorage.setItem('movieUser', JSON.stringify(currentUser));
-    showUser();
+  // Load videos from SheetDB
+  async function loadVideos(){
+    const url = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
+    const homeSection = document.getElementById('homeSection');
+    homeSection.innerHTML = 'Loading videos...';
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      homeSection.innerHTML = '';
+      data.forEach(video=>{
+        const title = video.Title || 'Untitled';
+        const link = video.Link || '';
+        const category = video.category || 'General';
+        let videoElem = '';
+
+        if(link.includes('youtube.com') || link.includes('youtu.be')){
+          let videoId = link.includes('v=') ? link.split('v=')[1].split('&')[0] : link.split('/').pop();
+          videoElem = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+        } else if(link.includes('.mp4')){
+          videoElem = `<video controls><source src="${link}" type="video/mp4">Your browser does not support the video tag.</video>`;
+        } else {
+          videoElem = `<a href="${link}" target="_blank">Watch Video</a>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        card.innerHTML = `<h4>${title} (${category})</h4>${videoElem}`;
+        homeSection.appendChild(card);
+      });
+    } catch(e){
+      homeSection.innerHTML = 'Failed to load videos ❌';
+      console.error(e);
+    }
   }
 
-  window.onload = () => {
-    const storedUser = localStorage.getItem('movieUser');
-    if(storedUser){
-      currentUser = JSON.parse(storedUser);
-      showUser();
-    }
+  loadVideos();
 
-    // Render Google button
+  // Google Sign-In
+  let userData = null;
+  function handleCredentialResponse(response) {
+    const decoded = jwt_decode(response.credential);
+    userData = decoded;
+    showUser(decoded);
+  }
+
+  window.onload = function(){
     google.accounts.id.initialize({
       client_id: '36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com',
       callback: handleCredentialResponse
     });
-  };
+    google.accounts.id.renderButton(
+      document.getElementById("g_id_signin"),
+      { theme: "outline", size: "large" }
+    );
+    google.accounts.id.prompt();
+  }
 
-  function showUser(){
+  function showUser(user){
     document.getElementById('profileSection').style.display='block';
     document.getElementById('userInfo').innerHTML = `
-      <p>Name: ${currentUser.name}</p>
-      <p>Email: ${currentUser.email}</p>
-      <p>ID: ${currentUser.sub}</p>
+      <p>Name: ${user.name}</p>
+      <p>Email: ${user.email}</p>
+      <p>ID: ${user.sub}</p>
     `;
     document.getElementById('logoutBtn').style.display='inline-block';
-    if(currentUser.email === adminEmail){
+    document.getElementById('g_id_signin').style.display='none';
+    // Admin
+    if(user.email==='mymaruf94@gmail.com'){
       document.getElementById('adminPanel').style.display='block';
     } else {
       document.getElementById('adminPanel').style.display='none';
     }
   }
 
-  document.getElementById('profileBtn').onclick = () => {
-    for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
-    document.getElementById('profileSection').style.display='block';
-
-    if(currentUser){
-      showUser();
-    } else {
-      document.getElementById('userInfo').innerHTML = `
-        <p>Please login with Google:</p>
-        <div id="g_id_onload"></div>
-        <div class="g_id_signin" data-type="standard"></div>
-      `;
-      google.accounts.id.renderButton(
-        document.getElementById("userInfo"),
-        { theme: "outline", size: "large" }
-      );
-      document.getElementById('adminPanel').style.display='none';
-      document.getElementById('logoutBtn').style.display='none';
-    }
-  };
-
-  document.getElementById('logoutBtn').onclick = () => {
-    localStorage.removeItem('movieUser');
-    currentUser = null;
-    location.reload();
-  };
-
-  // ----------------- Video Load -----------------
-  const homeSection = document.getElementById('homeSection');
-  async function loadVideos(){
-    try{
-      const res = await fetch('https://sheetdb.io/api/v1/3p5l2ilgzemvr');
-      const data = await res.json();
-      homeSection.innerHTML = '';
-      data.forEach(item=>{
-        let content = '';
-        const link = item.Link || '';
-        if(link.includes('youtube.com') || link.includes('youtu.be')){
-          content = `<iframe src="${link.replace("watch?v=", "embed/")}" frameborder="0" allowfullscreen></iframe>`;
-        } else if(link.includes('facebook.com')){
-          content = `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`;
-        } else if(link.endsWith('.mp4')){
-          content = `<video controls src="${link}"></video>`;
-        } else {
-          content = `<a href="${link}" target="_blank">${link}</a>`;
-        }
-        homeSection.innerHTML += `<h4>${item.Title}</h4>${content}<hr>`;
-      });
-    } catch(e){
-      homeSection.innerHTML = 'Video loading failed ❌';
-      console.error(e);
-    }
+  document.getElementById('logoutBtn').onclick = ()=>{
+    userData = null;
+    document.getElementById('userInfo').innerHTML='';
+    document.getElementById('logoutBtn').style.display='none';
+    document.getElementById('adminPanel').style.display='none';
+    document.getElementById('g_id_signin').style.display='block';
+    google.accounts.id.disableAutoSelect();
   }
-  loadVideos();
 
-  // ----------------- Upload Video -----------------
+  document.getElementById('profileBtn').onclick = () => {
+    for(let s in sections) document.getElementById(sections[s]).style.display='none';
+    document.getElementById('profileSection').style.display='block';
+    if(userData) showUser(userData);
+  };
+
+  // Upload video
   async function uploadVideo(){
     const title = document.getElementById('videoTitle').value;
     const link = document.getElementById('videoLink').value;
@@ -176,7 +172,7 @@
       clearInterval(interval);
       progressElem.style.width='100%';
       statusElem.innerText='Upload Success ✅';
-      loadVideos();
+      loadVideos(); // Reload after upload
     }catch(e){
       clearInterval(interval);
       statusElem.innerText='Upload Failed ❌';
@@ -184,6 +180,6 @@
     }
   }
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
 </body>
 </html>
