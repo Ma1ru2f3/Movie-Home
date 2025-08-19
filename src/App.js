@@ -1,29 +1,18 @@
-// src/App.js
 import React from "react";
-import Navbar from "./Navbar";
-import Profile from "./Profile";
-import Admin from "./Admin";
-import Home from "./Home";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
+import Profile from "./pages/Profile";
 
 function App() {
-  const [page, setPage] = React.useState("home");
-
-  const renderPage = () => {
-    switch(page){
-      case "home": return <Home />;
-      case "profile": return <Profile />;
-      case "admin": return <Admin />;
-      default: return <Home />;
-    }
-  };
-
   return (
-    <div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/profile" element={<Profile />} />
+      </Routes>
       <Navbar />
-      <div style={{ padding: "20px" }}>
-        {renderPage()}
-      </div>
-    </div>
+    </Router>
   );
 }
 
