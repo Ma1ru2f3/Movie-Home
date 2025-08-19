@@ -4,20 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie World</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
   body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
   nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
   nav div {cursor:pointer;}
   nav div:hover {text-decoration:underline;}
   #content {padding:20px;}
-  #profileSection, #homeSection, #searchSection, #historySection, #favSection {margin-top:20px;}
+  #profileSection {margin-top:20px;}
   input {margin:5px; padding:5px;}
   .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
   .progress {width:0%; height:100%; background:green; border-radius:5px;}
-  iframe, video {width:100%; max-width:600px; margin-top:10px;}
-  .video-card {margin-bottom:20px; padding:10px; background:white; border-radius:5px; box-shadow:0 0 5px rgba(0,0,0,0.1);}
+  .video-card {margin-bottom:20px; border:1px solid #ccc; padding:10px; border-radius:5px; background:white;}
+  iframe, video {width:100%; max-width:600px; height:340px;}
+  .btn {padding:5px 10px; margin:5px; border:none; border-radius:5px; cursor:pointer;}
+  .favBtn {background:gold;}
+  .historyBtn {background:#4CAF50; color:white;}
 </style>
 </head>
 <body>
@@ -31,10 +34,15 @@
 </nav>
 
 <div id="content">
-  <div id="homeSection">Loading videos...</div>
-  <div id="searchSection" style="display:none;">Search bar will work here...</div>
-  <div id="historySection" style="display:none;">History videos...</div>
-  <div id="favSection" style="display:none;">Favourite videos...</div>
+  <h2>Welcome to Movie World</h2>
+  <div id="homeSection">Home content will show videos here...</div>
+  <div id="searchSection" style="display:none;">
+    <input type="text" id="searchInput" placeholder="Search by title or category">
+    <button onclick="searchVideos()">Search</button>
+    <div id="searchResults"></div>
+  </div>
+  <div id="historySection" style="display:none;">History videos will appear here...</div>
+  <div id="favSection" style="display:none;">Favourite videos will appear here...</div>
   <div id="profileSection" style="display:none;">
     <div id="userInfo"></div>
     <div id="adminPanel" style="display:none;">
@@ -46,32 +54,51 @@
       <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
       <div id="uploadStatus"></div>
     </div>
-    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer;">Logout</button>
-    <div id="googleSignInDiv"></div>
+    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer; display:none;">Logout</button>
   </div>
 </div>
 
 <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAJlhLhl-dFkZO9LP5s_0XMhtotiv3RMW8",
+    authDomain: "movie-world-db6c9.firebaseapp.com",
+    projectId: "movie-world-db6c9",
+    storageBucket: "movie-world-db6c9.appspot.com",
+    messagingSenderId: "801583543414",
+    appId: "1:801583543414:web:42361e2894b9893c07db57"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
   const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
   for(let btn in sections){
     document.getElementById(btn).onclick = () => {
       for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
       document.getElementById(sections[btn]).style.display = 'block';
-      if(btn==='homeBtn') loadVideos();
+      if(btn==='historyBtn') loadHistory();
+      if(btn==='favBtn') loadFavorites();
     };
   }
 
-  let userProfile = null;
+  const provider = new firebase.auth.GoogleAuthProvider();
+  function googleLogin(){
+    auth.signInWithPopup(provider)
+    .then(result => {
+      const user = result.user;
+      showUser(user);
+    })
+    .catch(err => alert('Login failed: '+err));
+  }
 
   function showUser(user){
     document.getElementById('profileSection').style.display='block';
     document.getElementById('userInfo').innerHTML = `
-      <p>Name: ${user.name}</p>
+      <p>Name: ${user.displayName}</p>
       <p>Email: ${user.email}</p>
-      <p>ID: ${user.id}</p>
+      <p>ID: ${user.uid}</p>
     `;
     document.getElementById('logoutBtn').style.display='inline-block';
-    document.getElementById('googleSignInDiv').style.display='none';
     if(user.email === 'mymaruf94@gmail.com'){
       document.getElementById('adminPanel').style.display='block';
     } else {
@@ -79,51 +106,121 @@
     }
   }
 
-  function handleCredentialResponse(response) {
-    const data = jwt_decode(response.credential);
-    userProfile = {
-      name: data.name,
-      email: data.email,
-      id: data.sub,
-      picture: data.picture
-    };
-    localStorage.setItem('userProfile', JSON.stringify(userProfile));
-    showUser(userProfile);
-  }
-
-  window.onload = () => {
-    const savedUser = localStorage.getItem('userProfile');
-    if(savedUser){
-      userProfile = JSON.parse(savedUser);
-      showUser(userProfile);
-    }
-    google.accounts.id.initialize({
-      client_id: '36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com',
-      callback: handleCredentialResponse
-    });
-    google.accounts.id.renderButton(
-      document.getElementById('googleSignInDiv'),
-      { theme: "outline", size: "large" }
-    );
-    document.getElementById('googleSignInDiv').style.display = userProfile ? 'none' : 'block';
-    loadVideos();
-  };
-
   document.getElementById('logoutBtn').onclick = () => {
-    userProfile = null;
-    localStorage.removeItem('userProfile');
-    location.reload();
+    auth.signOut().then(()=>{location.reload();});
   };
 
   document.getElementById('profileBtn').onclick = () => {
     for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
     document.getElementById('profileSection').style.display='block';
-    if(userProfile){
-      showUser(userProfile);
+
+    const user = auth.currentUser;
+    if(user){
+      showUser(user);
     } else {
-      document.getElementById('googleSignInDiv').style.display = 'block';
+      document.getElementById('userInfo').innerHTML = `
+        <p>Please login with Google:</p>
+        <button onclick="googleLogin()" style="padding:5px 10px;background:#4285F4;color:white;border:none;border-radius:5px;cursor:pointer;">Sign in with Google</button>
+      `;
+      document.getElementById('adminPanel').style.display='none';
+      document.getElementById('logoutBtn').style.display='none';
     }
   };
+
+  auth.onAuthStateChanged(user=>{
+    if(user) showUser(user);
+  });
+
+  function extractYoutubeID(url){
+    const regExp = /(?:youtube\.com.*(?:\?|&)v=|youtu\.be\/)([^&\n?#]+)/;
+    const match = url.match(regExp);
+    return match ? match[1] : '';
+  }
+
+  let allVideos = [];
+
+  async function loadVideos(){
+    const home = document.getElementById('homeSection');
+    home.innerHTML = 'Loading videos...';
+    try{
+      const res = await fetch('https://sheetdb.io/api/v1/3p5l2ilgzemvr');
+      const json = await res.json();
+      if(!json || !json.length) {
+        home.innerHTML = 'No videos found';
+        return;
+      }
+      allVideos = json;
+      renderVideos(json, home);
+    }catch(e){
+      home.innerHTML='Failed to load videos';
+      console.error(e);
+    }
+  }
+
+  function renderVideos(videos, container){
+    container.innerHTML='';
+    videos.forEach(v=>{
+      const title = v.Title || 'No Title';
+      const link = v.Link || '';
+      const card = document.createElement('div');
+      card.className='video-card';
+      card.innerHTML = `<h4>${title}</h4>`;
+      if(link.includes('youtube.com') || link.includes('youtu.be')){
+        card.innerHTML += `<iframe src="https://www.youtube.com/embed/${extractYoutubeID(link)}" frameborder="0" allowfullscreen></iframe>`;
+      } else if(link.includes('facebook.com')){
+        card.innerHTML += `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`;
+      } else if(link.endsWith('.mp4')){
+        card.innerHTML += `<video controls><source src="${link}" type="video/mp4"></video>`;
+      } else {
+        card.innerHTML += `<p>Unsupported link</p>`;
+      }
+      const favBtn = document.createElement('button');
+      favBtn.className='btn favBtn';
+      favBtn.innerText='⭐ Favorite';
+      favBtn.onclick=()=>addFavorite(v);
+      const histBtn = document.createElement('button');
+      histBtn.className='btn historyBtn';
+      histBtn.innerText='📜 History';
+      histBtn.onclick=()=>addHistory(v);
+      card.appendChild(favBtn);
+      card.appendChild(histBtn);
+      container.appendChild(card);
+    });
+  }
+
+  function addHistory(video){
+    let history = JSON.parse(localStorage.getItem('history')||'[]');
+    history.push(video);
+    localStorage.setItem('history', JSON.stringify(history));
+    alert('Added to history');
+  }
+
+  function loadHistory(){
+    const histSection = document.getElementById('historySection');
+    let history = JSON.parse(localStorage.getItem('history')||'[]');
+    if(history.length===0){histSection.innerHTML='No history'; return;}
+    renderVideos(history, histSection);
+  }
+
+  function addFavorite(video){
+    let favs = JSON.parse(localStorage.getItem('favorites')||'[]');
+    if(!favs.find(v=>v.Link===video.Link)) favs.push(video);
+    localStorage.setItem('favorites', JSON.stringify(favs));
+    alert('Added to favorites');
+  }
+
+  function loadFavorites(){
+    const favSection = document.getElementById('favSection');
+    let favs = JSON.parse(localStorage.getItem('favorites')||'[]');
+    if(favs.length===0){favSection.innerHTML='No favorites'; return;}
+    renderVideos(favs, favSection);
+  }
+
+  function searchVideos(){
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const results = allVideos.filter(v=> (v.Title||'').toLowerCase().includes(query) || (v.category||'').toLowerCase().includes(query));
+    renderVideos(results, document.getElementById('searchResults'));
+  }
 
   async function uploadVideo(){
     const title = document.getElementById('videoTitle').value;
@@ -134,57 +231,4 @@
     const url = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
     const progressElem = document.getElementById('uploadProgress');
     const statusElem = document.getElementById('uploadStatus');
-    progressElem.style.width='0%';
-    statusElem.innerText='Uploading...';
-    let width=0;
-    const interval = setInterval(()=>{width+=10; progressElem.style.width=width+'%';},100);
-    try{
-      await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data})});
-      clearInterval(interval);
-      progressElem.style.width='100%';
-      statusElem.innerText='Upload Success ✅';
-      loadVideos();
-    }catch(e){
-      clearInterval(interval);
-      statusElem.innerText='Upload Failed ❌';
-      console.error(e);
-    }
-  }
-
-  async function loadVideos(){
-    const home = document.getElementById('homeSection');
-    home.innerHTML = 'Loading videos...';
-    try{
-      const res = await fetch('https://sheetdb.io/api/v1/3p5l2ilgzemvr');
-      const videos = await res.json();
-      home.innerHTML = '';
-      videos.forEach(v=>{
-        const card = document.createElement('div');
-        card.className='video-card';
-        card.innerHTML = `<h4>${v.title}</h4>`;
-        if(v.link.includes('youtube.com') || v.link.includes('youtu.be')){
-          card.innerHTML += `<iframe src="https://www.youtube.com/embed/${extractYoutubeID(v.link)}" frameborder="0" allowfullscreen></iframe>`;
-        } else if(v.link.includes('facebook.com')){
-          card.innerHTML += `<iframe src="${v.link}" frameborder="0" allowfullscreen></iframe>`;
-        } else if(v.link.endsWith('.mp4')){
-          card.innerHTML += `<video controls><source src="${v.link}" type="video/mp4"></video>`;
-        } else {
-          card.innerHTML += `<p>Unsupported link</p>`;
-        }
-        home.appendChild(card);
-      });
-    }catch(e){
-      home.innerHTML='Failed to load videos';
-      console.error(e);
-    }
-  }
-
-  function extractYoutubeID(url){
-    const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|embed|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = url.match(regExp);
-    return match ? match[1] : '';
-  }
-</script>
-
-</body>
-</html>
+    progressElem.style.width='0%
