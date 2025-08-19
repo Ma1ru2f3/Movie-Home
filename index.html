@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie World</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
   nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
@@ -16,6 +15,7 @@
   .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
   .progress {width:0%; height:100%; background:green; border-radius:5px;}
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -35,7 +35,6 @@
   <div id="favSection" style="display:none;">Favourite videos...</div>
   <div id="profileSection" style="display:none;">
     <div id="userInfo"></div>
-    <div id="googleSignInButton"></div>
     <div id="adminPanel" style="display:none;">
       <h3>Admin Dashboard</h3>
       <input type="text" id="videoTitle" placeholder="Title">
@@ -59,34 +58,42 @@
     };
   }
 
-  // Google Sign-In Initialization
-  const clientId = "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";
+  // Google SignIn setup
+  const clientId = "36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com";
+
+  let currentUser = null;
 
   function handleCredentialResponse(response) {
-    // JWT Token decode
-    const data = parseJwt(response.credential);
-    showUser(data);
+    const userObject = jwt_decode(response.credential); // decode JWT to get user info
+    currentUser = {
+      name: userObject.name,
+      email: userObject.email,
+      id: userObject.sub,
+      picture: userObject.picture
+    };
+    showUser(currentUser);
   }
 
-  function parseJwt(token) {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    return JSON.parse(jsonPayload);
+  window.onload = () => {
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleCredentialResponse
+    });
+  };
+
+  function googleLogin() {
+    google.accounts.id.prompt(); // show Google Sign-in prompt
   }
 
   function showUser(user){
+    document.getElementById('profileSection').style.display='block';
     document.getElementById('userInfo').innerHTML = `
       <p>Name: ${user.name}</p>
       <p>Email: ${user.email}</p>
-      <p>Sub: ${user.sub}</p>
+      <p>ID: ${user.id}</p>
+      <img src="${user.picture}" width="80" style="border-radius:50%;">
     `;
     document.getElementById('logoutBtn').style.display='inline-block';
-    document.getElementById('googleSignInButton').style.display='none';
-
-    // Admin check
     if(user.email === 'mymaruf94@gmail.com'){
       document.getElementById('adminPanel').style.display='block';
     } else {
@@ -94,29 +101,29 @@
     }
   }
 
-  function logoutUser(){
-    document.getElementById('userInfo').innerHTML='';
-    document.getElementById('googleSignInButton').style.display='block';
-    document.getElementById('logoutBtn').style.display='none';
+  document.getElementById('logoutBtn').onclick = () => {
+    currentUser = null;
+    document.getElementById('profileSection').style.display='block';
+    document.getElementById('userInfo').innerHTML = `
+      <p>Please login with Google:</p>
+      <button onclick="googleLogin()" style="padding:5px 10px;background:#4285F4;color:white;border:none;border-radius:5px;cursor:pointer;">Sign in with Google</button>
+    `;
     document.getElementById('adminPanel').style.display='none';
-  }
+    document.getElementById('logoutBtn').style.display='none';
+  };
 
-  document.getElementById('logoutBtn').onclick = logoutUser;
-
-  // Profile bar click
   document.getElementById('profileBtn').onclick = () => {
     for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
     document.getElementById('profileSection').style.display='block';
-    if(!document.getElementById('googleSignInButton').innerHTML){
-      google.accounts.id.initialize({
-        client_id: clientId,
-        callback: handleCredentialResponse
-      });
-      google.accounts.id.renderButton(
-        document.getElementById('googleSignInButton'),
-        { theme: "outline", size: "large" }
-      );
-      google.accounts.id.prompt();
+    if(currentUser){
+      showUser(currentUser);
+    } else {
+      document.getElementById('userInfo').innerHTML = `
+        <p>Please login with Google:</p>
+        <button onclick="googleLogin()" style="padding:5px 10px;background:#4285F4;color:white;border:none;border-radius:5px;cursor:pointer;">Sign in with Google</button>
+      `;
+      document.getElementById('adminPanel').style.display='none';
+      document.getElementById('logoutBtn').style.display='none';
     }
   };
 
@@ -146,6 +153,6 @@
     }
   }
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
 </body>
 </html>
