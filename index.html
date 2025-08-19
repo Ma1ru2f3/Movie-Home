@@ -16,7 +16,6 @@
   input {margin:5px; padding:5px;}
   .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
   .progress {width:0%; height:100%; background:green; border-radius:5px;}
-  button {cursor:pointer;}
 </style>
 </head>
 <body>
@@ -46,7 +45,7 @@
       <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
       <div id="uploadStatus"></div>
     </div>
-    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer;display:none;">Logout</button>
+    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer; display:none;">Logout</button>
   </div>
 </div>
 
@@ -74,13 +73,11 @@
 
   // Google SignIn
   const provider = new firebase.auth.GoogleAuthProvider();
-
   function googleLogin(){
     auth.signInWithPopup(provider)
     .then(result => {
       const user = result.user;
       showUser(user);
-      document.getElementById('logoutBtn').style.display='inline-block';
     })
     .catch(err => alert('Login failed: '+err));
   }
@@ -93,7 +90,6 @@
       <p>ID: ${user.uid}</p>
     `;
     document.getElementById('logoutBtn').style.display='inline-block';
-    
     // Admin check
     if(user.email === 'mymaruf94@gmail.com'){
       document.getElementById('adminPanel').style.display='block';
@@ -107,14 +103,15 @@
     auth.signOut().then(()=>{location.reload();});
   };
 
-  // Profile button logic
+  // Profile bar click
   document.getElementById('profileBtn').onclick = () => {
     for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
-    document.getElementById('profileSection').style.display = 'block';
+    document.getElementById('profileSection').style.display='block';
 
     const user = auth.currentUser;
-    if(user) showUser(user);
-    else {
+    if(user){
+      showUser(user);
+    } else {
       document.getElementById('userInfo').innerHTML = `
         <p>Please login with Google:</p>
         <button onclick="googleLogin()" style="padding:5px 10px;background:#4285F4;color:white;border:none;border-radius:5px;cursor:pointer;">Sign in with Google</button>
@@ -141,8 +138,6 @@
     const statusElem = document.getElementById('uploadStatus');
     progressElem.style.width='0%';
     statusElem.innerText='Uploading...';
-
-    // Simulate progress
     let width=0;
     const interval = setInterval(()=>{width+=10; progressElem.style.width=width+'%';},100);
     try{
