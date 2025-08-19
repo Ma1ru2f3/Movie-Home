@@ -5,17 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie World</title>
 <style>
-  body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
-  nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
-  nav div {cursor:pointer;}
-  nav div:hover {text-decoration:underline;}
-  #content {padding:20px;}
-  #profileSection {margin-top:20px;}
-  input {margin:5px; padding:5px;}
-  .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
-  .progress {width:0%; height:100%; background:green; border-radius:5px;}
+body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
+nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
+nav div {cursor:pointer;}
+nav div:hover {text-decoration:underline;}
+#content {padding:20px;}
+#profileSection {margin-top:20px;}
+input {margin:5px; padding:5px;}
+.progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
+.progress {width:0%; height:100%; background:green; border-radius:5px;}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
 </head>
 <body>
 
@@ -33,10 +34,10 @@
   <div id="searchSection" style="display:none;">Search bar will work here...</div>
   <div id="historySection" style="display:none;">History videos...</div>
   <div id="favSection" style="display:none;">Favourite videos...</div>
-  
+
   <div id="profileSection" style="display:none;">
     <div id="userInfo"></div>
-    <button id="googleSignInBtn" style="padding:5px 10px;background:#4285F4;color:white;border:none;border-radius:5px;cursor:pointer;">Sign in with Google</button>
+    <div id="g_id_signin"></div>
     <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer; display:none;">Logout</button>
 
     <div id="adminPanel" style="display:none;">
@@ -56,7 +57,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
   const profileBtn = document.getElementById('profileBtn');
   const profileSection = document.getElementById('profileSection');
-  const googleSignInBtn = document.getElementById('googleSignInBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const userInfo = document.getElementById('userInfo');
   const adminPanel = document.getElementById('adminPanel');
@@ -80,13 +80,26 @@ document.addEventListener('DOMContentLoaded', ()=>{
       showUser({name,email});
     } else {
       userInfo.innerHTML = '<p>Please login:</p>';
-      googleSignInBtn.style.display='inline-block';
       logoutBtn.style.display='none';
-      adminPanel.style.display='none';
+      renderGoogleButton();
     }
   }
 
-  // Google Sign-In
+  // Google Sign-In render
+  function renderGoogleButton(){
+    google.accounts.id.initialize({
+      client_id: '36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com',
+      callback: handleCredentialResponse,
+      auto_select: false
+    });
+    google.accounts.id.renderButton(
+      document.getElementById("g_id_signin"),
+      { theme: "outline", size: "large", width:"250" } 
+    );
+    google.accounts.id.prompt(); 
+  }
+
+  // Handle response
   function handleCredentialResponse(response){
     const decoded = jwt_decode(response.credential);
     localStorage.setItem('userName', decoded.name);
@@ -96,18 +109,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   function showUser(user){
     userInfo.innerHTML = `<p>Name: ${user.name}</p><p>Email: ${user.email}</p>`;
-    googleSignInBtn.style.display='none';
     logoutBtn.style.display='inline-block';
+    document.getElementById("g_id_signin").innerHTML='';
     if(user.email==='mymaruf94@gmail.com') adminPanel.style.display='block';
     else adminPanel.style.display='none';
-  }
-
-  googleSignInBtn.onclick = ()=>{
-    google.accounts.id.initialize({
-      client_id: '36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com',
-      callback: handleCredentialResponse
-    });
-    google.accounts.id.prompt(); 
   }
 
   // Logout
@@ -151,6 +156,5 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
 </body>
 </html>
