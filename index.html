@@ -3,168 +3,211 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Movie World</title>
-<!-- React CDN -->
-<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-<!-- Firebase -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-auth.js";
-
-  window.firebaseApp = initializeApp({
-    apiKey: "AIzaSyAJlhLhl-dFkZO9LP5s_0XMhtotiv3RMW8",
-    authDomain: "movie-world-db6c9.firebaseapp.com",
-    projectId: "movie-world-db6c9",
-    storageBucket: "movie-world-db6c9.appspot.com",
-    messagingSenderId: "801583543414",
-    appId: "1:801583543414:web:42361e2894b9893c07db57"
-  });
-  window.auth = getAuth(window.firebaseApp);
-  window.provider = new GoogleAuthProvider();
-</script>
+<title>Video Web App</title>
 <style>
-body { font-family: Arial; margin:0; padding:0; background:#f0f0f0; }
-.navbar { display:flex; background:#222; color:white; padding:10px; justify-content:space-around; }
-.navbar button { color:white; background:none; border:none; font-size:16px; cursor:pointer; }
-.navbar button.active { color:#ff0; font-weight:bold; }
-.section { display:none; padding:20px; }
-.section.active { display:block; }
-button.google-btn { background:#4285F4; color:white; padding:10px; border:none; cursor:pointer; }
-.upload-status { margin-top:10px; color:green; font-weight:bold; }
-.video-item { margin:10px 0; }
+body{font-family:sans-serif;margin:0;padding:0;background:#f9f9f9;}
+.navbar{display:flex;justify-content:space-around;background:#6200ee;color:white;padding:10px;}
+.navbar div{cursor:pointer;font-size:16px;}
+.navbar div:hover{background:#3700b3;border-radius:5px;}
+#content{padding:10px;}
+.video-card{background:white;padding:10px;margin:10px 0;border-radius:5px;box-shadow:0 2px 5px rgba(0,0,0,0.2);}
+button{padding:5px 10px;margin:5px;cursor:pointer;}
+.progress-bar{width:100%;background:#ddd;border-radius:5px;overflow:hidden;margin:5px 0;}
+.progress{width:0%;height:10px;background:#6200ee;}
 </style>
 </head>
 <body>
-<div id="root"></div>
 
-<script type="text/babel">
+<div class="navbar">
+  <div id="homeBar">🏠 Home</div>
+  <div id="searchBar">🔍 Search</div>
+  <div id="historyBar">📜 History</div>
+  <div id="favoritesBar">⭐ Favorites</div>
+  <div id="profileBar">👤 Profile</div>
+</div>
 
-const { useState, useEffect } = React;
-
-function App() {
-  const [activeSection, setActiveSection] = useState("Home");
-  const [user, setUser] = useState(null);
-  const [videos, setVideos] = useState([]);
-  const [uploadStatus, setUploadStatus] = useState("");
-
-  // Load videos from SheetDB
-  const SHEETDB_API = "https://sheetdb.io/api/v1/3p5l2ilgzemvr";
-
-  useEffect(() => {
-    fetch(SHEETDB_API)
-      .then(res => res.json())
-      .then(data => setVideos(data))
-      .catch(err => console.log(err));
-  }, []);
-
-  const handleLogin = () => {
-    signInWithPopup(auth, provider)
-      .then(result => {
-        setUser(result.user);
-      })
-      .catch(err => alert("Login error: use Chrome/Firefox browser"));
-  };
-
-  const handleLogout = () => {
-    signOut(auth).then(() => setUser(null));
-  };
-
-  const handleUpload = (e) => {
-    e.preventDefault();
-    const title = e.target.title.value;
-    const link = e.target.link.value;
-    const category = e.target.category.value;
-
-    setUploadStatus("Uploading...");
-
-    fetch(SHEETDB_API, {
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ data: { Title: title, Link: link, category } })
-    })
-    .then(res => res.json())
-    .then(data => {
-      setUploadStatus("Upload successful!");
-      // Refresh video list
-      setVideos(prev => [...prev, { Title: title, Link: link, category }]);
-      e.target.reset();
-    })
-    .catch(err => {
-      setUploadStatus("Upload failed!");
-      console.log(err);
-    });
-  };
-
-  return (
-    <div>
-      {/* Navbar */}
-      <div className="navbar">
-        {["Home","Search","Favourite","Profile"].map(item => (
-          <button
-            key={item}
-            className={activeSection===item?"active":""}
-            onClick={()=>setActiveSection(item)}
-          >{item} {item==="Home"?"🏠":item==="Search"?"🔍":item==="Favourite"?"⭐":"👤"}</button>
-        ))}
-      </div>
-
-      {/* Sections */}
-      <div className={`section ${activeSection==="Home"?"active":""}`}>
-        <h2>Home Section</h2>
-        {videos.map((v,i)=>(
-          <div key={i} className="video-item">
-            <h4>{v.Title} ({v.category})</h4>
-            <video src={v.Link} controls width="300"></video>
-          </div>
-        ))}
-      </div>
-
-      <div className={`section ${activeSection==="Search"?"active":""}`}>
-        <h2>Search Section</h2>
-        <p>Search bar placeholder...</p>
-      </div>
-
-      <div className={`section ${activeSection==="Favourite"?"active":""}`}>
-        <h2>Favourite Section</h2>
-        <p>Favourite videos placeholder...</p>
-      </div>
-
-      <div className={`section ${activeSection==="Profile"?"active":""}`}>
-        <h2>Profile Section</h2>
-        {user ? (
-          <div>
-            <img src={user.photoURL} width="80" style={{borderRadius:"50%"}}/>
-            <p>{user.displayName}</p>
-            <p>{user.email}</p>
-            <button onClick={handleLogout}>Logout</button>
-
-            {/* Admin Video Upload */}
-            {user.email==="mymaruf94@gmail.com" && (
-              <div style={{marginTop:"20px"}}>
-                <h3>Admin: Upload Video</h3>
-                <form onSubmit={handleUpload}>
-                  <input name="title" placeholder="Title" required/><br/>
-                  <input name="link" placeholder="MP4 Link" required/><br/>
-                  <input name="category" placeholder="Category" required/><br/>
-                  <button type="submit">Upload</button>
-                </form>
-                <div className="upload-status">{uploadStatus}</div>
-              </div>
-            )}
-
-          </div>
-        ) : (
-          <button className="google-btn" onClick={handleLogin}>Sign in with Google</button>
-        )}
-      </div>
+<div id="content">
+  <!-- Sections -->
+  <div id="homeSection"></div>
+  <div id="searchSection" style="display:none;">
+    <input type="text" id="searchInput" placeholder="Search videos by title...">
+    <button onclick="searchVideo()">Search</button>
+    <div id="searchResults"></div>
+  </div>
+  <div id="historySection" style="display:none;"><div id="historyList"></div></div>
+  <div id="favoritesSection" style="display:none;"><div id="favoritesList"></div></div>
+  <div id="profileSection" style="display:none;">
+    <div id="userInfo"></div>
+    <div id="adminPanel" style="display:none;">
+      <h3>Admin Dashboard</h3>
+      <input type="text" id="videoTitle" placeholder="Title">
+      <input type="text" id="videoLink" placeholder="MP4/YouTube/Facebook link">
+      <input type="text" id="videoCategory" placeholder="Category">
+      <button onclick="uploadVideo()">Upload Video</button>
+      <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
+      <div id="uploadStatus"></div>
     </div>
-  );
+    <button onclick="signOut()">Logout</button>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyAJlhLhl-dFkZO9LP5s_0XMhtotiv3RMW8",
+  authDomain: "movie-world-db6c9.firebaseapp.com",
+  projectId: "movie-world-db6c9",
+  storageBucket: "movie-world-db6c9.appspot.com",
+  messagingSenderId: "801583543414",
+  appId: "1:801583543414:web:42361e2894b9893c07db57"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// Navbar navigation
+document.getElementById("homeBar").onclick = ()=>showSection("homeSection");
+document.getElementById("searchBar").onclick = ()=>showSection("searchSection");
+document.getElementById("historyBar").onclick = ()=>showSection("historySection");
+document.getElementById("favoritesBar").onclick = ()=>showSection("favoritesSection");
+document.getElementById("profileBar").onclick = ()=>showSection("profileSection");
+
+function showSection(id){
+  ["homeSection","searchSection","historySection","favoritesSection","profileSection"].forEach(s=>{
+    document.getElementById(s).style.display = s===id?"block":"none";
+  });
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+// Sign in
+function signIn(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(console.error);
+}
 
+// Sign out
+function signOut(){ auth.signOut(); location.reload(); }
+
+// Get user-specific localStorage key
+function getUserKey(email,key){ return `${email}_${key}`; }
+
+// History & Favorites
+function addToHistory(userEmail,video){
+  const key = getUserKey(userEmail,'history');
+  let history = JSON.parse(localStorage.getItem(key))||[];
+  history = history.filter(v=>v.link!==video.link);
+  history.unshift(video);
+  if(history.length>50) history.pop();
+  localStorage.setItem(key,JSON.stringify(history));
+  loadHistory(userEmail);
+}
+function toggleFavorite(userEmail,video){
+  const key = getUserKey(userEmail,'favorites');
+  let favs = JSON.parse(localStorage.getItem(key))||[];
+  const exists = favs.find(v=>v.link===video.link);
+  if(exists) favs=favs.filter(v=>v.link!==video.link);
+  else favs.push(video);
+  localStorage.setItem(key,JSON.stringify(favs));
+  loadFavorites(userEmail);
+}
+function loadHistory(userEmail){
+  const key=getUserKey(userEmail,'history');
+  const hist = JSON.parse(localStorage.getItem(key))||[];
+  const div=document.getElementById("historyList"); div.innerHTML="";
+  hist.forEach(v=>{
+    const card=document.createElement("div"); card.className="video-card";
+    card.innerHTML=`<strong>${v.title}</strong> (${v.category})<br>
+      <video src="${v.link}" width="100%" controls></video>`;
+    div.appendChild(card);
+  });
+}
+function loadFavorites(userEmail){
+  const key=getUserKey(userEmail,'favorites');
+  const favs = JSON.parse(localStorage.getItem(key))||[];
+  const div=document.getElementById("favoritesList"); div.innerHTML="";
+  favs.forEach(v=>{
+    const card=document.createElement("div"); card.className="video-card";
+    card.innerHTML=`<strong>${v.title}</strong> (${v.category})<br>
+      <video src="${v.link}" width="100%" controls></video>
+      <button onclick='toggleFavorite("${userEmail}",${JSON.stringify(v)})'>Remove ⭐</button>`;
+    div.appendChild(card);
+  });
+}
+
+// Load Videos
+function loadVideos(){
+  fetch("https://sheetdb.io/api/v1/3p5l2ilgzemvr")
+    .then(res=>res.json())
+    .then(data=>{
+      const div=document.getElementById("homeSection"); div.innerHTML="";
+      data.forEach(v=>{
+        const card=document.createElement("div"); card.className="video-card";
+        card.innerHTML=`<strong>${v.title}</strong> (${v.category})<br>
+          <video src="${v.link}" width="100%" controls></video>
+          <button onclick='toggleFavorite("${auth.currentUser?.email}",${JSON.stringify(v)})'>⭐</button>`;
+        card.querySelector("video").addEventListener("play",()=>{
+          if(auth.currentUser) addToHistory(auth.currentUser.email,v);
+        });
+        div.appendChild(card);
+      });
+    });
+}
+
+// Search
+function searchVideo(){
+  const term=document.getElementById("searchInput").value.toLowerCase();
+  fetch("https://sheetdb.io/api/v1/3p5l2ilgzemvr")
+    .then(res=>res.json())
+    .then(data=>{
+      const results=data.filter(v=>v.title.toLowerCase().includes(term));
+      const div=document.getElementById("searchResults"); div.innerHTML="";
+      results.forEach(v=>{
+        const card=document.createElement("div"); card.className="video-card";
+        card.innerHTML=`<strong>${v.title}</strong> (${v.category})<br>
+          <video src="${v.link}" width="100%" controls></video>
+          <button onclick='toggleFavorite("${auth.currentUser?.email}",${JSON.stringify(v)})'>⭐</button>`;
+        div.appendChild(card);
+      });
+    });
+}
+
+// Admin upload
+function uploadVideo(){
+  const title=document.getElementById("videoTitle").value;
+  const link=document.getElementById("videoLink").value;
+  const category=document.getElementById("videoCategory").value;
+  if(!title||!link||!category){ alert("Fill all fields"); return; }
+  const status=document.getElementById("uploadStatus");
+  const progress=document.getElementById("uploadProgress");
+  progress.style.width="0%"; status.innerText="Uploading...";
+  fetch("https://sheetdb.io/api/v1/3p5l2ilgzemvr",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify([{title,link,category}])
+  }).then(res=>{
+    progress.style.width="100%";
+    status.innerText="✅ Upload Successful!";
+    loadVideos();
+  }).catch(err=>{status.innerText="❌ Upload Failed"; console.error(err);});
+}
+
+// Auth state
+auth.onAuthStateChanged(user=>{
+  if(user){
+    document.getElementById("profileSection").style.display="block";
+    document.getElementById("userInfo").innerHTML=
+      `<strong>${user.displayName}</strong><br>${user.email}<br>UID: ${user.uid}`;
+    loadFavorites(user.email); loadHistory(user.email); loadVideos();
+    if(user.email==="mymaruf94@gmail.com"){
+      document.getElementById("adminPanel").style.display="block";
+    }
+  } else {
+    signIn();
+  }
+});
 </script>
+
 </body>
 </html>
