@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie World</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
   nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
@@ -15,9 +14,8 @@
   input {margin:5px; padding:5px;}
   .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
   .progress {width:0%; height:100%; background:green; border-radius:5px;}
-  #googleSignInBtn {padding:5px 10px; background:#4285F4; color:white; border:none; border-radius:5px; cursor:pointer;}
-  #logoutBtn {margin-top:10px; padding:5px 10px; background:#e53935; color:white; border:none; border-radius:5px; cursor:pointer;}
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -35,9 +33,12 @@
   <div id="searchSection" style="display:none;">Search bar will work here...</div>
   <div id="historySection" style="display:none;">History videos...</div>
   <div id="favSection" style="display:none;">Favourite videos...</div>
+  
   <div id="profileSection" style="display:none;">
     <div id="userInfo"></div>
-    <button id="googleSignInBtn">Sign in with Google</button>
+    <button id="googleSignInBtn" style="padding:5px 10px;background:#4285F4;color:white;border:none;border-radius:5px;cursor:pointer;">Sign in with Google</button>
+    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer; display:none;">Logout</button>
+
     <div id="adminPanel" style="display:none;">
       <h3>Admin Dashboard</h3>
       <input type="text" id="videoTitle" placeholder="Title">
@@ -47,90 +48,74 @@
       <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
       <div id="uploadStatus"></div>
     </div>
-    <button id="logoutBtn" style="display:none;">Logout</button>
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
-
-  const CLIENT_ID = '36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com';
   const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
+  const profileBtn = document.getElementById('profileBtn');
+  const profileSection = document.getElementById('profileSection');
+  const googleSignInBtn = document.getElementById('googleSignInBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const userInfo = document.getElementById('userInfo');
+  const adminPanel = document.getElementById('adminPanel');
 
   // Navbar click
   for(let btn in sections){
-    const element = document.getElementById(btn);
-    if(element){
-      element.onclick = () => {
-        for(let s in sections) document.getElementById(sections[s]).style.display='none';
-        document.getElementById(sections[btn]).style.display='block';
-      }
-    }
+    document.getElementById(btn).onclick = () => {
+      for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
+      profileSection.style.display = 'none';
+      document.getElementById(sections[btn]).style.display = 'block';
+    };
   }
-
-  // Google Sign-In
-  const googleBtn = document.getElementById('googleSignInBtn');
-  googleBtn.onclick = () => {
-    google.accounts.id.initialize({
-      client_id: CLIENT_ID,
-      callback: handleCredentialResponse
-    });
-    google.accounts.id.prompt();
-  };
-
-  function handleCredentialResponse(response){
-    const jwt = response.credential;
-    const base64Url = jwt.split('.')[1];
-    const base64 = base64Url.replace(/-/g,'+').replace(/_/g,'/');
-    const user = JSON.parse(decodeURIComponent(escape(window.atob(base64))));
-    const name = user.name;
-    const email = user.email;
-    localStorage.setItem('userName', name);
-    localStorage.setItem('userEmail', email);
-    showUser({name,email});
-  }
-
-  // Show user info
-  function showUser(user){
-    document.getElementById('profileSection').style.display='block';
-    document.getElementById('userInfo').innerHTML = `
-      <p>Name: ${user.name}</p>
-      <p>Email: ${user.email}</p>
-    `;
-    document.getElementById('googleSignInBtn').style.display='none';
-    document.getElementById('logoutBtn').style.display='inline-block';
-
-    // Admin panel check
-    if(user.email === 'mymaruf94@gmail.com'){
-      document.getElementById('adminPanel').style.display='block';
-    } else {
-      document.getElementById('adminPanel').style.display='none';
-    }
-  }
-
-  // Logout
-  document.getElementById('logoutBtn').onclick = ()=>{
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
-    location.reload();
-  };
 
   // Profile button click
-  const profileBtn = document.getElementById('profileBtn');
   profileBtn.onclick = ()=>{
-    for(let s in sections) document.getElementById(sections[s]).style.display='none';
-    document.getElementById('profileSection').style.display='block';
+    for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
+    profileSection.style.display = 'block';
     const name = localStorage.getItem('userName');
     const email = localStorage.getItem('userEmail');
     if(name && email){
       showUser({name,email});
     } else {
-      document.getElementById('userInfo').innerHTML='<p>Please login:</p>';
-      document.getElementById('googleSignInBtn').style.display='inline-block';
-      document.getElementById('logoutBtn').style.display='none';
-      document.getElementById('adminPanel').style.display='none';
+      userInfo.innerHTML = '<p>Please login:</p>';
+      googleSignInBtn.style.display='inline-block';
+      logoutBtn.style.display='none';
+      adminPanel.style.display='none';
     }
-  };
+  }
+
+  // Google Sign-In
+  function handleCredentialResponse(response){
+    const decoded = jwt_decode(response.credential);
+    localStorage.setItem('userName', decoded.name);
+    localStorage.setItem('userEmail', decoded.email);
+    showUser({name:decoded.name,email:decoded.email});
+  }
+
+  function showUser(user){
+    userInfo.innerHTML = `<p>Name: ${user.name}</p><p>Email: ${user.email}</p>`;
+    googleSignInBtn.style.display='none';
+    logoutBtn.style.display='inline-block';
+    if(user.email==='mymaruf94@gmail.com') adminPanel.style.display='block';
+    else adminPanel.style.display='none';
+  }
+
+  googleSignInBtn.onclick = ()=>{
+    google.accounts.id.initialize({
+      client_id: '36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com',
+      callback: handleCredentialResponse
+    });
+    google.accounts.id.prompt(); 
+  }
+
+  // Logout
+  logoutBtn.onclick = ()=>{
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    profileBtn.click();
+  }
 
   // Auto login on refresh
   const name = localStorage.getItem('userName');
@@ -139,8 +124,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     showUser({name,email});
   }
 
-  // Video Upload
-  window.uploadVideo = async function(){
+  // Video Upload (Admin)
+  window.uploadVideo = async ()=>{
     const title = document.getElementById('videoTitle').value;
     const link = document.getElementById('videoLink').value;
     const category = document.getElementById('videoCategory').value;
@@ -164,9 +149,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
       console.error(e);
     }
   }
-
 });
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
 </body>
 </html>
