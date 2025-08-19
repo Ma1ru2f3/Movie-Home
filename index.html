@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie World</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
   nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
@@ -14,8 +15,6 @@
   input {margin:5px; padding:5px;}
   .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
   .progress {width:0%; height:100%; background:green; border-radius:5px;}
-  button {cursor:pointer;}
-  .video-item {margin:10px 0; padding:10px; background:white; border-radius:5px; box-shadow:0 0 5px rgba(0,0,0,0.2);}
 </style>
 </head>
 <body>
@@ -36,6 +35,7 @@
   <div id="favSection" style="display:none;">Favourite videos...</div>
   <div id="profileSection" style="display:none;">
     <div id="userInfo"></div>
+    <div id="googleSignInButton"></div>
     <div id="adminPanel" style="display:none;">
       <h3>Admin Dashboard</h3>
       <input type="text" id="videoTitle" placeholder="Title">
@@ -45,149 +45,107 @@
       <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
       <div id="uploadStatus"></div>
     </div>
-    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;display:none;">Logout</button>
+    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer; display:none;">Logout</button>
   </div>
 </div>
 
-<!-- Google API -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-let currentUser = null;
-const adminEmail = 'mymaruf94@gmail.com';
+  // Navbar click events
+  const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
+  for(let btn in sections){
+    document.getElementById(btn).onclick = () => {
+      for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
+      document.getElementById(sections[btn]).style.display = 'block';
+    };
+  }
 
-// Navbar click events
-const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
-for(let btn in sections){
-  document.getElementById(btn).onclick = () => {
-    for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
-    document.getElementById(sections[btn]).style.display = 'block';
-    if(btn === 'historyBtn') renderHistory();
-    if(btn === 'favBtn') renderFav();
-  };
-}
+  // Google Sign-In Initialization
+  const clientId = "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";
 
-// Google One Tap / Sign In
-function handleCredentialResponse(response) {
-  const data = jwt_decode(response.credential);
-  currentUser = {name: data.name, email: data.email, picture: data.picture, id: data.sub};
-  showUser(currentUser);
-}
+  function handleCredentialResponse(response) {
+    // JWT Token decode
+    const data = parseJwt(response.credential);
+    showUser(data);
+  }
 
-// Show user profile
-function showUser(user){
-  document.getElementById('profileSection').style.display='block';
-  document.getElementById('userInfo').innerHTML = `
-    <p>Name: ${user.name}</p>
-    <p>Email: ${user.email}</p>
-    <p>ID: ${user.id}</p>
-    <img src="${user.picture}" width="80" style="border-radius:50%;">
-  `;
-  document.getElementById('logoutBtn').style.display='inline-block';
+  function parseJwt(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  }
 
-  if(user.email === adminEmail){
-    document.getElementById('adminPanel').style.display='block';
-  } else {
+  function showUser(user){
+    document.getElementById('userInfo').innerHTML = `
+      <p>Name: ${user.name}</p>
+      <p>Email: ${user.email}</p>
+      <p>Sub: ${user.sub}</p>
+    `;
+    document.getElementById('logoutBtn').style.display='inline-block';
+    document.getElementById('googleSignInButton').style.display='none';
+
+    // Admin check
+    if(user.email === 'mymaruf94@gmail.com'){
+      document.getElementById('adminPanel').style.display='block';
+    } else {
+      document.getElementById('adminPanel').style.display='none';
+    }
+  }
+
+  function logoutUser(){
+    document.getElementById('userInfo').innerHTML='';
+    document.getElementById('googleSignInButton').style.display='block';
+    document.getElementById('logoutBtn').style.display='none';
     document.getElementById('adminPanel').style.display='none';
   }
-}
 
-// Logout
-document.getElementById('logoutBtn').onclick = () => {
-  currentUser = null;
-  document.getElementById('userInfo').innerHTML = `
-    <p>Please login with Google:</p>
-    <div id="g_id_onload"
-      data-client_id="119036146469-3kdd5drvt8udga1qk028qbjqoaug0sfi.apps.googleusercontent.com"
-      data-callback="handleCredentialResponse">
-    </div>
-    <div class="g_id_signin"
-      data-type="standard"
-      data-size="large"
-      data-theme="outline"
-      data-text="sign_in_with"
-      data-shape="rectangular"
-      data-logo_alignment="left">
-    </div>
-  `;
-  document.getElementById('logoutBtn').style.display='none';
-  document.getElementById('adminPanel').style.display='none';
-};
+  document.getElementById('logoutBtn').onclick = logoutUser;
 
-// Profile bar click
-document.getElementById('profileBtn').onclick = () => {
-  for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
-  document.getElementById('profileSection').style.display='block';
-  if(currentUser){
-    showUser(currentUser);
-  } else {
-    document.getElementById('userInfo').innerHTML = `
-      <p>Please login with Google:</p>
-      <div id="g_id_onload"
-        data-client_id="119036146469-3kdd5drvt8udga1qk028qbjqoaug0sfi.apps.googleusercontent.com"
-        data-callback="handleCredentialResponse">
-      </div>
-      <div class="g_id_signin"
-        data-type="standard"
-        data-size="large"
-        data-theme="outline"
-        data-text="sign_in_with"
-        data-shape="rectangular"
-        data-logo_alignment="left">
-      </div>
-    `;
+  // Profile bar click
+  document.getElementById('profileBtn').onclick = () => {
+    for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
+    document.getElementById('profileSection').style.display='block';
+    if(!document.getElementById('googleSignInButton').innerHTML){
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleCredentialResponse
+      });
+      google.accounts.id.renderButton(
+        document.getElementById('googleSignInButton'),
+        { theme: "outline", size: "large" }
+      );
+      google.accounts.id.prompt();
+    }
+  };
+
+  // Video Upload
+  async function uploadVideo(){
+    const title = document.getElementById('videoTitle').value;
+    const link = document.getElementById('videoLink').value;
+    const category = document.getElementById('videoCategory').value;
+    if(!title||!link||!category) return alert('Fill all fields');
+    const data = {title, link, category};
+    const url = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
+    const progressElem = document.getElementById('uploadProgress');
+    const statusElem = document.getElementById('uploadStatus');
+    progressElem.style.width='0%';
+    statusElem.innerText='Uploading...';
+    let width=0;
+    const interval = setInterval(()=>{width+=10; progressElem.style.width=width+'%';},100);
+    try{
+      await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data})});
+      clearInterval(interval);
+      progressElem.style.width='100%';
+      statusElem.innerText='Upload Success ✅';
+    }catch(e){
+      clearInterval(interval);
+      statusElem.innerText='Upload Failed ❌';
+      console.error(e);
+    }
   }
-};
-
-// Video Upload
-async function uploadVideo(){
-  const title = document.getElementById('videoTitle').value;
-  const link = document.getElementById('videoLink').value;
-  const category = document.getElementById('videoCategory').value;
-  if(!title||!link||!category) return alert('Fill all fields');
-  const data = {title, link, category};
-  const url = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
-  const progressElem = document.getElementById('uploadProgress');
-  const statusElem = document.getElementById('uploadStatus');
-  progressElem.style.width='0%';
-  statusElem.innerText='Uploading...';
-  let width=0;
-  const interval = setInterval(()=>{width+=10; progressElem.style.width=width+'%';},100);
-  try{
-    await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data})});
-    clearInterval(interval);
-    progressElem.style.width='100%';
-    statusElem.innerText='Upload Success ✅';
-  }catch(e){
-    clearInterval(interval);
-    statusElem.innerText='Upload Failed ❌';
-    console.error(e);
-  }
-}
-
-// History & Favourite storage
-function addHistory(video){ 
-  let history = JSON.parse(localStorage.getItem('history')) || [];
-  history.push(video);
-  localStorage.setItem('history', JSON.stringify(history));
-}
-function addFav(video){
-  let fav = JSON.parse(localStorage.getItem('fav')) || [];
-  if(!fav.find(v=>v.link===video.link)) fav.push(video);
-  localStorage.setItem('fav', JSON.stringify(fav));
-}
-function renderHistory(){
-  let history = JSON.parse(localStorage.getItem('history')) || [];
-  const container = document.getElementById('historySection');
-  container.innerHTML = '<h3>History Videos:</h3>';
-  history.forEach(v=>container.innerHTML+=`<div class="video-item"><b>${v.title}</b><br>${v.link}</div>`);
-}
-function renderFav(){
-  let fav = JSON.parse(localStorage.getItem('fav')) || [];
-  const container = document.getElementById('favSection');
-  container.innerHTML = '<h3>Favourite Videos:</h3>';
-  fav.forEach(v=>container.innerHTML+=`<div class="video-item"><b>${v.title}</b><br>${v.link}</div>`);
-}
 </script>
-<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+
 </body>
 </html>
