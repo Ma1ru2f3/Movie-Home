@@ -4,19 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie World</title>
-<style>
-body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
-nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
-nav div {cursor:pointer;}
-nav div:hover {text-decoration:underline;}
-#content {padding:20px;}
-#profileSection {margin-top:20px;}
-input {margin:5px; padding:5px;}
-.progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
-.progress {width:0%; height:100%; background:green; border-radius:5px;}
-</style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+<style>
+  body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
+  nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
+  nav div {cursor:pointer;}
+  nav div:hover {text-decoration:underline;}
+  #content {padding:20px;}
+  #profileSection, #homeSection, #searchSection, #historySection, #favSection {margin-top:20px;}
+  input {margin:5px; padding:5px;}
+  .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
+  .progress {width:0%; height:100%; background:green; border-radius:5px;}
+  iframe, video {width:100%; max-width:600px; margin-top:10px;}
+  .video-card {margin-bottom:20px; padding:10px; background:white; border-radius:5px; box-shadow:0 0 5px rgba(0,0,0,0.1);}
+</style>
 </head>
 <body>
 
@@ -29,17 +31,12 @@ input {margin:5px; padding:5px;}
 </nav>
 
 <div id="content">
-  <h2>Welcome to Movie World</h2>
-  <div id="homeSection">Home content will show videos here...</div>
+  <div id="homeSection">Loading videos...</div>
   <div id="searchSection" style="display:none;">Search bar will work here...</div>
   <div id="historySection" style="display:none;">History videos...</div>
   <div id="favSection" style="display:none;">Favourite videos...</div>
-
   <div id="profileSection" style="display:none;">
     <div id="userInfo"></div>
-    <div id="g_id_signin"></div>
-    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer; display:none;">Logout</button>
-
     <div id="adminPanel" style="display:none;">
       <h3>Admin Dashboard</h3>
       <input type="text" id="videoTitle" placeholder="Title">
@@ -49,88 +46,86 @@ input {margin:5px; padding:5px;}
       <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
       <div id="uploadStatus"></div>
     </div>
+    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer;">Logout</button>
+    <div id="googleSignInDiv"></div>
   </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', ()=>{
   const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
-  const profileBtn = document.getElementById('profileBtn');
-  const profileSection = document.getElementById('profileSection');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const userInfo = document.getElementById('userInfo');
-  const adminPanel = document.getElementById('adminPanel');
-
-  // Navbar click
   for(let btn in sections){
     document.getElementById(btn).onclick = () => {
       for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
-      profileSection.style.display = 'none';
       document.getElementById(sections[btn]).style.display = 'block';
+      if(btn==='homeBtn') loadVideos();
     };
   }
 
-  // Profile button click
-  profileBtn.onclick = ()=>{
-    for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
-    profileSection.style.display = 'block';
-    const name = localStorage.getItem('userName');
-    const email = localStorage.getItem('userEmail');
-    if(name && email){
-      showUser({name,email});
+  let userProfile = null;
+
+  function showUser(user){
+    document.getElementById('profileSection').style.display='block';
+    document.getElementById('userInfo').innerHTML = `
+      <p>Name: ${user.name}</p>
+      <p>Email: ${user.email}</p>
+      <p>ID: ${user.id}</p>
+    `;
+    document.getElementById('logoutBtn').style.display='inline-block';
+    document.getElementById('googleSignInDiv').style.display='none';
+    if(user.email === 'mymaruf94@gmail.com'){
+      document.getElementById('adminPanel').style.display='block';
     } else {
-      userInfo.innerHTML = '<p>Please login:</p>';
-      logoutBtn.style.display='none';
-      renderGoogleButton();
+      document.getElementById('adminPanel').style.display='none';
     }
   }
 
-  // Google Sign-In render
-  function renderGoogleButton(){
+  function handleCredentialResponse(response) {
+    const data = jwt_decode(response.credential);
+    userProfile = {
+      name: data.name,
+      email: data.email,
+      id: data.sub,
+      picture: data.picture
+    };
+    localStorage.setItem('userProfile', JSON.stringify(userProfile));
+    showUser(userProfile);
+  }
+
+  window.onload = () => {
+    const savedUser = localStorage.getItem('userProfile');
+    if(savedUser){
+      userProfile = JSON.parse(savedUser);
+      showUser(userProfile);
+    }
     google.accounts.id.initialize({
       client_id: '36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com',
-      callback: handleCredentialResponse,
-      auto_select: false
+      callback: handleCredentialResponse
     });
     google.accounts.id.renderButton(
-      document.getElementById("g_id_signin"),
-      { theme: "outline", size: "large", width:"250" } 
+      document.getElementById('googleSignInDiv'),
+      { theme: "outline", size: "large" }
     );
-    google.accounts.id.prompt(); 
-  }
+    document.getElementById('googleSignInDiv').style.display = userProfile ? 'none' : 'block';
+    loadVideos();
+  };
 
-  // Handle response
-  function handleCredentialResponse(response){
-    const decoded = jwt_decode(response.credential);
-    localStorage.setItem('userName', decoded.name);
-    localStorage.setItem('userEmail', decoded.email);
-    showUser({name:decoded.name,email:decoded.email});
-  }
+  document.getElementById('logoutBtn').onclick = () => {
+    userProfile = null;
+    localStorage.removeItem('userProfile');
+    location.reload();
+  };
 
-  function showUser(user){
-    userInfo.innerHTML = `<p>Name: ${user.name}</p><p>Email: ${user.email}</p>`;
-    logoutBtn.style.display='inline-block';
-    document.getElementById("g_id_signin").innerHTML='';
-    if(user.email==='mymaruf94@gmail.com') adminPanel.style.display='block';
-    else adminPanel.style.display='none';
-  }
+  document.getElementById('profileBtn').onclick = () => {
+    for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
+    document.getElementById('profileSection').style.display='block';
+    if(userProfile){
+      showUser(userProfile);
+    } else {
+      document.getElementById('googleSignInDiv').style.display = 'block';
+    }
+  };
 
-  // Logout
-  logoutBtn.onclick = ()=>{
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
-    profileBtn.click();
-  }
-
-  // Auto login on refresh
-  const name = localStorage.getItem('userName');
-  const email = localStorage.getItem('userEmail');
-  if(name && email){
-    showUser({name,email});
-  }
-
-  // Video Upload (Admin)
-  window.uploadVideo = async ()=>{
+  async function uploadVideo(){
     const title = document.getElementById('videoTitle').value;
     const link = document.getElementById('videoLink').value;
     const category = document.getElementById('videoCategory').value;
@@ -148,13 +143,48 @@ document.addEventListener('DOMContentLoaded', ()=>{
       clearInterval(interval);
       progressElem.style.width='100%';
       statusElem.innerText='Upload Success ✅';
+      loadVideos();
     }catch(e){
       clearInterval(interval);
       statusElem.innerText='Upload Failed ❌';
       console.error(e);
     }
   }
-});
+
+  async function loadVideos(){
+    const home = document.getElementById('homeSection');
+    home.innerHTML = 'Loading videos...';
+    try{
+      const res = await fetch('https://sheetdb.io/api/v1/3p5l2ilgzemvr');
+      const videos = await res.json();
+      home.innerHTML = '';
+      videos.forEach(v=>{
+        const card = document.createElement('div');
+        card.className='video-card';
+        card.innerHTML = `<h4>${v.title}</h4>`;
+        if(v.link.includes('youtube.com') || v.link.includes('youtu.be')){
+          card.innerHTML += `<iframe src="https://www.youtube.com/embed/${extractYoutubeID(v.link)}" frameborder="0" allowfullscreen></iframe>`;
+        } else if(v.link.includes('facebook.com')){
+          card.innerHTML += `<iframe src="${v.link}" frameborder="0" allowfullscreen></iframe>`;
+        } else if(v.link.endsWith('.mp4')){
+          card.innerHTML += `<video controls><source src="${v.link}" type="video/mp4"></video>`;
+        } else {
+          card.innerHTML += `<p>Unsupported link</p>`;
+        }
+        home.appendChild(card);
+      });
+    }catch(e){
+      home.innerHTML='Failed to load videos';
+      console.error(e);
+    }
+  }
+
+  function extractYoutubeID(url){
+    const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|embed|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regExp);
+    return match ? match[1] : '';
+  }
 </script>
+
 </body>
 </html>
