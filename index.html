@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie World</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
 <style>
   body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
   nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
@@ -79,13 +80,25 @@
         const category = video.category || 'General';
         let videoElem = '';
 
+        // Video detection logic for all types
         if(link.includes('youtube.com') || link.includes('youtu.be')){
-          let videoId = link.includes('v=') ? link.split('v=')[1].split('&')[0] : link.split('/').pop();
-          videoElem = `<iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+            let videoId = link.includes('v=') ? link.split('v=')[1].split('&')[0] : link.split('/').pop();
+            videoElem = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+        } else if(link.includes('drive.google.com')){
+            let fileId = '';
+            if(link.includes('/file/d/')){
+                fileId = link.split('/file/d/')[1].split('/')[0];
+            } else if(link.includes('id=')){
+                fileId = link.split('id=')[1].split('&')[0];
+            }
+            const driveLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
+            videoElem = `<video controls><source src="${driveLink}" type="video/mp4">Your browser does not support the video tag.</video>`;
         } else if(link.includes('.mp4')){
-          videoElem = `<video controls><source src="${link}" type="video/mp4">Your browser does not support the video tag.</video>`;
+            videoElem = `<video controls><source src="${link}" type="video/mp4">Your browser does not support the video tag.</video>`;
+        } else if(link.includes('facebook.com') && link.includes('video')){
+            videoElem = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(link)}&show_text=0&width=560" width="560" height="315" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>`;
         } else {
-          videoElem = `<a href="${link}" target="_blank">Watch Video</a>`;
+            videoElem = `<a href="${link}" target="_blank">Watch Video</a>`;
         }
 
         const card = document.createElement('div');
@@ -130,7 +143,6 @@
     `;
     document.getElementById('logoutBtn').style.display='inline-block';
     document.getElementById('g_id_signin').style.display='none';
-    // Admin
     if(user.email==='mymaruf94@gmail.com'){
       document.getElementById('adminPanel').style.display='block';
     } else {
@@ -180,6 +192,5 @@
     }
   }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
 </body>
 </html>
