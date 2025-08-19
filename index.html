@@ -9,8 +9,8 @@
 <style>
   body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
   nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
-  nav div {cursor:pointer;}
-  nav div:hover {text-decoration:underline;}
+  nav div {cursor:pointer; transition: 0.3s;}
+  nav div:hover {text-decoration:underline; transform: scale(1.1);}
   #content {padding:20px;}
   #profileSection {margin-top:20px;}
   input {margin:5px; padding:5px;}
@@ -62,12 +62,26 @@
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
 
-  // Navbar click events
-  const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
+  // Navbar sections
+  const sections = {
+    homeBtn:'homeSection', 
+    searchBtn:'searchSection', 
+    historyBtn:'historySection', 
+    favBtn:'favSection', 
+    profileBtn:'profileSection'
+  };
+
   for(let btn in sections){
     document.getElementById(btn).onclick = () => {
       for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
       document.getElementById(sections[btn]).style.display = 'block';
+
+      // Profile click → show user info or login
+      if(btn==='profileBtn'){
+        const user = auth.currentUser;
+        if(user) showUser(user);
+        else googleLogin();
+      }
     };
   }
 
@@ -92,6 +106,8 @@
     // Admin check
     if(user.email === 'mymaruf94@gmail.com'){
       document.getElementById('adminPanel').style.display='block';
+    } else {
+      document.getElementById('adminPanel').style.display='none';
     }
   }
 
@@ -103,7 +119,6 @@
   // Auth state
   auth.onAuthStateChanged(user=>{
     if(user) showUser(user);
-    else googleLogin(); // auto login prompt
   });
 
   // Video Upload
