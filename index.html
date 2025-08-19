@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,8 +16,8 @@
   input {margin:5px; padding:5px;}
   .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
   .progress {width:0%; height:100%; background:green; border-radius:5px;}
-  .video-card {background:white; padding:10px; margin:10px 0; border-radius:5px;}
-  video, iframe {width:100%; max-height:400px;}
+  video {width:100%; max-width:600px; margin-bottom:20px;}
+  iframe {width:100%; max-width:600px; height:340px; margin-bottom:20px;}
 </style>
 </head>
 <body>
@@ -31,12 +32,10 @@
 
 <div id="content">
   <h2>Welcome to Movie World</h2>
-  
   <div id="homeSection"></div>
   <div id="searchSection" style="display:none;">Search bar will work here...</div>
   <div id="historySection" style="display:none;">History videos...</div>
   <div id="favSection" style="display:none;">Favourite videos...</div>
-  
   <div id="profileSection" style="display:none;">
     <div id="userInfo"></div>
     <div id="adminPanel" style="display:none;">
@@ -48,21 +47,12 @@
       <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
       <div id="uploadStatus"></div>
     </div>
-    <div id="loginDiv">
-      <p>Please login with Google:</p>
-      <div id="g_id_onload"
-           data-client_id="36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com"
-           data-callback="handleCredentialResponse"
-           data-auto_prompt="false">
-      </div>
-      <div class="g_id_signin" data-type="standard"></div>
-    </div>
-    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer; display:none;">Logout</button>
+    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer;">Logout</button>
   </div>
 </div>
 
 <script>
-  // Navbar click events
+  // ----------------- Navbar -----------------
   const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
   for(let btn in sections){
     document.getElementById(btn).onclick = () => {
@@ -71,51 +61,103 @@
     };
   }
 
-  // User login state
+  // ----------------- Google Sign-In -----------------
   let currentUser = null;
-
+  const adminEmail = 'mymaruf94@gmail.com';
+  
   function handleCredentialResponse(response) {
-    // Decode JWT to get user info
-    const base64Url = response.credential.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    currentUser = JSON.parse(jsonPayload);
-    showUser(currentUser);
+    // Decode credential
+    const userObject = JSON.parse(atob(response.credential.split('.')[1]));
+    currentUser = userObject;
+    localStorage.setItem('movieUser', JSON.stringify(currentUser));
+    showUser();
   }
 
-  function showUser(user){
+  window.onload = () => {
+    const storedUser = localStorage.getItem('movieUser');
+    if(storedUser){
+      currentUser = JSON.parse(storedUser);
+      showUser();
+    }
+
+    // Render Google button
+    google.accounts.id.initialize({
+      client_id: '36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com',
+      callback: handleCredentialResponse
+    });
+  };
+
+  function showUser(){
     document.getElementById('profileSection').style.display='block';
-    document.getElementById('loginDiv').style.display='none';
     document.getElementById('userInfo').innerHTML = `
-      <p>Name: ${user.name}</p>
-      <p>Email: ${user.email}</p>
-      <p>ID: ${user.sub}</p>
+      <p>Name: ${currentUser.name}</p>
+      <p>Email: ${currentUser.email}</p>
+      <p>ID: ${currentUser.sub}</p>
     `;
     document.getElementById('logoutBtn').style.display='inline-block';
-    if(user.email === 'mymaruf94@gmail.com'){
+    if(currentUser.email === adminEmail){
       document.getElementById('adminPanel').style.display='block';
     } else {
       document.getElementById('adminPanel').style.display='none';
     }
   }
 
-  document.getElementById('logoutBtn').onclick = () => {
-    currentUser = null;
-    document.getElementById('profileSection').style.display='block';
-    document.getElementById('userInfo').innerHTML='';
-    document.getElementById('loginDiv').style.display='block';
-    document.getElementById('logoutBtn').style.display='none';
-    document.getElementById('adminPanel').style.display='none';
-  };
-
   document.getElementById('profileBtn').onclick = () => {
     for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
     document.getElementById('profileSection').style.display='block';
+
+    if(currentUser){
+      showUser();
+    } else {
+      document.getElementById('userInfo').innerHTML = `
+        <p>Please login with Google:</p>
+        <div id="g_id_onload"></div>
+        <div class="g_id_signin" data-type="standard"></div>
+      `;
+      google.accounts.id.renderButton(
+        document.getElementById("userInfo"),
+        { theme: "outline", size: "large" }
+      );
+      document.getElementById('adminPanel').style.display='none';
+      document.getElementById('logoutBtn').style.display='none';
+    }
   };
 
-  // Video upload
+  document.getElementById('logoutBtn').onclick = () => {
+    localStorage.removeItem('movieUser');
+    currentUser = null;
+    location.reload();
+  };
+
+  // ----------------- Video Load -----------------
+  const homeSection = document.getElementById('homeSection');
+  async function loadVideos(){
+    try{
+      const res = await fetch('https://sheetdb.io/api/v1/3p5l2ilgzemvr');
+      const data = await res.json();
+      homeSection.innerHTML = '';
+      data.forEach(item=>{
+        let content = '';
+        const link = item.Link || '';
+        if(link.includes('youtube.com') || link.includes('youtu.be')){
+          content = `<iframe src="${link.replace("watch?v=", "embed/")}" frameborder="0" allowfullscreen></iframe>`;
+        } else if(link.includes('facebook.com')){
+          content = `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`;
+        } else if(link.endsWith('.mp4')){
+          content = `<video controls src="${link}"></video>`;
+        } else {
+          content = `<a href="${link}" target="_blank">${link}</a>`;
+        }
+        homeSection.innerHTML += `<h4>${item.Title}</h4>${content}<hr>`;
+      });
+    } catch(e){
+      homeSection.innerHTML = 'Video loading failed ❌';
+      console.error(e);
+    }
+  }
+  loadVideos();
+
+  // ----------------- Upload Video -----------------
   async function uploadVideo(){
     const title = document.getElementById('videoTitle').value;
     const link = document.getElementById('videoLink').value;
@@ -141,36 +183,7 @@
       console.error(e);
     }
   }
-
-  // Load videos from sheet
-  async function loadVideos(){
-    const home = document.getElementById('homeSection');
-    home.innerHTML = 'Loading videos...';
-    const url = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
-    try{
-      const res = await fetch(url);
-      const data = await res.json();
-      home.innerHTML='';
-      data.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'video-card';
-        card.innerHTML = `<h4>${item.Title}</h4>`;
-        if(item.Link.includes('youtube.com') || item.Link.includes('youtu.be')){
-          card.innerHTML += `<iframe src="${item.Link.replace('watch?v=','embed/')}" frameborder="0" allowfullscreen></iframe>`;
-        } else if(item.Link.includes('facebook.com')){
-          card.innerHTML += `<iframe src="${item.Link}" frameborder="0" allowfullscreen></iframe>`;
-        } else {
-          card.innerHTML += `<video controls><source src="${item.Link}" type="video/mp4">Your browser does not support the video tag.</video>`;
-        }
-        home.appendChild(card);
-      });
-    }catch(e){
-      home.innerHTML='Failed to load videos ❌';
-      console.error(e);
-    }
-  }
-
-  loadVideos();
 </script>
+
 </body>
 </html>
