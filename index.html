@@ -9,13 +9,14 @@
 <style>
   body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
   nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
-  nav div {cursor:pointer; transition: 0.3s;}
-  nav div:hover {text-decoration:underline; transform: scale(1.1);}
+  nav div {cursor:pointer;}
+  nav div:hover {text-decoration:underline;}
   #content {padding:20px;}
   #profileSection {margin-top:20px;}
   input {margin:5px; padding:5px;}
   .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
   .progress {width:0%; height:100%; background:green; border-radius:5px;}
+  button {cursor:pointer;}
 </style>
 </head>
 <body>
@@ -45,7 +46,7 @@
       <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
       <div id="uploadStatus"></div>
     </div>
-    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer;">Logout</button>
+    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer;display:none;">Logout</button>
   </div>
 </div>
 
@@ -62,36 +63,24 @@
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
 
-  // Navbar sections
-  const sections = {
-    homeBtn:'homeSection', 
-    searchBtn:'searchSection', 
-    historyBtn:'historySection', 
-    favBtn:'favSection', 
-    profileBtn:'profileSection'
-  };
-
+  // Navbar click events
+  const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
   for(let btn in sections){
     document.getElementById(btn).onclick = () => {
       for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
       document.getElementById(sections[btn]).style.display = 'block';
-
-      // Profile click → show user info or login
-      if(btn==='profileBtn'){
-        const user = auth.currentUser;
-        if(user) showUser(user);
-        else googleLogin();
-      }
     };
   }
 
   // Google SignIn
   const provider = new firebase.auth.GoogleAuthProvider();
+
   function googleLogin(){
     auth.signInWithPopup(provider)
     .then(result => {
       const user = result.user;
       showUser(user);
+      document.getElementById('logoutBtn').style.display='inline-block';
     })
     .catch(err => alert('Login failed: '+err));
   }
@@ -103,6 +92,8 @@
       <p>Email: ${user.email}</p>
       <p>ID: ${user.uid}</p>
     `;
+    document.getElementById('logoutBtn').style.display='inline-block';
+    
     // Admin check
     if(user.email === 'mymaruf94@gmail.com'){
       document.getElementById('adminPanel').style.display='block';
@@ -114,6 +105,23 @@
   // Logout
   document.getElementById('logoutBtn').onclick = () => {
     auth.signOut().then(()=>{location.reload();});
+  };
+
+  // Profile button logic
+  document.getElementById('profileBtn').onclick = () => {
+    for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
+    document.getElementById('profileSection').style.display = 'block';
+
+    const user = auth.currentUser;
+    if(user) showUser(user);
+    else {
+      document.getElementById('userInfo').innerHTML = `
+        <p>Please login with Google:</p>
+        <button onclick="googleLogin()" style="padding:5px 10px;background:#4285F4;color:white;border:none;border-radius:5px;cursor:pointer;">Sign in with Google</button>
+      `;
+      document.getElementById('adminPanel').style.display='none';
+      document.getElementById('logoutBtn').style.display='none';
+    }
   };
 
   // Auth state
@@ -133,6 +141,7 @@
     const statusElem = document.getElementById('uploadStatus');
     progressElem.style.width='0%';
     statusElem.innerText='Uploading...';
+
     // Simulate progress
     let width=0;
     const interval = setInterval(()=>{width+=10; progressElem.style.width=width+'%';},100);
