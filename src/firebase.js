@@ -1,9 +1,10 @@
-// src/firebase.js
+// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
 
+// Your Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAJlhLhl-dFkZO9LP5s_0XMhtotiv3RMW8",
   authDomain: "movie-world-db6c9.firebaseapp.com",
@@ -14,9 +15,11 @@ const firebaseConfig = {
   measurementId: "G-1ZY34TB1GC"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+const storage = getStorage(app);
+const db = getFirestore(app);
 
-export const auth = getAuth(app);
-export const provider = new GoogleAuthProvider();
-export const storage = getStorage(app);
-export const db = getFirestore(app);
+export { auth, provider, storage, db };
