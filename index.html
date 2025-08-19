@@ -4,23 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie World</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
-  body {font-family: Arial, sans-serif; margin:0; padding:0; background:#f2f2f2;}
+  body {font-family: Arial; margin:0; padding:0; background:#f2f2f2;}
   nav {display:flex; justify-content:space-around; padding:10px; background:#2196F3; color:white; font-weight:bold; font-size:18px;}
   nav div {cursor:pointer;}
   nav div:hover {text-decoration:underline;}
-  #content {padding:20px;}
-  #profileSection {margin-top:20px;}
-  input {margin:5px; padding:5px;}
-  .progress-bar {width:100%; background:#ddd; height:15px; border-radius:5px; margin-top:10px;}
-  .progress {width:0%; height:100%; background:green; border-radius:5px;}
-  .video-card {margin-bottom:20px; border:1px solid #ccc; padding:10px; border-radius:5px; background:white;}
-  iframe, video {width:100%; max-width:600px; height:340px;}
-  .btn {padding:5px 10px; margin:5px; border:none; border-radius:5px; cursor:pointer;}
-  .favBtn {background:gold;}
-  .historyBtn {background:#4CAF50; color:white;}
+  .section {display:none; padding:20px;}
+  .active {display:block;}
+  #loginBtn, #logoutBtn {padding:5px 10px; margin-top:10px;}
 </style>
 </head>
 <body>
@@ -33,202 +24,60 @@
   <div id="profileBtn">👤 Profile</div>
 </nav>
 
-<div id="content">
-  <h2>Welcome to Movie World</h2>
-  <div id="homeSection">Home content will show videos here...</div>
-  <div id="searchSection" style="display:none;">
-    <input type="text" id="searchInput" placeholder="Search by title or category">
-    <button onclick="searchVideos()">Search</button>
-    <div id="searchResults"></div>
-  </div>
-  <div id="historySection" style="display:none;">History videos will appear here...</div>
-  <div id="favSection" style="display:none;">Favourite videos will appear here...</div>
-  <div id="profileSection" style="display:none;">
-    <div id="userInfo"></div>
-    <div id="adminPanel" style="display:none;">
-      <h3>Admin Dashboard</h3>
-      <input type="text" id="videoTitle" placeholder="Title">
-      <input type="text" id="videoLink" placeholder="MP4/YouTube/Facebook link">
-      <input type="text" id="videoCategory" placeholder="Category">
-      <button onclick="uploadVideo()">Upload Video</button>
-      <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
-      <div id="uploadStatus"></div>
-    </div>
-    <button id="logoutBtn" style="margin-top:10px;padding:5px 10px;background:#e53935;color:white;border:none;border-radius:5px;cursor:pointer; display:none;">Logout</button>
-  </div>
+<div id="homeSection" class="section active">Home content...</div>
+<div id="searchSection" class="section">Search content...</div>
+<div id="historySection" class="section">History content...</div>
+<div id="favSection" class="section">Favorites content...</div>
+<div id="profileSection" class="section">
+  <div id="userInfo">Please login</div>
+  <button id="loginBtn">Sign in with Google</button>
+  <button id="logoutBtn" style="display:none;">Logout</button>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAJlhLhl-dFkZO9LP5s_0XMhtotiv3RMW8",
-    authDomain: "movie-world-db6c9.firebaseapp.com",
-    projectId: "movie-world-db6c9",
-    storageBucket: "movie-world-db6c9.appspot.com",
-    messagingSenderId: "801583543414",
-    appId: "1:801583543414:web:42361e2894b9893c07db57"
-  };
+  // Firebase Config
+  const firebaseConfig = { /* তোমার config */ };
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-  const sections = {homeBtn:'homeSection', searchBtn:'searchSection', historyBtn:'historySection', favBtn:'favSection'};
-  for(let btn in sections){
-    document.getElementById(btn).onclick = () => {
-      for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
-      document.getElementById(sections[btn]).style.display = 'block';
-      if(btn==='historyBtn') loadHistory();
-      if(btn==='favBtn') loadFavorites();
-    };
-  }
-
-  const provider = new firebase.auth.GoogleAuthProvider();
-  function googleLogin(){
-    auth.signInWithPopup(provider)
-    .then(result => {
-      const user = result.user;
-      showUser(user);
-    })
-    .catch(err => alert('Login failed: '+err));
-  }
-
-  function showUser(user){
-    document.getElementById('profileSection').style.display='block';
-    document.getElementById('userInfo').innerHTML = `
-      <p>Name: ${user.displayName}</p>
-      <p>Email: ${user.email}</p>
-      <p>ID: ${user.uid}</p>
-    `;
-    document.getElementById('logoutBtn').style.display='inline-block';
-    if(user.email === 'mymaruf94@gmail.com'){
-      document.getElementById('adminPanel').style.display='block';
-    } else {
-      document.getElementById('adminPanel').style.display='none';
-    }
-  }
-
-  document.getElementById('logoutBtn').onclick = () => {
-    auth.signOut().then(()=>{location.reload();});
-  };
-
-  document.getElementById('profileBtn').onclick = () => {
-    for(let s in sections) document.getElementById(sections[s]).style.display = 'none';
-    document.getElementById('profileSection').style.display='block';
-
-    const user = auth.currentUser;
-    if(user){
-      showUser(user);
-    } else {
-      document.getElementById('userInfo').innerHTML = `
-        <p>Please login with Google:</p>
-        <button onclick="googleLogin()" style="padding:5px 10px;background:#4285F4;color:white;border:none;border-radius:5px;cursor:pointer;">Sign in with Google</button>
-      `;
-      document.getElementById('adminPanel').style.display='none';
-      document.getElementById('logoutBtn').style.display='none';
-    }
-  };
-
-  auth.onAuthStateChanged(user=>{
-    if(user) showUser(user);
+  // Navbar click
+  const sections = ['home','search','history','fav','profile'];
+  sections.forEach(name=>{
+    document.getElementById(name+'Btn').addEventListener('click', ()=>{
+      sections.forEach(n=>document.getElementById(n+'Section').classList.remove('active'));
+      document.getElementById(name+'Section').classList.add('active');
+      if(name==='profile') showProfile();
+    });
   });
 
-  function extractYoutubeID(url){
-    const regExp = /(?:youtube\.com.*(?:\?|&)v=|youtu\.be\/)([^&\n?#]+)/;
-    const match = url.match(regExp);
-    return match ? match[1] : '';
-  }
+  const provider = new firebase.auth.GoogleAuthProvider();
 
-  let allVideos = [];
+  document.getElementById('loginBtn').addEventListener('click', ()=>{
+    auth.signInWithPopup(provider).then(()=>showProfile()).catch(err=>alert(err));
+  });
 
-  async function loadVideos(){
-    const home = document.getElementById('homeSection');
-    home.innerHTML = 'Loading videos...';
-    try{
-      const res = await fetch('https://sheetdb.io/api/v1/3p5l2ilgzemvr');
-      const json = await res.json();
-      if(!json || !json.length) {
-        home.innerHTML = 'No videos found';
-        return;
-      }
-      allVideos = json;
-      renderVideos(json, home);
-    }catch(e){
-      home.innerHTML='Failed to load videos';
-      console.error(e);
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{
+    auth.signOut().then(()=>showProfile());
+  });
+
+  function showProfile(){
+    const user = auth.currentUser;
+    if(user){
+      document.getElementById('userInfo').innerHTML = `<p>Name: ${user.displayName}</p><p>Email: ${user.email}</p>`;
+      document.getElementById('loginBtn').style.display='none';
+      document.getElementById('logoutBtn').style.display='inline-block';
+    } else{
+      document.getElementById('userInfo').innerHTML = 'Please login';
+      document.getElementById('loginBtn').style.display='inline-block';
+      document.getElementById('logoutBtn').style.display='none';
     }
   }
 
-  function renderVideos(videos, container){
-    container.innerHTML='';
-    videos.forEach(v=>{
-      const title = v.Title || 'No Title';
-      const link = v.Link || '';
-      const card = document.createElement('div');
-      card.className='video-card';
-      card.innerHTML = `<h4>${title}</h4>`;
-      if(link.includes('youtube.com') || link.includes('youtu.be')){
-        card.innerHTML += `<iframe src="https://www.youtube.com/embed/${extractYoutubeID(link)}" frameborder="0" allowfullscreen></iframe>`;
-      } else if(link.includes('facebook.com')){
-        card.innerHTML += `<iframe src="${link}" frameborder="0" allowfullscreen></iframe>`;
-      } else if(link.endsWith('.mp4')){
-        card.innerHTML += `<video controls><source src="${link}" type="video/mp4"></video>`;
-      } else {
-        card.innerHTML += `<p>Unsupported link</p>`;
-      }
-      const favBtn = document.createElement('button');
-      favBtn.className='btn favBtn';
-      favBtn.innerText='⭐ Favorite';
-      favBtn.onclick=()=>addFavorite(v);
-      const histBtn = document.createElement('button');
-      histBtn.className='btn historyBtn';
-      histBtn.innerText='📜 History';
-      histBtn.onclick=()=>addHistory(v);
-      card.appendChild(favBtn);
-      card.appendChild(histBtn);
-      container.appendChild(card);
-    });
-  }
+  auth.onAuthStateChanged(()=>showProfile());
+</script>
 
-  function addHistory(video){
-    let history = JSON.parse(localStorage.getItem('history')||'[]');
-    history.push(video);
-    localStorage.setItem('history', JSON.stringify(history));
-    alert('Added to history');
-  }
-
-  function loadHistory(){
-    const histSection = document.getElementById('historySection');
-    let history = JSON.parse(localStorage.getItem('history')||'[]');
-    if(history.length===0){histSection.innerHTML='No history'; return;}
-    renderVideos(history, histSection);
-  }
-
-  function addFavorite(video){
-    let favs = JSON.parse(localStorage.getItem('favorites')||'[]');
-    if(!favs.find(v=>v.Link===video.Link)) favs.push(video);
-    localStorage.setItem('favorites', JSON.stringify(favs));
-    alert('Added to favorites');
-  }
-
-  function loadFavorites(){
-    const favSection = document.getElementById('favSection');
-    let favs = JSON.parse(localStorage.getItem('favorites')||'[]');
-    if(favs.length===0){favSection.innerHTML='No favorites'; return;}
-    renderVideos(favs, favSection);
-  }
-
-  function searchVideos(){
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const results = allVideos.filter(v=> (v.Title||'').toLowerCase().includes(query) || (v.category||'').toLowerCase().includes(query));
-    renderVideos(results, document.getElementById('searchResults'));
-  }
-
-  async function uploadVideo(){
-    const title = document.getElementById('videoTitle').value;
-    const link = document.getElementById('videoLink').value;
-    const category = document.getElementById('videoCategory').value;
-    if(!title||!link||!category) return alert('Fill all fields');
-    const data = {title, link, category};
-    const url = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
-    const progressElem = document.getElementById('uploadProgress');
-    const statusElem = document.getElementById('uploadStatus');
-    progressElem.style.width='0%
+</body>
+</html>
