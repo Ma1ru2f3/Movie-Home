@@ -1,10 +1,170 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie World</title>
+<!-- React CDN -->
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.3.0/firebase-auth.js";
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+  window.firebaseApp = initializeApp({
+    apiKey: "AIzaSyAJlhLhl-dFkZO9LP5s_0XMhtotiv3RMW8",
+    authDomain: "movie-world-db6c9.firebaseapp.com",
+    projectId: "movie-world-db6c9",
+    storageBucket: "movie-world-db6c9.appspot.com",
+    messagingSenderId: "801583543414",
+    appId: "1:801583543414:web:42361e2894b9893c07db57"
+  });
+  window.auth = getAuth(window.firebaseApp);
+  window.provider = new GoogleAuthProvider();
+</script>
+<style>
+body { font-family: Arial; margin:0; padding:0; background:#f0f0f0; }
+.navbar { display:flex; background:#222; color:white; padding:10px; justify-content:space-around; }
+.navbar button { color:white; background:none; border:none; font-size:16px; cursor:pointer; }
+.navbar button.active { color:#ff0; font-weight:bold; }
+.section { display:none; padding:20px; }
+.section.active { display:block; }
+button.google-btn { background:#4285F4; color:white; padding:10px; border:none; cursor:pointer; }
+.upload-status { margin-top:10px; color:green; font-weight:bold; }
+.video-item { margin:10px 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+
+const { useState, useEffect } = React;
+
+function App() {
+  const [activeSection, setActiveSection] = useState("Home");
+  const [user, setUser] = useState(null);
+  const [videos, setVideos] = useState([]);
+  const [uploadStatus, setUploadStatus] = useState("");
+
+  // Load videos from SheetDB
+  const SHEETDB_API = "https://sheetdb.io/api/v1/3p5l2ilgzemvr";
+
+  useEffect(() => {
+    fetch(SHEETDB_API)
+      .then(res => res.json())
+      .then(data => setVideos(data))
+      .catch(err => console.log(err));
+  }, []);
+
+  const handleLogin = () => {
+    signInWithPopup(auth, provider)
+      .then(result => {
+        setUser(result.user);
+      })
+      .catch(err => alert("Login error: use Chrome/Firefox browser"));
+  };
+
+  const handleLogout = () => {
+    signOut(auth).then(() => setUser(null));
+  };
+
+  const handleUpload = (e) => {
+    e.preventDefault();
+    const title = e.target.title.value;
+    const link = e.target.link.value;
+    const category = e.target.category.value;
+
+    setUploadStatus("Uploading...");
+
+    fetch(SHEETDB_API, {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ data: { Title: title, Link: link, category } })
+    })
+    .then(res => res.json())
+    .then(data => {
+      setUploadStatus("Upload successful!");
+      // Refresh video list
+      setVideos(prev => [...prev, { Title: title, Link: link, category }]);
+      e.target.reset();
+    })
+    .catch(err => {
+      setUploadStatus("Upload failed!");
+      console.log(err);
+    });
+  };
+
+  return (
+    <div>
+      {/* Navbar */}
+      <div className="navbar">
+        {["Home","Search","Favourite","Profile"].map(item => (
+          <button
+            key={item}
+            className={activeSection===item?"active":""}
+            onClick={()=>setActiveSection(item)}
+          >{item} {item==="Home"?"🏠":item==="Search"?"🔍":item==="Favourite"?"⭐":"👤"}</button>
+        ))}
+      </div>
+
+      {/* Sections */}
+      <div className={`section ${activeSection==="Home"?"active":""}`}>
+        <h2>Home Section</h2>
+        {videos.map((v,i)=>(
+          <div key={i} className="video-item">
+            <h4>{v.Title} ({v.category})</h4>
+            <video src={v.Link} controls width="300"></video>
+          </div>
+        ))}
+      </div>
+
+      <div className={`section ${activeSection==="Search"?"active":""}`}>
+        <h2>Search Section</h2>
+        <p>Search bar placeholder...</p>
+      </div>
+
+      <div className={`section ${activeSection==="Favourite"?"active":""}`}>
+        <h2>Favourite Section</h2>
+        <p>Favourite videos placeholder...</p>
+      </div>
+
+      <div className={`section ${activeSection==="Profile"?"active":""}`}>
+        <h2>Profile Section</h2>
+        {user ? (
+          <div>
+            <img src={user.photoURL} width="80" style={{borderRadius:"50%"}}/>
+            <p>{user.displayName}</p>
+            <p>{user.email}</p>
+            <button onClick={handleLogout}>Logout</button>
+
+            {/* Admin Video Upload */}
+            {user.email==="mymaruf94@gmail.com" && (
+              <div style={{marginTop:"20px"}}>
+                <h3>Admin: Upload Video</h3>
+                <form onSubmit={handleUpload}>
+                  <input name="title" placeholder="Title" required/><br/>
+                  <input name="link" placeholder="MP4 Link" required/><br/>
+                  <input name="category" placeholder="Category" required/><br/>
+                  <button type="submit">Upload</button>
+                </form>
+                <div className="upload-status">{uploadStatus}</div>
+              </div>
+            )}
+
+          </div>
+        ) : (
+          <button className="google-btn" onClick={handleLogin}>Sign in with Google</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+</script>
+</body>
+</html>
