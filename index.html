@@ -85,7 +85,6 @@
           <div class="site-sub" id="siteAbout">Movie & Series Library</div>
         </div>
         <div style="flex:1"></div>
-        <div id="homeSignIn" style="display:none;"></div>
         <a href="https://drive.google.com/uc?export=download&id=1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw" style="
           display: inline-block;
           padding: 8px 14px;
@@ -98,6 +97,7 @@
         " download>
           Download App
         </a>
+        <div id="gsi-signin"></div>
       </div>
       <nav id="topNav">
         <button class="tab active" data-pane="home">🏠 Home</button>
@@ -323,12 +323,12 @@
       renderPaneMovies(STATE.videos.filter(v=>v.category.toLowerCase().includes('movie')));
       renderPaneSeries(STATE.videos.filter(v=>v.category.toLowerCase().includes('series')));
 
-      const homeSignIn = qs('#homeSignIn');
+      const gsiDiv = qs('#gsi-signin');
       if (STATE.user) {
-        homeSignIn.style.display = 'none';
+        gsiDiv.style.display = 'none';
       } else {
-        homeSignIn.style.display = 'block';
-        window.google.accounts.id.renderButton(homeSignIn, { theme:'outline', size:'large', text:'signin_with' });
+        gsiDiv.style.display = 'block';
+        window.google.accounts.id.renderButton(gsiDiv, { theme: 'filled_blue', size: 'large', text: 'signin_with' });
       }
     }
     
@@ -745,6 +745,12 @@
         client_id: CONFIG.GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse
       });
+      if (!STATE.user) {
+        window.google.accounts.id.renderButton(
+          document.getElementById('gsi-signin'), 
+          { theme: 'filled_blue', size: 'large', text: 'signin_with' }
+        );
+      }
     })();
   </script>
 </body>
