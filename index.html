@@ -227,42 +227,28 @@
       owner: OWNER_INFO,
     };
     
-    /**
-     * Converts a Google Drive 'view' link to a direct 'uc' download link.
-     * @param {string} link The original video link.
-     * @returns {string} The corrected direct video link.
-     */
-    function getDirectLink(link) {
+    function getFileIdFromLink(link) {
       if (link && link.includes('drive.google.com/file/d/')) {
         try {
           const parts = link.split('/d/');
           const fileId = parts[1].split('/')[0];
-          return `https://drive.google.com/uc?id=${fileId}&export=download`;
+          return fileId;
         } catch (e) {
           console.error('Failed to parse Google Drive link:', e);
-          return link;
+          return null;
         }
       }
-      return link;
+      return null;
     }
 
-    /**
-     * Converts a Google Drive 'view' link to a direct 'thumbnail' link.
-     * @param {string} link The original thumbnail link.
-     * @returns {string} The corrected direct image link.
-     */
+    function getDirectLink(link) {
+      const fileId = getFileIdFromLink(link);
+      return fileId ? `https://drive.google.com/uc?id=${fileId}&export=download` : link;
+    }
+
     function getThumbnailLink(link) {
-      if (link && link.includes('drive.google.com/file/d/') && link.includes('/view')) {
-        try {
-          const parts = link.split('/d/');
-          const fileId = parts[1].split('/')[0];
-          return `https://drive.google.com/thumbnail?id=${fileId}`;
-        } catch (e) {
-          console.error('Failed to parse Google Drive link:', e);
-          return link;
-        }
-      }
-      return link;
+      const fileId = getFileIdFromLink(link);
+      return fileId ? `https://drive.google.com/thumbnail?id=${fileId}` : link;
     }
 
     async function loadInitial(){
