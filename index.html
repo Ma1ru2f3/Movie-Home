@@ -167,7 +167,7 @@
             <div class="card">
               <div class="card-body">
                 <div style="font-weight:800;margin-bottom:8px">🔒 Login Info</div>
-                <div class="small-muted">Sign in with Google to view dashboard and upload (admin).</div>
+                <div class="small-muted">Sign in with Google to view profile & (if admin) the Admin Dashboard.</div>
                 <div style="height:8px"></div>
                 <div id="gsi-small"></div>
               </div>
@@ -228,8 +228,8 @@
     };
 
     /**
-     * Converts a Google Drive 'view' link to a direct 'uc' link.
-     * If the link is not a Google Drive 'view' link, it returns the original link.
+     * Converts a Google Drive 'view' link to a direct 'uc' download link.
+     * This is the most reliable method for publicly shared files.
      * @param {string} link The original thumbnail link.
      * @returns {string} The corrected direct image link.
      */
@@ -238,10 +238,10 @@
         try {
           const parts = link.split('/d/');
           const fileId = parts[1].split('/')[0];
-          return `https://drive.google.com/thumbnail?id=${fileId}`; // Changed to thumbnail API
+          return `https://drive.google.com/uc?id=${fileId}&export=download`; // Updated for better reliability
         } catch (e) {
           console.error('Failed to parse Google Drive link:', e);
-          return link; // Fallback to original link on error
+          return link;
         }
       }
       return link;
