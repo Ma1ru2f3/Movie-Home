@@ -1,189 +1,205 @@
 <!doctype html>
-<html lang="bn">    
-<head>    
-  <meta charset="utf-8" />    
-  <meta name="viewport" content="width=device-width,initial-scale=1" />    
-  <title>🎬 Bangla Video Hub</title>    
-  <script src="https://accounts.google.com/gsi/client" async defer></script>    
-  <style>    
-    :root{    
-      --bg1: linear-gradient(135deg,#fff7f0 0%, #fffef6 50%, #f0fbff 100%);    
-      --card: rgba(255,255,255,0.9);    
-      --muted: #6b7280;    
-      --accent: linear-gradient(90deg,#fb923c,#f97316);    
-      --rounded: 14px;    
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;    
-    }    
-    html,body{height:100%;margin:0;background:var(--bg1);color:#0f172a}    
-    .container{max-width:1100px;margin:0 auto;padding:18px}    
-    header{position:sticky;top:0;background:rgba(255,255,255,0.6);backdrop-filter:blur(4px);border-bottom:1px solid rgba(255,255,255,0.6)}    
-    .hdr{display:flex;align-items:center;gap:12px;padding:14px 0}    
-    .logo{font-size:26px}    
-    .site-title{font-weight:800;font-size:18px}    
-    .site-sub{font-size:12px;color:var(--muted)}    
-    nav{display:flex;gap:8px;padding:10px 0}    
-    .tab{padding:8px 14px;border-radius:999px;background:rgba(255,255,255,0.8);font-weight:600;cursor:pointer;border:1px solid rgba(0,0,0,0.04)}    
-    .tab.active{background:white;box-shadow:0 4px 12px rgba(2,6,23,0.06)}    
-    main{padding:18px 0}    
-    .grid{display:grid;gap:14px}    
-    .grid.cols-2{grid-template-columns:repeat(2,1fr)}    
-    .card{background:var(--card);border-radius:var(--rounded);overflow:hidden;box-shadow:0 6px 18px rgba(2,6,23,0.06)}    
-    .aspect-video{background:#0f172a;color:white;position:relative;padding-top:56.25%}    
-    .aspect-video iframe,.aspect-video video{position:absolute;left:0;top:0;width:100%;height:100%;border:0}    
-    .card-body{padding:12px}    
-    .meta{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}    
-    input[type="text"],textarea,select{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(2,6,23,0.06);outline:none;background:white}    
-    button{cursor:pointer;border:0;padding:8px 12px;border-radius:10px;font-weight:700}    
-    .btn-primary{background:linear-gradient(90deg,#60a5fa,#7c3aed);color:white}    
-    .btn-emerald{background:linear-gradient(90deg,#34d399,#10b981);color:white}    
-    .btn-red{background:linear-gradient(90deg,#ef4444,#dc2626);color:white}    
-    .muted{color:var(--muted)}    
-    .tiny{font-size:12px}    
-    .row{display:flex;gap:12px;align-items:center}    
-    .col{display:flex;flex-direction:column;gap:8px}    
-    .progress-wrap{height:10px;background:rgba(0,0,0,0.06);border-radius:999px;overflow:hidden}    
-    .progress-bar{height:100%;background:linear-gradient(90deg,#34d399,#f59e0b);width:0%}    
-    .owner-block{padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbf7ef);border:1px dashed rgba(0,0,0,0.03)}    
-    footer{padding:18px 0;text-align:center;color:var(--muted);font-size:13px}    
-    .searchbar{display:flex;gap:8px}    
-    .chip{display:inline-block;padding:6px 10px;border-radius:999px;background:linear-gradient(90deg,#fff,#fff);border:1px solid rgba(0,0,0,0.04);font-weight:600}    
-    .small-muted{font-size:12px;color:var(--muted)}    
-    .dropdown { position: relative; display: inline-block; }
-    .dropdown-content { display: none; position: absolute; background-color: white; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; border-radius: 8px; right: 0; }
-    .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; cursor: pointer; }
-    .dropdown-content a:hover { background-color: #f1f1f1 }
-    .dropdown:hover .dropdown-content { display: block; }
-
-    @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} nav{overflow:auto} }    
-  </style>  
-</head>    
-<body>    
-  <header>    
-    <div class="container hdr">    
-      <div class="logo">🎬</div>    
-      <div>    
-        <div class="site-title" id="siteName">Bangla Video Hub</div>    
-        <div class="site-sub" id="siteAbout">Video discovery with Google + SheetDB</div>    
-      </div>    
-      <div style="flex:1"></div>    
-      <div id="gsi-signin"></div>    
-    </div>    
-    <div class="container" style="padding-bottom:10px">    
-      <nav id="mainNav"></nav>    
-    </div>    
-  </header>    
-  <main class="container">    
-    <div id="paneHome" class="pane">    
-      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">    
-        <div class="col">    
-          <div style="font-weight:800">🏠 Home</div>    
-          <div class="small-muted">Latest uploaded videos appear here automatically</div>    
-        </div>    
-        <div class="searchbar" style="max-width:520px;width:100%">    
-          <input id="searchInput" type="text" placeholder="🔎 Search by title..." />    
-          <select id="seasonFilter">
-            <option value="">All Seasons</option>
-          </select>
-          <div class="chip" id="resultCount">0</div>    
-        </div>    
-      </div>  
-      <div id="videosGrid" class="grid cols-2"></div>    
-    </div>    
-    <div id="paneSearch" class="pane" style="display:none">    
-      <div style="font-weight:800;margin-bottom:10px">🔍 Search results</div>    
-      <div id="searchResults" class="grid cols-2"></div>    
-    </div>    
-    <div id="paneHistory" class="pane" style="display:none">    
-      <div style="font-weight:800;margin-bottom:10px">🕘 History</div>    
-      <div id="historyList" class="col"></div>    
-    </div>    
-    <div id="paneProfile" class="pane" style="display:none">    
-      <div class="grid" style="grid-template-columns:1fr 360px;gap:14px">    
-        <div class="col">    
-          <div class="card">    
-            <div class="card-body">    
-              <div style="font-weight:800;margin-bottom:8px">👤 Profile</div>    
-              <div id="profileArea"></div>    
-            </div>    
-          </div>    
-          <div style="height:14px"></div>    
-          <div class="card">    
-            <div class="card-body">    
-              <div style="font-weight:800;margin-bottom:8px">📣 Owner Info</div>    
-              <div class="owner-block" id="ownerInfoBlock">    
-                <div><strong id="ownerName">—</strong></div>    
-                <div class="small-muted" id="ownerAbout">—</div>    
-                <div class="small-muted">Contact: <span id="ownerContact">—</span></div>    
-              </div>    
-            </div>    
-          </div>    
-        </div>    
-        <div class="col">    
-          <div id="adminBlock" class="card" style="display:none">    
-            <div class="card-body">    
-              <div style="font-weight:800;margin-bottom:8px">🛠️ Admin Dashboard</div>    
-              <div style="font-weight:700">Upload Video</div>    
-              <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">    
-                <input id="uploadTitle" type="text" placeholder="Title" />    
-                <input id="uploadLink" type="text" placeholder="Video link (YouTube/Facebook/Drive/TikTok/MP4)" />    
-                <input id="uploadCategory" type="text" placeholder="Category" />    
-                <input id="uploadSeason" type="text" placeholder="Season" />    
-                <input id="uploadEpisode" type="text" placeholder="Episode" />    
-                <div class="row">    
-                  <button id="btnUpload" class="btn-emerald">Upload</button>    
-                  <div style="flex:1"></div>    
-                </div>    
-                <div class="progress-wrap"><div id="uploadProgress" class="progress-bar"></div></div>    
-              </div>    
-              <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(0,0,0,0.06)" />    
-              <div style="font-weight:700">Owner Settings</div>    
-              <div style="display:grid;gap:8px;margin-top:8px">    
-                <input id="ownerNameInput" type="text" placeholder="Site name" />    
-                <input id="ownerAboutInput" type="text" placeholder="Short about text" />    
-                <input id="ownerContactInput" type="text" placeholder="Contact email/phone" />    
-                <div class="row"><button id="btnOwnerSave" class="btn-primary">Save Owner Info</button></div>    
-              </div>    
-              <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(0,0,0,0.06)" />    
-              <div style="font-weight:700">Manage Videos</div>    
-              <div id="manageVideosBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:white;padding:8px"></div>    
-              <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(0,0,0,0.06)" />    
-              <div style="font-weight:700">User List</div>    
-              <div id="userListBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:white;padding:8px"></div>    
-            </div>    
-          </div>    
-          <div style="height:12px"></div>    
-          <div class="card">    
-            <div class="card-body">    
-              <div style="font-weight:800;margin-bottom:8px">🔒 Login Info</div>    
-              <div class="small-muted">Sign in with Google to view dashboard and upload (admin).</div>    
-              <div style="height:8px"></div>    
-              <div id="gsi-small"></div>    
-            </div>    
-          </div>    
-        </div>    
-      </div>    
-    </div>    
-  </main>    
-  <footer>    
-    <div class="container">    
-      Made with ❤️ using Google Sign-In + SheetDB · <span id="footerStatus">Ready</span>    
-    </div>    
-  </footer>  
-  <script>    
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Video Hub</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root{
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --text-primary: #ffffff;
+      --text-secondary: #b3b3b3;
+      --accent: #ef233c;
+      --border-color: #333333;
+      --rounded: 10px;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;margin:0;background:var(--bg-dark);color:var(--text-primary)}
+    .container{max-width:1100px;margin:0 auto;padding:18px}
+    header{position:sticky;top:0;background:var(--bg-dark);border-bottom:1px solid var(--border-color);z-index:100}
+    .hdr{display:flex;align-items:center;gap:12px;padding:14px 0}
+    .logo{font-size:26px}
+    .site-title{font-weight:800;font-size:18px}
+    .site-sub{font-size:12px;color:var(--text-secondary)}
+    nav{display:flex;gap:8px;padding:10px 0}
+    .tab{padding:8px 14px;border-radius:999px;background:var(--card-bg);font-weight:600;cursor:pointer;color:var(--text-primary);border:1px solid var(--border-color)}
+    .tab.active{background:var(--accent);color:white;box-shadow:0 4px 12px rgba(2,6,23,0.06)}
+    main{padding:18px 0;padding-bottom:100px}
+    .grid{display:grid;gap:14px}
+    .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+    .card{background:var(--card-bg);border-radius:var(--rounded);overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.2)}
+    .aspect-video{background:#000;color:white;position:relative;padding-top:56.25%}
+    .aspect-video iframe,.aspect-video video{position:absolute;left:0;top:0;width:100%;height:100%;border:0}
+    .card-body{padding:12px}
+    .meta{display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px}
+    input[type="text"],textarea,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--border-color);outline:none;background:var(--card-bg);color:var(--text-primary)}
+    button{cursor:pointer;border:0;padding:8px 12px;border-radius:10px;font-weight:700}
+    .btn-primary{background:linear-gradient(90deg,#60a5fa,#7c3aed);color:white}
+    .btn-emerald{background:linear-gradient(90deg,#34d399,#10b981);color:white}
+    .btn-red{background:linear-gradient(90deg,#ef4444,#dc2626);color:white}
+    .muted{color:var(--text-secondary)}
+    .tiny{font-size:12px}
+    .row{display:flex;gap:12px;align-items:center}
+    .col{display:flex;flex-direction:column;gap:8px}
+    .progress-wrap{height:10px;background:var(--border-color);border-radius:999px;overflow:hidden}
+    .progress-bar{height:100%;background:linear-gradient(90deg,#34d399,#f59e0b);width:0%}
+    .owner-block{padding:12px;border-radius:10px;background:var(--card-bg);border:1px dashed rgba(255,255,255,0.1)}
+    footer{position:fixed;bottom:0;left:0;right:0;padding:18px 0;background:var(--card-bg);text-align:center;color:var(--text-secondary);font-size:13px;border-top:1px solid var(--border-color)}
+    .searchbar{display:flex;gap:8px}
+    .chip{display:inline-block;padding:6px 10px;border-radius:999px;background:var(--card-bg);border:1px solid var(--border-color);font-weight:600;cursor:pointer}
+    .small-muted{font-size:12px;color:var(--text-secondary)}
+    .scroll-x{overflow-x:auto;display:flex;gap:12px;padding:8px 0;scrollbar-width:none}
+    .scroll-x::-webkit-scrollbar{display:none}
+    .section-title{font-weight:800;font-size:18px;margin-top:20px;margin-bottom:12px}
+    .content-card{width:120px;flex-shrink:0}
+    .content-card img{width:100%;height:180px;object-fit:cover;border-radius:8px}
+    .content-card-title{font-size:14px;font-weight:600;margin-top:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .logo-container img{width:60px;height:60px;object-fit:contain;border-radius:10px}
+    .logo-container{flex-shrink:0}
+    .details-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
+    .details-page .header{position:relative;height:300px;overflow:hidden;background:var(--card-bg)}
+    .details-page .header img{width:100%;height:100%;object-fit:cover;opacity:0.6}
+    .details-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
+    .details-page .body{padding:20px}
+    .details-page h1{font-size:24px;margin:0;font-weight:800}
+    .details-page .meta-info{display:flex;gap:10px;margin-top:8px;color:var(--text-secondary);font-size:14px}
+    .details-page .btn-group{margin-top:15px;display:flex;gap:10px;justify-content:center}
+    .details-page .overview{margin-top:20px;line-height:1.6}
+    .episode-list{margin-top:20px}
+    .episode-item{display:flex;gap:15px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-color)}
+    .episode-item img{width:80px;height:50px;object-fit:cover;border-radius:6px}
+    .episode-item .info{flex:1}
+    .episode-item .title{font-weight:600}
+    @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} nav{overflow:auto} .details-page .header{height:200px} }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <main class="container">
+      <div id="paneHome" class="pane">
+        <div class="hdr">
+          <div class="logo">🎬</div>
+          <div>
+            <div class="site-title" id="siteName">Video Hub</div>
+            <div class="site-sub" id="siteAbout">Movie & Series Library</div>
+          </div>
+          <div style="flex:1"></div>
+          <div id="gsi-signin"></div>
+        </div>
+        <div class="section-title">Popular</div>
+        <div class="scroll-x">
+          <div class="logo-container"> <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Crunchyroll_Logo.svg/2560px-Crunchyroll_Logo.svg.png"> </div>
+          <div class="logo-container"> <img src="https://cdn.freebiesupply.com/logos/large/2x/netflix-logo-png-transparent.png"> </div>
+          <div class="logo-container"> <img src="https://i.pinimg.com/originals/ce/c8/1f/cec81f9532588d01b1a7d65b758b731f.png"> </div>
+        </div>
+        <div class="section-title">Categories</div>
+        <div class="scroll-x" id="categoryChips"></div>
+        <div class="section-title">Trending</div>
+        <div class="scroll-x" id="trendingVideos"></div>
+        <div class="section-title">Most Popular</div>
+        <div class="scroll-x" id="popularVideos"></div>
+      </div>
+      <div id="paneSearch" class="pane" style="display:none">
+        <div class="col" style="margin-bottom:12px">
+          <div style="font-weight:800;font-size:24px">Search</div>
+          <input id="searchInput" type="text" placeholder="🔎 Search by title..." />
+        </div>
+        <div id="searchResults" class="grid cols-2"></div>
+      </div>
+      <div id="paneMovies" class="pane" style="display:none">
+        <div style="font-weight:800;font-size:24px">Movies</div>
+        <div id="moviesGrid" class="grid cols-2"></div>
+      </div>
+      <div id="paneSeries" class="pane" style="display:none">
+        <div style="font-weight:800;font-size:24px">Series</div>
+        <div id="seriesGrid" class="grid cols-2"></div>
+      </div>
+      <div id="paneProfile" class="pane" style="display:none">
+        <div class="grid" style="grid-template-columns:1fr 360px;gap:14px">
+          <div class="col">
+            <div class="card">
+              <div class="card-body">
+                <div style="font-weight:800;margin-bottom:8px">👤 Profile</div>
+                <div id="profileArea"></div>
+              </div>
+            </div>
+            <div style="height:14px"></div>
+            <div class="card">
+              <div class="card-body">
+                <div style="font-weight:800;margin-bottom:8px">📣 Owner Info</div>
+                <div class="owner-block" id="ownerInfoBlock">
+                  <div><strong id="ownerName"></strong></div>
+                  <div class="small-muted" id="ownerAbout"></div>
+                  <div class="small-muted">Contact: <span id="ownerContact"></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div id="adminBlock" class="card" style="display:none">
+              <div class="card-body">
+                <div style="font-weight:800;margin-bottom:8px">🛠️ Admin Dashboard</div>
+                <div style="font-weight:700">Upload Video</div>
+                <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
+                  <input id="uploadTitle" type="text" placeholder="Title" />
+                  <input id="uploadLink" type="text" placeholder="Video link" />
+                  <input id="uploadCategory" type="text" placeholder="Category" />
+                  <input id="uploadSeason" type="text" placeholder="Season" />
+                  <input id="uploadEpisode" type="text" placeholder="Episode" />
+                  <textarea id="uploadDescription" rows="3" placeholder="Description"></textarea>
+                  <input id="uploadThumbnail" type="text" placeholder="Thumbnail link" />
+                  <div class="row">
+                    <button id="btnUpload" class="btn-emerald">Upload</button>
+                    <div style="flex:1"></div>
+                  </div>
+                  <div class="progress-wrap"><div id="uploadProgress" class="progress-bar"></div></div>
+                </div>
+                <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
+                <div style="font-weight:700">Manage Videos</div>
+                <div id="manageVideosBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
+              </div>
+            </div>
+            <div style="height:12px"></div>
+            <div class="card">
+              <div class="card-body">
+                <div style="font-weight:800;margin-bottom:8px">🔒 Login Info</div>
+                <div class="small-muted">Sign in with Google to view dashboard and upload (admin).</div>
+                <div style="height:8px"></div>
+                <div id="gsi-small"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div id="videoDetailsPage" class="details-page"></div>
+    <footer>
+      <div class="container">
+        <nav id="bottomNav">
+          <button class="tab active" data-pane="home">🏠 Home</button>
+          <button class="tab" data-pane="search">🔍 Search</button>
+          <button class="tab" data-pane="movies">🎞️ Movies</button>
+          <button class="tab" data-pane="series">📺 Series</button>
+          <button class="tab" data-pane="profile">👤 Profile</button>
+        </nav>
+      </div>
+    </footer>
+  </div>
+  <script>
     const CONFIG = {
       ADMIN_EMAIL: "mymaruf94@gmail.com",
       SHEETDB_API: "https://sheetdb.io/api/v1/8j681cv0tysp5",
       GOOGLE_CLIENT_ID: "36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com"
     };
 
-    // Owner info hardcoded as per user request
     const OWNER_INFO = {
-        name: "Bangla Video Hub",
-        about: "I am [Maruf Hossain], a video creator and creative content producer. I make fresh and high-quality content for my audience.",
+        name: "Video Hub",
+        about: "Your home for anime & series.",
         contact: "Mymaruf94@gmail.com"
     };
 
-    // ---------- Helpers ----------
     const qs = sel => document.querySelector(sel);
     const qsa = sel => Array.from(document.querySelectorAll(sel));
     const api = CONFIG.SHEETDB_API;
@@ -213,66 +229,16 @@
 
     function rid(prefix='id'){ return `${prefix}_${Math.random().toString(36).slice(2,9)}${Date.now().toString().slice(-4)}` }
 
-    function getEmbedSrc(link){
-      try{
-        const u = new URL(link);
-        if(u.hostname.includes('youtube.com')){ const id = u.searchParams.get('v'); if(id) return `https://www.youtube.com/embed/${id}`; }
-        if(u.hostname === 'youtu.be'){ const id = u.pathname.slice(1); if(id) return `https://www.youtube.com/embed/${id}`; }
-        if(u.hostname.includes('drive.google.com')){ const parts = u.pathname.split('/'); const idx = parts.indexOf('d'); const id = idx>=0? parts[idx+1] : null; if(id) return `https://drive.google.com/file/d/${id}/preview`; }
-        if(u.hostname.includes('facebook.com')){ return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(link)}&show_text=false&width=560`; }
-        if(u.hostname.includes('tiktok.com')){
-            const parts = u.pathname.split('/');
-            const videoId = parts[parts.length - 1] || parts[parts.length - 2];
-            if(videoId) return `https://www.tiktok.com/embed/v2/${videoId}`;
-        }
-      }catch(e){}
-      return null;
-    }
-
-    // ---------- State ----------
     let STATE = {
       videos: [],
-      owner: OWNER_INFO,
       user: JSON.parse(localStorage.getItem('bv_user') || 'null'),
-      history: JSON.parse(localStorage.getItem('bv_history') || '[]')
+      history: JSON.parse(localStorage.getItem('bv_history') || '[]'),
+      owner: OWNER_INFO,
     };
 
-    // ---------- UI wiring ----------
-    const navEl = qs('#mainNav');
-    const tabs = [
-      {key:'home',label:'🏠 Home'},
-      {key:'search',label:'🔍 Search'},
-      {key:'history',label:'🕘 History'},
-      {key:'profile',label:'👤 Profile'}
-    ];
-    let activeTab = 'home';
-    function renderNav(){
-      navEl.innerHTML = '';
-      tabs.forEach(t => {
-        const btn = document.createElement('button');
-        btn.className = 'tab' + (t.key===activeTab? ' active':'');
-        btn.textContent = t.label;
-        btn.onclick = ()=>{ setTab(t.key); }
-        navEl.appendChild(btn);
-      });
-    }
-    function setTab(k){
-      activeTab = k; renderNav();
-      qsa('.pane').forEach(p=>p.style.display='none');
-      qs('#paneHome').style.display = (k==='home'?'block':'none');
-      qs('#paneSearch').style.display = (k==='search'?'block':'none');
-      qs('#paneHistory').style.display = (k==='history'?'block':'none');
-      qs('#paneProfile').style.display = (k==='profile'?'block':'none');
-      if(k==='profile'){ renderProfile(); }
-    }
-
-    // ---------- Fetch & render ----------
     async function loadInitial(){
-      qs('#footerStatus').textContent = 'Loading...';
       try{
-        const [videosRaw] = await Promise.all([
-          apiGet('videos').catch(()=>[])
-        ]);
+        const videosRaw = await apiGet('videos').catch(()=>[]);
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
           id: r.id || r.ID || rid('vid'),
           title: r.title || r.Title || r.name || 'Untitled',
@@ -281,234 +247,256 @@
           uploadedBy: r.uploadedBy || r.UploadedBy || '',
           uploadDate: r.uploadDate || r.UploadDate || '',
           season: r.season || '',
-          episode: r.episode || ''
+          episode: r.episode || '',
+          description: r.description || '',
+          thumbnail: r.thumbnail || 'https://via.placeholder.com/150x225.png?text=No+Image'
         })) : []);
-        renderSiteHeader();
-        populateSeasonFilter();
-        filterAndRenderVideos();
-        qs('#footerStatus').textContent = 'Ready';
+        renderHomeContent();
         if(STATE.user && STATE.user.email === adminEmail){
             renderManageVideos();
         }
       }catch(e){
-        qs('#footerStatus').textContent = 'Error loading';
         console.error(e);
       }
     }
 
-    function renderSiteHeader(){
-      qs('#siteName').textContent = STATE.owner.name;
-      qs('#siteAbout').textContent = STATE.owner.about;
-      qs('#ownerName').textContent = STATE.owner.name;
-      qs('#ownerAbout').textContent = STATE.owner.about;
-      qs('#ownerContact').textContent = STATE.owner.contact;
-      qs('#ownerNameInput').value = STATE.owner.name;
-      qs('#ownerAboutInput').value = STATE.owner.about;
-      qs('#ownerContactInput').value = STATE.owner.contact;
-    }
-
-    function populateSeasonFilter(){
-      const select = qs('#seasonFilter');
-      select.innerHTML = '<option value="">All Seasons</option>';
-      const seasons = [...new Set(STATE.videos.map(v => v.season).filter(s => s))].sort((a, b) => a - b);
-      seasons.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s;
-        opt.textContent = `Season ${s}`;
-        select.appendChild(opt);
-      });
-    }
-
-    function filterAndRenderVideos(){
-      const query = qs('#searchInput').value.trim().toLowerCase();
-      const season = qs('#seasonFilter').value;
-      let filteredVideos = STATE.videos;
+    function renderHomeContent(){
+      const trending = STATE.videos.filter(v => v.category.toLowerCase().includes('trending'));
+      const popular = STATE.videos.filter(v => v.category.toLowerCase().includes('popular'));
+      const categories = [...new Set(STATE.videos.map(v => v.category))];
       
-      if(query){
-        filteredVideos = filteredVideos.filter(v => v.title && v.title.toLowerCase().includes(query));
-      }
-      
-      if(season){
-        filteredVideos = filteredVideos.filter(v => v.season === season);
-      }
-      
-      qs('#resultCount').textContent = filteredVideos.length;
-      renderVideosGrid(filteredVideos);
+      renderVideoSection(qs('#trendingVideos'), trending, true);
+      renderVideoSection(qs('#popularVideos'), popular, true);
+      renderCategories(qs('#categoryChips'), categories);
+      renderPaneMovies(STATE.videos.filter(v=>v.category.toLowerCase().includes('movie')));
+      renderPaneSeries(STATE.videos.filter(v=>v.category.toLowerCase().includes('series')));
     }
     
-    qs('#searchInput').addEventListener('input', filterAndRenderVideos);
-    qs('#seasonFilter').addEventListener('change', filterAndRenderVideos);
-
-    function renderVideosGrid(videosToRender){
-      const el = qs('#videosGrid'); el.innerHTML = '';
-      if(!videosToRender.length){
-        el.innerHTML = '<div style="padding:18px" class="card-body">No videos match the filter.</div>';
+    function renderVideoSection(container, videos, isHorizontal = false){
+      container.innerHTML = '';
+      if(!videos.length){
+        container.innerHTML = '<div style="color:var(--text-secondary)">No videos found.</div>';
         return;
       }
-      videosToRender.forEach(v=>{
-        const card = document.createElement('div'); card.className='card';
-        const embedSrc = getEmbedSrc(v.link);
-        const playerHtml = embedSrc ? `<iframe src="${embedSrc}" allow="accelerometer; autoplay; encrypted-smedia; picture-in-picture" allowfullscreen></iframe>` : `<video controls><source src="${encodeURI(v.link)}"></video>`;
-        card.innerHTML = `<div class="aspect-video">${playerHtml}</div>
-          <div class="card-body">
-            <div style="font-weight:700">${escapeHtml(v.title)}</div>
-            <div class="meta" style="margin-top:8px">
-              <div>${escapeHtml(v.category || 'General')}</div>
-              <div style="flex:1"></div>
-              <div class="tiny muted">by ${escapeHtml(v.uploadedBy||'—')}</div>
-            </div>
-            <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-              <button class="btn-primary" data-id="${v.id}">▶️ Play</button>
-              <button data-open class="small-muted">🔗 Open</button>
-              <div style="flex:1"></div>
-              <div class="dropdown">
-                  <span style="font-weight: 700; cursor: pointer;">...</span>
-                  <div class="dropdown-content">
-                    <a href="#" class="season-episode-info" data-season="${escapeHtml(v.season)}" data-episode="${escapeHtml(v.episode)}">Season: ${escapeHtml(v.season)}, Episode: ${escapeHtml(v.episode)}</a>
-                    <a href="${escapeHtml(v.link)}" target="_blank">Open Link</a>
+      // Deduplicate videos by title
+      const uniqueVideos = [];
+      const titles = new Set();
+      videos.forEach(v => {
+        if(!titles.has(v.title)){
+          titles.add(v.title);
+          uniqueVideos.push(v);
+        }
+      });
+
+      uniqueVideos.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'content-card';
+        card.innerHTML = `<img src="${v.thumbnail}" alt="${v.title}">
+                          <div class="content-card-title">${escapeHtml(v.title)}</div>`;
+        card.onclick = () => showVideoDetails(v);
+        container.appendChild(card);
+      });
+    }
+
+    function renderPaneMovies(videos){
+      const container = qs('#moviesGrid');
+      container.innerHTML = '';
+      videos.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'content-card';
+        card.style.width = '100%';
+        card.innerHTML = `<img src="${v.thumbnail}" alt="${v.title}">
+                          <div class="content-card-title">${escapeHtml(v.title)}</div>`;
+        card.onclick = () => showVideoDetails(v);
+        container.appendChild(card);
+      });
+    }
+
+    function renderPaneSeries(videos){
+      const container = qs('#seriesGrid');
+      container.innerHTML = '';
+      const uniqueSeries = [];
+      const titles = new Set();
+      videos.forEach(v => {
+        if(!titles.has(v.title)){
+          titles.add(v.title);
+          uniqueSeries.push(v);
+        }
+      });
+      uniqueSeries.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'content-card';
+        card.style.width = '100%';
+        card.innerHTML = `<img src="${v.thumbnail}" alt="${v.title}">
+                          <div class="content-card-title">${escapeHtml(v.title)}</div>`;
+        card.onclick = () => showVideoDetails(v);
+        container.appendChild(card);
+      });
+    }
+    
+    function renderCategories(container, categories){
+      container.innerHTML = '';
+      categories.forEach(cat => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.textContent = cat;
+        chip.onclick = () => {
+          const filtered = STATE.videos.filter(v => v.category === cat);
+          const grid = qs('#searchResults');
+          grid.innerHTML = ''; // Clear old content
+          filtered.forEach(v => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<div class="card-body">
+                                <div style="font-weight:700">${escapeHtml(v.title)}</div>
+                                <div class="small-muted">${escapeHtml(v.category)}</div>
+                                <div class="small-muted">Season ${escapeHtml(v.season)}, Episode ${escapeHtml(v.episode)}</div>
+                              </div>`;
+            card.onclick = () => showVideoDetails(v);
+            grid.appendChild(card);
+          });
+          setPane('search'); // Switch to search pane
+        };
+        container.appendChild(chip);
+      });
+    }
+
+    function showVideoDetails(video){
+      const page = qs('#videoDetailsPage');
+      const episodes = STATE.videos.filter(v => v.title === video.title);
+      const seasons = [...new Set(episodes.map(e => e.season).filter(s => s))].sort((a,b) => a-b);
+      const firstSeasonEpisodes = episodes.filter(e => e.season === seasons[0]).sort((a,b) => a.episode - b.episode);
+      
+      const episodeListHTML = firstSeasonEpisodes.map(ep => `
+          <div class="episode-item" data-id="${ep.id}">
+              <img src="${ep.thumbnail}" alt="${ep.title}">
+              <div class="info">
+                  <div class="title">E${ep.episode}: ${ep.title}</div>
+                  <div class="small-muted">...</div>
+              </div>
+          </div>
+      `).join('');
+      
+      const seasonOptions = seasons.map(s => `<option value="${s}">Season ${s}</option>`).join('');
+
+      page.innerHTML = `
+          <div class="header">
+              <img src="${video.thumbnail}">
+              <div class="back-btn" onclick="hideVideoDetails()">←</div>
+          </div>
+          <div class="body">
+              <h1>${escapeHtml(video.title)}</h1>
+              <div class="meta-info">
+                  <div>${escapeHtml(video.category)}</div>
+                  <div>·</div>
+                  <div>${escapeHtml(video.season ? `Season ${video.season}` : 'Movie')}</div>
+                  <div>·</div>
+                  <div>${video.uploadDate ? new Date(video.uploadDate).getFullYear() : ''}</div>
+              </div>
+              <div class="btn-group">
+                  <button class="btn-primary">▶️ Watch Now</button>
+                  <button class="btn-emerald">⭐ Favourite</button>
+                  <button class="btn-red">🔗 Share</button>
+              </div>
+              <div class="overview">${escapeHtml(video.description)}</div>
+              <div class="episode-list">
+                  <div style="font-weight:700;margin-bottom:10px">Episodes</div>
+                  <select id="seasonSelector">
+                      ${seasonOptions}
+                  </select>
+                  <div id="episodesContainer">
+                      ${episodeListHTML}
                   </div>
               </div>
-              <div class="small-muted tiny">${v.uploadDate? new Date(v.uploadDate).toLocaleString() : ''}</div>
-            </div>
-          </div>`;
-        card.querySelector('[data-open]').onclick = ()=> window.open(v.link,'_blank');
-        card.querySelector('.btn-primary').onclick = async ()=>{ onPlay(v); };
-        card.querySelector('.season-episode-info').addEventListener('click', (e) => {
-            e.preventDefault();
-            alert(`Season: ${v.season || 'N/A'}\nEpisode: ${v.episode || 'N/A'}`);
-        });
-        el.appendChild(card);
-      });
-    }
-
-    // SEARCH FUNCTIONALITY
-    qs('#searchInput').addEventListener('input', (e)=>{
-      const q = e.target.value.trim().toLowerCase();
-      if (q.length > 0) {
-          setTab('search');
-          const res = STATE.videos.filter(v => v.title && v.title.toLowerCase().includes(q));
-          qs('#resultCount').textContent = res.length;
-          renderSearchResults(res);
-      } else {
-          setTab('home');
-          qs('#resultCount').textContent = STATE.videos.length;
-      }
-    });
-
-    function renderSearchResults(list){
-      const el = qs('#searchResults'); el.innerHTML = '';
-      if(!list.length) el.innerHTML = '<div class="card-body">No results.</div>';
-      list.forEach(v=>{
-        const c = document.createElement('div'); c.className='card';
-        const embedSrc = getEmbedSrc(v.link);
-        const playerHtml = embedSrc ? `<iframe src="${embedSrc}" allowfullscreen></iframe>` : `<video controls><source src="${encodeURI(v.link)}"></video>`;
-        c.innerHTML = `<div class="aspect-video">${playerHtml}</div>
-          <div class="card-body">
-            <div style="font-weight:700">${escapeHtml(v.title)}</div>
-            <div class="meta" style="margin-top:8px">
-              ${escapeHtml(v.category||'General')}
-              <div style="flex:1"></div>
-              <div class="tiny muted">${escapeHtml(v.uploadedBy||'—')}</div>
-            </div>
-          </div>`;
-        c.querySelector('iframe,video').addEventListener('play', ()=> onPlay(v), {once:true});
-        el.appendChild(c);
-      });
-    }
-
-    function renderHistory(){
-      const el = qs('#historyList'); el.innerHTML = '';
-      if(!STATE.history.length){ el.innerHTML = '<div class="small-muted">No history yet.</div>'; return; }
-      STATE.history.forEach(it=>{
-        const r = document.createElement('div'); r.className='card';
-        r.innerHTML = `<div class="card-body"><div style="font-weight:700">${escapeHtml(it.title)}</div><div class="small-muted tiny">${new Date(it.at).toLocaleString()}</div></div>`;
-        el.appendChild(r);
-      });
-    }
-
-    function renderProfile(){
-      const area = qs('#profileArea'); area.innerHTML = '';
-      if(!STATE.user){
-        area.innerHTML = `<div id="gsi_container_small"></div><div style="margin-top:8px" class="small-muted">Sign in with Google to see profile & (if admin) the Admin Dashboard.</div>`;
-        renderGSI('gsi_container_small');
-        qs('#adminBlock').style.display = 'none';
-        return;
-      }
-      const u = STATE.user;
-      area.innerHTML = `<div style="display:flex;gap:12px;align-items:center">
-          ${u.picture?`<img src="${u.picture}" style="width:64px;height:64px;border-radius:12px;object-fit:cover">`:`<div style="width:64px;height:64px;border-radius:12px;background:#eee;display:flex;align-items:center;justify-content:center">🙂</div>`}
-          <div>
-            <div style="font-weight:800">${escapeHtml(u.name)}</div>
-            <div class="small-muted">${escapeHtml(u.email)}</div>
-            <div class="small-muted tiny">User ID: <code>${escapeHtml(u.localId)}</code></div>
           </div>
-          <div style="flex:1"></div>
-          <div><button id="btnSignOut" class="btn-primary">Sign out</button></div>
-        </div>`;
-      qs('#btnSignOut').onclick = ()=> signOut();
+      `;
+      page.style.display = 'block';
 
-      if(u.email === adminEmail){
-        qs('#adminBlock').style.display = 'block';
-        loadUserList();
-        renderManageVideos();
-      } else {
-        qs('#adminBlock').style.display = 'none';
-      }
+      qs('#seasonSelector').addEventListener('change', (e) => {
+          const selectedSeason = e.target.value;
+          const seasonEpisodes = episodes.filter(ep => ep.season === selectedSeason).sort((a,b) => a.episode - b.episode);
+          const newEpisodeListHTML = seasonEpisodes.map(ep => `
+              <div class="episode-item" data-id="${ep.id}">
+                  <img src="${ep.thumbnail}" alt="${ep.title}">
+                  <div class="info">
+                      <div class="title">E${ep.episode}: ${ep.title}</div>
+                      <div class="small-muted">...</div>
+                  </div>
+              </div>
+          `).join('');
+          qs('#episodesContainer').innerHTML = newEpisodeListHTML;
+          qsa('#episodesContainer .episode-item').forEach(item => {
+              item.addEventListener('click', () => {
+                  const videoId = item.dataset.id;
+                  const selectedVideo = STATE.videos.find(v => v.id === videoId);
+                  if (selectedVideo) {
+                      window.open(selectedVideo.link, '_blank');
+                  }
+              });
+          });
+      });
+      
+      qsa('#episodesContainer .episode-item').forEach(item => {
+          item.addEventListener('click', () => {
+              const videoId = item.dataset.id;
+              const selectedVideo = STATE.videos.find(v => v.id === videoId);
+              if (selectedVideo) {
+                  window.open(selectedVideo.link, '_blank');
+              }
+          });
+      });
+      
+      qs('.btn-primary').addEventListener('click', () => {
+          window.open(video.link, '_blank');
+      });
     }
 
-    async function onPlay(video){
-      STATE.history = [ {id:video.id, title:video.title, at:new Date().toISOString()}, ...STATE.history.filter(h=>h.id!==video.id) ].slice(0,100);
-      localStorage.setItem('bv_history', JSON.stringify(STATE.history));
-      renderHistory();
-      try{
-        await apiPost('history', { userId: STATE.user? STATE.user.localId : 'anon', videoId: video.id, watchedAt: new Date().toISOString() });
-      }catch(e){ /* ignore */ }
+    function hideVideoDetails(){
+      qs('#videoDetailsPage').style.display = 'none';
     }
 
-    qs('#btnUpload').addEventListener('click', async ()=>{
-      if(!STATE.user || STATE.user.email !== adminEmail){ toast('Only admin can upload (sign in with admin email).'); return; }
-      const title = qs('#uploadTitle').value.trim();
-      const link = qs('#uploadLink').value.trim();
-      const category = qs('#uploadCategory').value.trim();
-      const season = qs('#uploadSeason').value.trim();
-      const episode = qs('#uploadEpisode').value.trim();
-      if(!title || !link){ toast('Title and Link required'); return; }
-      const pb = qs('#uploadProgress'); pb.style.width = '5%';
-      let p = 5; const iv = setInterval(()=>{ p = Math.min(95, p+8); pb.style.width = p+'%'; }, 180);
-      try{
-        const row = {
-          id: rid('vid'),
-          title, link, category, season, episode,
-          uploadedBy: STATE.user.email,
-          uploadDate: new Date().toISOString()
-        };
-        await apiPost('videos', row);
-        clearInterval(iv); pb.style.width = '100%';
-        setTimeout(()=> pb.style.width = '0%', 500);
-        qs('#uploadTitle').value=''; qs('#uploadLink').value=''; qs('#uploadCategory').value='';
-        qs('#uploadSeason').value=''; qs('#uploadEpisode').value='';
-        toast('Upload successful — added to Home!');
-        await loadInitial();
-      }catch(e){
-        clearInterval(iv); pb.style.width = '0%';
-        console.error(e); toast('Upload failed');
-      }
+    // ---------- PANE NAVIGATION ----------
+    function setPane(paneId){
+        qsa('.pane').forEach(p => p.style.display = 'none');
+        qs(`#pane${paneId.charAt(0).toUpperCase() + paneId.slice(1)}`).style.display = 'block';
+        qsa('#bottomNav .tab').forEach(t => t.classList.remove('active'));
+        qs(`#bottomNav [data-pane="${paneId}"]`).classList.add('active');
+    }
+    qsa('#bottomNav .tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const paneId = btn.dataset.pane;
+            setPane(paneId);
+        });
+    });
+    
+    // ---------- SEARCH LOGIC ----------
+    qs('#searchInput').addEventListener('input', (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        const resultsContainer = qs('#searchResults');
+        resultsContainer.innerHTML = '';
+        if(query.length > 0){
+            const filteredVideos = STATE.videos.filter(v => 
+                v.title && v.title.toLowerCase().includes(query)
+            );
+            if(filteredVideos.length === 0){
+                resultsContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary)">No results found.</div>';
+            } else {
+                filteredVideos.forEach(v => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `<div class="card-body">
+                                        <div style="font-weight:700">${escapeHtml(v.title)}</div>
+                                        <div class="small-muted">${escapeHtml(v.category)}</div>
+                                        <div class="small-muted">Season ${escapeHtml(v.season)}, Episode ${escapeHtml(v.episode)}</div>
+                                      </div>`;
+                    card.onclick = () => showVideoDetails(v);
+                    resultsContainer.appendChild(card);
+                });
+            }
+        }
     });
 
-    qs('#btnOwnerSave').addEventListener('click', async ()=>{
-      if(!STATE.user || STATE.user.email !== adminEmail){ toast('Only admin can save owner info'); return; }
-      const name = qs('#ownerNameInput').value.trim();
-      const about = qs('#ownerAboutInput').value.trim();
-      const contact = qs('#ownerContactInput').value.trim();
-      try{
-        await apiPost('ownerInfo', { key: 'name', value: name });
-        await apiPost('ownerInfo', { key: 'about', value: about });
-        await apiPost('ownerInfo', { key: 'contact', value: contact });
-        toast('Owner info saved (appended). Refreshing...');
-        await loadInitial();
-      }catch(e){ console.error(e); toast('Failed saving owner info'); }
-    });
-
+    // ---------- Admin Dashboard Logic ----------
     function renderManageVideos(){
       const out = qs('#manageVideosBlock');
       out.innerHTML = '';
@@ -519,7 +507,7 @@
       STATE.videos.forEach(v => {
         const d = document.createElement('div');
         d.style.padding = '8px';
-        d.style.borderBottom = '1px solid rgba(0,0,0,0.04)';
+        d.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
         d.style.display = 'flex';
         d.style.alignItems = 'center';
         d.innerHTML = `<div style="flex:1;">
@@ -544,19 +532,50 @@
       });
     }
 
-    async function loadUserList(){
-      const out = qs('#userListBlock'); out.innerHTML = '<div class="small-muted">Loading…</div>';
+    qs('#btnUpload').addEventListener('click', async ()=>{
+      if(!STATE.user || STATE.user.email !== adminEmail){ toast('Only admin can upload (sign in with admin email).'); return; }
+      const title = qs('#uploadTitle').value.trim();
+      const link = qs('#uploadLink').value.trim();
+      const category = qs('#uploadCategory').value.trim();
+      const season = qs('#uploadSeason').value.trim();
+      const episode = qs('#uploadEpisode').value.trim();
+      const description = qs('#uploadDescription').value.trim();
+      const thumbnail = qs('#uploadThumbnail').value.trim();
+      if(!title || !link){ toast('Title and Link required'); return; }
+      const pb = qs('#uploadProgress'); pb.style.width = '5%';
+      let p = 5; const iv = setInterval(()=>{ p = Math.min(95, p+8); pb.style.width = p+'%'; }, 180);
       try{
-        const users = await apiGet('users');
-        out.innerHTML = '';
-        if(!Array.isArray(users) || !users.length){ out.innerHTML = '<div class="small-muted">No users yet.</div>'; return; }
-        users.forEach(u=>{
-          const d = document.createElement('div'); d.style.padding='8px'; d.style.borderBottom='1px solid rgba(0,0,0,0.04)';
-          d.innerHTML = `<div style="font-weight:700">${escapeHtml(u.name||'—')}</div><div class="small-muted">${escapeHtml(u.email||'—')} <span style="float:right" class="tiny">ID: <code>${escapeHtml(u.id||'—')}</code></span></div>`;
-          out.appendChild(d);
-        });
-      }catch(e){ out.innerHTML = '<div class="small-muted">Failed loading users</div>'; }
+        const row = {
+          id: rid('vid'),
+          title, link, category, season, episode, description, thumbnail,
+          uploadedBy: STATE.user.email,
+          uploadDate: new Date().toISOString()
+        };
+        await apiPost('videos', row);
+        clearInterval(iv); pb.style.width = '100%';
+        setTimeout(()=> pb.style.width = '0%', 500);
+        qs('#uploadTitle').value=''; qs('#uploadLink').value=''; qs('#uploadCategory').value='';
+        qs('#uploadSeason').value=''; qs('#uploadEpisode').value='';
+        qs('#uploadDescription').value=''; qs('#uploadThumbnail').value='';
+        toast('Upload successful!');
+        await loadInitial();
+      }catch(e){
+        clearInterval(iv); pb.style.width = '0%';
+        console.error(e); toast('Upload failed');
+      }
+    });
+    
+    // GSI & Auth logic
+    
+    // Hardcoded owner info as per user request
+    function renderSiteHeader(){
+      qs('#siteName').textContent = OWNER_INFO.name;
+      qs('#siteAbout').textContent = OWNER_INFO.about;
+      qs('#ownerName').textContent = OWNER_INFO.name;
+      qs('#ownerAbout').textContent = OWNER_INFO.about;
+      qs('#ownerContact').textContent = OWNER_INFO.contact;
     }
+
 
     let gsiInited = false;
     function renderGSI(containerId='gsi-signin'){
@@ -600,19 +619,44 @@
       window.google.accounts.id.renderButton(el, { theme:'outline', size:'small', text:'signin_with' });
     }
 
+    function renderProfile(){
+      const area = qs('#profileArea'); area.innerHTML = '';
+      if(!STATE.user){
+        area.innerHTML = `<div id="gsi_container_small"></div><div style="margin-top:8px" class="small-muted">Sign in with Google to see profile & (if admin) the Admin Dashboard.</div>`;
+        renderGSI('gsi_container_small');
+        qs('#adminBlock').style.display = 'none';
+        return;
+      }
+      const u = STATE.user;
+      area.innerHTML = `<div style="display:flex;gap:12px;align-items:center">
+          ${u.picture?`<img src="${u.picture}" style="width:64px;height:64px;border-radius:12px;object-fit:cover">`:`<div style="width:64px;height:64px;border-radius:12px;background:var(--text-secondary);display:flex;align-items:center;justify-content:center">🙂</div>`}
+          <div>
+            <div style="font-weight:800">${escapeHtml(u.name)}</div>
+            <div class="small-muted">${escapeHtml(u.email)}</div>
+            <div class="small-muted tiny">User ID: <code>${escapeHtml(u.localId)}</code></div>
+          </div>
+          <div style="flex:1"></div>
+          <div><button id="btnSignOut" class="btn-primary">Sign out</button></div>
+        </div>`;
+      qs('#btnSignOut').onclick = ()=> signOut();
+
+      if(u.email === adminEmail){
+        qs('#adminBlock').style.display = 'block';
+        renderManageVideos();
+      } else {
+        qs('#adminBlock').style.display = 'none';
+      }
+    }
+
+
     function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
 
     (function init(){
-      renderNav();
-      setTab('home');
-      const gsitime = setInterval(()=>{ if(window.google){ renderGSI(); clearInterval(gsitime); } }, 200);
-      const gsitime2 = setInterval(()=>{ if(window.google && qs('#gsi_container_small')){ renderGSI('gsi_container_small'); clearInterval(gsitime2); } }, 200);
-
+      renderSiteHeader();
       loadInitial();
-      renderHistory();
       if(STATE.user) renderProfile();
-      qs('#searchInput').addEventListener('focus', ()=> setTab('search'));
+      setPane('home');
     })();
-  </script>  
+  </script>
 </body>
 </html>
