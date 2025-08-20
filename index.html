@@ -9,6 +9,7 @@
 </head>
 <body class="bg-gray-100 text-gray-900">
 
+  <!-- Navbar -->
   <nav class="flex justify-around bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4">
     <button onclick="showPage('home')" class="font-bold">🏠 Home</button>
     <button onclick="showPage('search')" class="font-bold">🔍 Search</button>
@@ -16,12 +17,15 @@
     <button onclick="showPage('profile')" class="font-bold">👤 Profile</button>
   </nav>
 
+  <!-- Pages -->
   <div id="pages" class="p-4">
+    <!-- Home -->
     <div id="home" class="page">
       <h1 class="text-xl font-bold mb-4">🏠 Home</h1>
       <div id="videoList" class="grid gap-4"></div>
     </div>
 
+    <!-- Search -->
     <div id="search" class="page hidden">
       <h1 class="text-xl font-bold mb-4">🔍 Search</h1>
       <input id="searchInput" type="text" placeholder="Search by title..." 
@@ -30,11 +34,13 @@
       <div id="searchResults" class="grid gap-4"></div>
     </div>
 
+    <!-- History -->
     <div id="history" class="page hidden">
       <h1 class="text-xl font-bold mb-4">⏳ History</h1>
       <div id="historyList" class="grid gap-4"></div>
     </div>
 
+    <!-- Profile -->
     <div id="profile" class="page hidden">
       <h1 class="text-xl font-bold mb-4">👤 Profile</h1>
       <div id="profileContent"></div>
@@ -188,17 +194,10 @@ function parseJwt(token) {
 function renderProfile() {
   const div = document.getElementById("profileContent");
   if (!currentUser) {
-    div.innerHTML = `
-      <div class="flex flex-col items-center">
-        <p class="text-gray-500 mb-4">Sign in to view your profile and the Admin Dashboard.</p>
-        <button id="signInButton" class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700">
-          Sign in with Google
-        </button>
-      </div>
-    `;
-    document.getElementById('signInButton').addEventListener('click', () => {
-      window.google.accounts.id.prompt();
-    });
+    div.innerHTML = `<div id="g_id_onload"
+          data-client_id="${GOOGLE_CLIENT_ID}"
+          data-callback="handleCredentialResponse"></div>
+        <div class="g_id_signin" data-type="standard"></div>`;
     return;
   }
   if (currentUser.email === ADMIN_EMAIL) {
@@ -251,10 +250,6 @@ async function deleteVideo(videoId) {
 window.onload = () => {
   loadVideos();
   renderProfile();
-  window.google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleCredentialResponse
-  });
 };
 </script>
 </body>
