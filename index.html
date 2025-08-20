@@ -1,567 +1,256 @@
-<!doctype html>
-<html lang="bn">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>🎬 Bangla Video Hub</title>
-
-  <!-- Google Sign-In (GSI) -->
+  <meta charset="UTF-8">
+  <title>Video Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-
-  <style>
-    /* Simple Tailwind-like utility-ish CSS (kept small & readable) */
-    :root{
-      --bg1: linear-gradient(135deg,#fff7f0 0%, #fffef6 50%, #f0fbff 100%);
-      --card: rgba(255,255,255,0.9);
-      --muted: #6b7280;
-      --accent: linear-gradient(90deg,#fb923c,#f97316);
-      --rounded: 14px;
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
-    html,body{height:100%;margin:0;background:var(--bg1);color:#0f172a}
-    .container{max-width:1100px;margin:0 auto;padding:18px}
-    header{position:sticky;top:0;background:rgba(255,255,255,0.6);backdrop-filter:blur(4px);border-bottom:1px solid rgba(255,255,255,0.6)}
-    .hdr{display:flex;align-items:center;gap:12px;padding:14px 0}
-    .logo{font-size:26px}
-    .site-title{font-weight:800;font-size:18px}
-    .site-sub{font-size:12px;color:var(--muted)}
-    nav{display:flex;gap:8px;padding:10px 0}
-    .tab{padding:8px 14px;border-radius:999px;background:rgba(255,255,255,0.8);font-weight:600;cursor:pointer;border:1px solid rgba(0,0,0,0.04)}
-    .tab.active{background:white;box-shadow:0 4px 12px rgba(2,6,23,0.06)}
-    main{padding:18px 0}
-    .grid{display:grid;gap:14px}
-    .grid.cols-2{grid-template-columns:repeat(2,1fr)}
-    .card{background:var(--card);border-radius:var(--rounded);overflow:hidden;box-shadow:0 6px 18px rgba(2,6,23,0.06)}
-    .aspect-video{background:#0f172a;color:white;position:relative;padding-top:56.25%}
-    .aspect-video iframe,.aspect-video video{position:absolute;left:0;top:0;width:100%;height:100%;border:0}
-    .card-body{padding:12px}
-    .meta{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
-    input[type="text"],textarea,select{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(2,6,23,0.06);outline:none;background:white}
-    button{cursor:pointer;border:0;padding:8px 12px;border-radius:10px;font-weight:700}
-    .btn-primary{background:linear-gradient(90deg,#60a5fa,#7c3aed);color:white}
-    .btn-emerald{background:linear-gradient(90deg,#34d399,#10b981);color:white}
-    .muted{color:var(--muted)}
-    .tiny{font-size:12px}
-    .row{display:flex;gap:12px;align-items:center}
-    .col{display:flex;flex-direction:column;gap:8px}
-    .progress-wrap{height:10px;background:rgba(0,0,0,0.06);border-radius:999px;overflow:hidden}
-    .progress-bar{height:100%;background:linear-gradient(90deg,#34d399,#f59e0b);width:0%}
-    .owner-block{padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbf7ef);border:1px dashed rgba(0,0,0,0.03)}
-    footer{padding:18px 0;text-align:center;color:var(--muted);font-size:13px}
-    .searchbar{display:flex;gap:8px}
-    .chip{display:inline-block;padding:6px 10px;border-radius:999px;background:linear-gradient(90deg,#fff,#fff);border:1px solid rgba(0,0,0,0.04);font-weight:600}
-    .small-muted{font-size:12px;color:var(--muted)}
-    @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} nav{overflow:auto} }
-  </style>
 </head>
-<body>
-  <header>
-    <div class="container hdr">
-      <div class="logo">🎬</div>
-      <div>
-        <div class="site-title" id="siteName">Bangla Video Hub</div>
-        <div class="site-sub" id="siteAbout">Video discovery with Google + SheetDB</div>
-      </div>
-      <div style="flex:1"></div>
-      <div id="gsi-signin"></div>
-    </div>
-    <div class="container" style="padding-bottom:10px">
-      <nav id="mainNav"></nav>
-    </div>
-  </header>
+<body class="bg-gray-100 text-gray-900">
 
-  <main class="container">
-    <!-- Main panes -->
-    <div id="paneHome" class="pane">
-      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div class="col">
-          <div style="font-weight:800">🏠 Home</div>
-          <div class="small-muted">Latest uploaded videos appear here automatically</div>
-        </div>
-        <div class="searchbar" style="max-width:520px;width:100%">
-          <input id="searchInput" type="text" placeholder="🔎 Search by title..." />
-          <div class="chip" id="resultCount">0</div>
-        </div>
-      </div>
+  <!-- Navbar -->
+  <nav class="flex justify-around bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4">
+    <button onclick="showPage('home')" class="font-bold">🏠 Home</button>
+    <button onclick="showPage('search')" class="font-bold">🔍 Search</button>
+    <button onclick="showPage('history')" class="font-bold">⏳ History</button>
+    <button onclick="showPage('profile')" class="font-bold">👤 Profile</button>
+  </nav>
 
-      <div id="videosGrid" class="grid cols-2"></div>
+  <!-- Pages -->
+  <div id="pages" class="p-4">
+    <!-- Home -->
+    <div id="home" class="page">
+      <h1 class="text-xl font-bold mb-4">🏠 Home</h1>
+      <div id="videoList" class="grid gap-4"></div>
     </div>
 
-    <div id="paneSearch" class="pane" style="display:none">
-      <div style="font-weight:800;margin-bottom:10px">🔍 Search results</div>
-      <div id="searchResults" class="grid cols-2"></div>
+    <!-- Search -->
+    <div id="search" class="page hidden">
+      <h1 class="text-xl font-bold mb-4">🔍 Search</h1>
+      <input id="searchInput" type="text" placeholder="Search by title..." 
+             class="p-2 border rounded w-full mb-4"
+             onkeyup="searchVideos()">
+      <div id="searchResults" class="grid gap-4"></div>
     </div>
 
-    <div id="paneHistory" class="pane" style="display:none">
-      <div style="font-weight:800;margin-bottom:10px">🕘 History</div>
-      <div id="historyList" class="col"></div>
+    <!-- History -->
+    <div id="history" class="page hidden">
+      <h1 class="text-xl font-bold mb-4">⏳ History</h1>
+      <div id="historyList" class="grid gap-4"></div>
     </div>
 
-    <div id="paneProfile" class="pane" style="display:none">
-      <div class="grid" style="grid-template-columns:1fr 360px;gap:14px">
-        <div class="col">
-          <div class="card">
-            <div class="card-body">
-              <div style="font-weight:800;margin-bottom:8px">👤 Profile</div>
-              <div id="profileArea"></div>
-            </div>
-          </div>
-
-          <div style="height:14px"></div>
-
-          <div class="card">
-            <div class="card-body">
-              <div style="font-weight:800;margin-bottom:8px">📣 Owner Info</div>
-              <div class="owner-block" id="ownerInfoBlock">
-                <div><strong id="ownerName">—</strong></div>
-                <div class="small-muted" id="ownerAbout">—</div>
-                <div class="small-muted">Contact: <span id="ownerContact">—</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Admin column -->
-        <div class="col">
-          <div id="adminBlock" class="card" style="display:none">
-            <div class="card-body">
-              <div style="font-weight:800;margin-bottom:8px">🛠️ Admin Dashboard</div>
-
-              <div style="font-weight:700">Upload Video</div>
-              <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
-                <input id="uploadTitle" type="text" placeholder="Title" />
-                <input id="uploadLink" type="text" placeholder="Video link (YouTube/Facebook/Drive/MP4)" />
-                <input id="uploadCategory" type="text" placeholder="Category" />
-                <div class="row">
-                  <button id="btnUpload" class="btn-emerald">Upload</button>
-                  <div style="flex:1"></div>
-                </div>
-                <div class="progress-wrap"><div id="uploadProgress" class="progress-bar"></div></div>
-              </div>
-
-              <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(0,0,0,0.06)" />
-
-              <div style="font-weight:700">Owner Settings</div>
-              <div style="display:grid;gap:8px;margin-top:8px">
-                <input id="ownerNameInput" type="text" placeholder="Site name" />
-                <input id="ownerAboutInput" type="text" placeholder="Short about text" />
-                <input id="ownerContactInput" type="text" placeholder="Contact email/phone" />
-                <div class="row"><button id="btnOwnerSave" class="btn-primary">Save Owner Info</button></div>
-              </div>
-
-              <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(0,0,0,0.06)" />
-              <div style="font-weight:700">User List</div>
-              <div id="userListBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:white;padding:8px"></div>
-            </div>
-          </div>
-
-          <div style="height:12px"></div>
-
-          <div class="card">
-            <div class="card-body">
-              <div style="font-weight:800;margin-bottom:8px">🔒 Login Info</div>
-              <div class="small-muted">Sign in with Google to view dashboard and upload (admin).</div>
-              <div style="height:8px"></div>
-              <div id="gsi-small"></div>
-            </div>
-          </div>
-
-        </div>
-      </div>
+    <!-- Profile -->
+    <div id="profile" class="page hidden">
+      <h1 class="text-xl font-bold mb-4">👤 Profile</h1>
+      <div id="profileContent"></div>
     </div>
-  </main>
-
-  <footer>
-    <div class="container">
-      Made with ❤️ using Google Sign-In + SheetDB · <span id="footerStatus">Ready</span>
-    </div>
-  </footer>
+  </div>
 
 <script>
-/*
-  Single-file Video Hub (vanilla JS)
-  - Uses SheetDB API (your provided endpoint)
-  - Uses Google Identity Services for sign-in
-  - Admin is checked by email
-  - History stored locally and saved to SheetDB/history
-  - Upload posts to SheetDB/videos (link-based)
-  - Owner info stored in SheetDB/ownerInfo as rows {key, value}
-*/
+/* ================= CONFIG ================= */
+const ADMIN_EMAIL = "mymaruf94@gmail.com";
+const SHEET_API = "https://sheetdb.io/api/v1/8j681cv0tysp5";
+const GOOGLE_CLIENT_ID = "36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com";
 
-const CONFIG = {
-  ADMIN_EMAIL: "mymaruf94@gmail.com",
-  SHEETDB_API: "https://sheetdb.io/api/v1/8j681cv0tysp5",
-  GOOGLE_CLIENT_ID: "36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com"
-};
+let currentUser = null;
+let videos = [];
+let historyData = [];
 
-// ---------- Helpers ----------
-const qs = sel => document.querySelector(sel);
-const qsa = sel => Array.from(document.querySelectorAll(sel));
-const api = CONFIG.SHEETDB_API;
-const adminEmail = CONFIG.ADMIN_EMAIL;
-
-function toast(msg){
-  // simple alert replacement
-  console.log('TOAST:', msg);
-  alert(msg);
+/* ================= NAVIGATION ================= */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
 }
 
-function apiGet(sheet){
-  return fetch(`${api}?sheet=${encodeURIComponent(sheet)}`).then(r=>r.json());
-}
-function apiPost(sheet, rowObj){
-  // SheetDB batch format: {data: {...}}
-  return fetch(`${api}?sheet=${encodeURIComponent(sheet)}`, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ data: rowObj })
-  }).then(r=>r.json());
-}
-
-// generate random id
-function rid(prefix='id'){ return `${prefix}_${Math.random().toString(36).slice(2,9)}${Date.now().toString().slice(-4)}` }
-
-// embed helper
-function getEmbedSrc(link){
-  try{
-    const u = new URL(link);
-    if(u.hostname.includes('youtube.com')){ const id = u.searchParams.get('v'); if(id) return `https://www.youtube.com/embed/${id}`; }
-    if(u.hostname === 'youtu.be'){ const id = u.pathname.slice(1); if(id) return `https://www.youtube.com/embed/${id}`; }
-    if(u.hostname.includes('drive.google.com')){ const parts = u.pathname.split('/'); const idx = parts.indexOf('d'); const id = idx>=0? parts[idx+1] : null; if(id) return `https://drive.google.com/file/d/${id}/preview`; }
-    if(u.hostname.includes('facebook.com')){ return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(link)}&show_text=false&width=560`; }
-  }catch(e){}
-  return null;
-}
-
-// ---------- State ----------
-let STATE = {
-  videos: [],
-  owner: {},
-  user: JSON.parse(localStorage.getItem('bv_user') || 'null'),
-  history: JSON.parse(localStorage.getItem('bv_history') || '[]')
-};
-
-// ---------- UI wiring ----------
-const navEl = qs('#mainNav');
-const tabs = [
-  {key:'home',label:'🏠 Home'},
-  {key:'search',label:'🔍 Search'},
-  {key:'history',label:'🕘 History'},
-  {key:'profile',label:'👤 Profile'}
-];
-let activeTab = 'home';
-function renderNav(){
-  navEl.innerHTML = '';
-  tabs.forEach(t => {
-    const btn = document.createElement('button');
-    btn.className = 'tab' + (t.key===activeTab? ' active':'');
-    btn.textContent = t.label;
-    btn.onclick = ()=>{ setTab(t.key); }
-    navEl.appendChild(btn);
-  });
-}
-function setTab(k){
-  activeTab = k; renderNav();
-  qsa('.pane').forEach(p=>p.style.display='none');
-  qs('#paneHome').style.display = (k==='home'?'block':'none');
-  qs('#paneSearch').style.display = (k==='search'?'block':'none');
-  qs('#paneHistory').style.display = (k==='history'?'block':'none');
-  qs('#paneProfile').style.display = (k==='profile'?'block':'none');
-  if(k==='profile'){ renderProfile(); }
-}
-
-// ---------- Fetch & render ----------
-async function loadInitial(){
-  qs('#footerStatus').textContent = 'Loading...';
-  try{
-    const [videosRaw, ownerRaw] = await Promise.all([
-      apiGet('videos').catch(()=>[]),
-      apiGet('ownerInfo').catch(()=>[])
-    ]);
-    // normalize videos: SheetDB returns array of objects (keys as column names)
-    STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
-      id: r.id || r.ID || rid('vid'),
-      title: r.title || r.Title || r.name || 'Untitled',
-      link: r.link || r.Link || r.url || '',
-      category: r.category || r.Category || r.cat || '',
-      uploadedBy: r.uploadedBy || r.UploadedBy || '',
-      uploadDate: r.uploadDate || r.UploadDate || ''
-    })) : []);
-    // ownerRaw: rows like {key: 'name', value: '...'}
-    if(Array.isArray(ownerRaw)){
-      let o = {};
-      ownerRaw.forEach(r => { if(r.key) o[r.key] = r.value; });
-      STATE.owner = o;
-    } else STATE.owner = {};
-    renderSiteHeader();
-    renderVideosGrid();
-    qs('#resultCount').textContent = STATE.videos.length;
-    qs('#footerStatus').textContent = 'Ready';
-  }catch(e){
-    qs('#footerStatus').textContent = 'Error loading';
-    console.error(e);
+/* ================= EMBED HELPER ================= */
+function getEmbedUrl(url) {
+  if (url.includes("youtube.com/watch?v=")) {
+    const videoId = url.split("v=")[1].split("&")[0];
+    return `https://www.youtube.com/embed/${videoId}`;
   }
-}
-
-function renderSiteHeader(){
-  qs('#siteName').textContent = STATE.owner.name || 'Bangla Video Hub';
-  qs('#siteAbout').textContent = STATE.owner.about || 'Video discovery with Google + SheetDB';
-  qs('#ownerName').textContent = STATE.owner.name || '—';
-  qs('#ownerAbout').textContent = STATE.owner.about || '—';
-  qs('#ownerContact').textContent = STATE.owner.contact || '—';
-  qs('#ownerNameInput').value = STATE.owner.name || '';
-  qs('#ownerAboutInput').value = STATE.owner.about || '';
-  qs('#ownerContactInput').value = STATE.owner.contact || '';
-}
-
-function renderVideosGrid(){
-  const el = qs('#videosGrid'); el.innerHTML = '';
-  if(!STATE.videos.length){
-    el.innerHTML = '<div style="padding:18px" class="card-body">No videos yet. Admin can upload from Profile → Admin Dashboard.</div>';
-    return;
+  if (url.includes("youtu.be/")) {
+    const videoId = url.split("youtu.be/")[1].split("?")[0];
+    return `https://www.youtube.com/embed/${videoId}`;
   }
-  STATE.videos.forEach(v=>{
-    const card = document.createElement('div'); card.className='card';
-    card.innerHTML = `
-      <div class="aspect-video">${ getEmbedSrc(v.link) ? `<iframe src="${getEmbedSrc(v.link)}" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : `<video controls><source src="${encodeURI(v.link)}"></video>` }</div>
-      <div class="card-body">
-        <div style="font-weight:700">${escapeHtml(v.title)}</div>
-        <div class="meta" style="margin-top:8px">
-          <div>${escapeHtml(v.category || 'General')}</div>
-          <div style="flex:1"></div>
-          <div class="tiny muted">by ${escapeHtml(v.uploadedBy||'—')}</div>
-        </div>
-        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-          <button class="btn-primary" data-id="${v.id}">▶️ Play</button>
-          <button data-open class="small-muted">🔗 Open</button>
-          <div style="flex:1"></div>
-          <div class="small-muted tiny">${v.uploadDate? new Date(v.uploadDate).toLocaleString() : ''}</div>
-        </div>
-      </div>
-    `;
-    // events
-    card.querySelector('[data-open]').onclick = ()=> window.open(v.link,'_blank');
-    card.querySelector('.btn-primary').onclick = async ()=>{ onPlay(v); };
-    el.appendChild(card);
-  });
-}
-
-// Search
-qs('#searchInput').addEventListener('input', (e)=>{
-  const q = e.target.value.trim().toLowerCase();
-  const res = STATE.videos.filter(v=> v.title.toLowerCase().includes(q));
-  qs('#resultCount').textContent = res.length;
-  renderSearchResults(res);
-});
-function renderSearchResults(list){
-  const el = qs('#searchResults'); el.innerHTML = '';
-  if(!list.length) el.innerHTML = '<div class="card-body">No results.</div>';
-  list.forEach(v=>{
-    const c = document.createElement('div'); c.className='card';
-    c.innerHTML = `
-      <div class="aspect-video">${ getEmbedSrc(v.link) ? `<iframe src="${getEmbedSrc(v.link)}" allowfullscreen></iframe>` : `<video controls><source src="${encodeURI(v.link)}"></video>` }</div>
-      <div class="card-body"><div style="font-weight:700">${escapeHtml(v.title)}</div><div class="meta" style="margin-top:8px">${escapeHtml(v.category||'General')}<div style="flex:1"></div><div class="tiny muted">${escapeHtml(v.uploadedBy||'—')}</div></div></div>
-    `;
-    c.querySelector('iframe,video').addEventListener('play', ()=> onPlay(v), {once:true});
-    el.appendChild(c);
-  });
-}
-
-// History
-function renderHistory(){
-  const el = qs('#historyList'); el.innerHTML = '';
-  if(!STATE.history.length){ el.innerHTML = '<div class="small-muted">No history yet.</div>'; return; }
-  STATE.history.forEach(it=>{
-    const r = document.createElement('div'); r.className='card';
-    r.innerHTML = `<div class="card-body"><div style="font-weight:700">${escapeHtml(it.title)}</div><div class="small-muted tiny">${new Date(it.at).toLocaleString()}</div></div>`;
-    el.appendChild(r);
-  });
-}
-
-// Profile / Admin
-function renderProfile(){
-  const area = qs('#profileArea'); area.innerHTML = '';
-  if(!STATE.user){
-    // show GSI button small
-    area.innerHTML = `<div id="gsi_container_small"></div><div style="margin-top:8px" class="small-muted">Sign in with Google to see profile & (if admin) the Admin Dashboard.</div>`;
-    renderGSI('gsi_container_small');
-    qs('#adminBlock').style.display = 'none';
-    return;
+  if (url.includes("drive.google.com")) {
+    const match = url.match(/\/d\/(.*)\/view/);
+    if (match && match[1]) return `https://drive.google.com/file/d/${match[1]}/preview`;
   }
-  // show user info
-  const u = STATE.user;
-  area.innerHTML = `
-    <div style="display:flex;gap:12px;align-items:center">
-      ${u.picture? `<img src="${u.picture}" style="width:64px;height:64px;border-radius:12px;object-fit:cover">` : `<div style="width:64px;height:64px;border-radius:12px;background:#eee;display:flex;align-items:center;justify-content:center">🙂</div>`}
-      <div>
-        <div style="font-weight:800">${escapeHtml(u.name)}</div>
-        <div class="small-muted">${escapeHtml(u.email)}</div>
-        <div class="small-muted tiny">User ID: <code>${escapeHtml(u.localId)}</code></div>
-      </div>
-      <div style="flex:1"></div>
-      <div><button id="btnSignOut" class="btn-primary">Sign out</button></div>
-    </div>
-  `;
-  qs('#btnSignOut').onclick = ()=> signOut();
+  if (url.includes("facebook.com")) {
+    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0&width=560`;
+  }
+  if (url.includes("tiktok.com")) {
+    if (url.includes("/video/")) return `https://www.tiktok.com/embed/v2/${url.split("/video/")[1].split("?")[0]}`;
+  }
+  if (url.endsWith(".mp4")) return url;
+  return url;
+}
 
-  // show admin only if email matches
-  if(u.email === adminEmail){
-    qs('#adminBlock').style.display = 'block';
-    // load user list
-    loadUserList();
+function createVideoPlayer(url) {
+  const embedUrl = getEmbedUrl(url);
+  if (embedUrl.endsWith(".mp4")) {
+    return `<video controls width="100%" class="rounded-lg">
+              <source src="${embedUrl}" type="video/mp4">
+              Your browser does not support HTML5 video.
+            </video>`;
   } else {
-    qs('#adminBlock').style.display = 'none';
+    return `<iframe width="100%" height="315" 
+              src="${embedUrl}" frameborder="0" allowfullscreen
+              class="rounded-lg"></iframe>`;
   }
 }
 
-// ---------- Events & actions ----------
-async function onPlay(video){
-  // add to local history
-  STATE.history = [ {id:video.id, title:video.title, at:new Date().toISOString()}, ...STATE.history.filter(h=>h.id!==video.id) ].slice(0,100);
-  localStorage.setItem('bv_history', JSON.stringify(STATE.history));
-  renderHistory();
-  // send to sheet history (non-blocking)
-  try{
-    await apiPost('history', { userId: STATE.user? STATE.user.localId : 'anon', videoId: video.id, watchedAt: new Date().toISOString() });
-  }catch(e){ /* ignore */ }
+/* ================= VIDEO LOAD ================= */
+async function loadVideos() {
+  const res = await fetch(`${SHEET_API}?sheet=videos`);
+  videos = await res.json();
+  renderVideos();
 }
 
-// Upload
-qs('#btnUpload').addEventListener('click', async ()=>{
-  if(!STATE.user || STATE.user.email !== adminEmail){ toast('Only admin can upload (sign in with admin email).'); return; }
-  const title = qs('#uploadTitle').value.trim();
-  const link = qs('#uploadLink').value.trim();
-  const category = qs('#uploadCategory').value.trim();
-  if(!title || !link){ toast('Title and Link required'); return; }
-  // simulate progress
-  const pb = qs('#uploadProgress'); pb.style.width = '5%';
-  let p = 5; const iv = setInterval(()=>{ p = Math.min(95, p+8); pb.style.width = p+'%'; }, 180);
-  try{
-    const row = {
-      id: rid('vid'),
-      title, link, category,
-      uploadedBy: STATE.user.email,
-      uploadDate: new Date().toISOString()
+function renderVideos() {
+  const list = document.getElementById("videoList");
+  list.innerHTML = "";
+  videos.forEach(v => {
+    const div = document.createElement("div");
+    div.className = "bg-white p-2 rounded shadow relative";
+
+    let deleteBtn = "";
+    if (currentUser && currentUser.email === ADMIN_EMAIL) {
+      deleteBtn = `<button onclick="deleteVideo('${v.id}')" 
+                    class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                    🗑️ Delete</button>`;
+    }
+
+    div.innerHTML = `
+      ${deleteBtn}
+      <h2 class="font-bold mb-2">${v.title}</h2>
+      ${createVideoPlayer(v.link)}
+    `;
+    div.onclick = (e) => {
+      if (e.target.tagName !== "BUTTON") addToHistory(v);
     };
-    await apiPost('videos', row);
-    clearInterval(iv); pb.style.width = '100%';
-    setTimeout(()=> pb.style.width = '0%', 500);
-    qs('#uploadTitle').value=''; qs('#uploadLink').value=''; qs('#uploadCategory').value='';
-    toast('Upload successful — added to Home!');
-    await loadInitial(); // refresh home
-  }catch(e){
-    clearInterval(iv); pb.style.width = '0%';
-    console.error(e); toast('Upload failed');
-  }
-});
-
-// Owner save
-qs('#btnOwnerSave').addEventListener('click', async ()=>{
-  if(!STATE.user || STATE.user.email !== adminEmail){ toast('Only admin can save owner info'); return; }
-  const name = qs('#ownerNameInput').value.trim();
-  const about = qs('#ownerAboutInput').value.trim();
-  const contact = qs('#ownerContactInput').value.trim();
-  try{
-    // For ownerInfo we post three rows; SheetDB will append rows — for simplicity we append rows.
-    await apiPost('ownerInfo', { key: 'name', value: name });
-    await apiPost('ownerInfo', { key: 'about', value: about });
-    await apiPost('ownerInfo', { key: 'contact', value: contact });
-    toast('Owner info saved (appended). Refreshing...');
-    await loadInitial();
-  }catch(e){ console.error(e); toast('Failed saving owner info'); }
-});
-
-// user list
-async function loadUserList(){
-  const out = qs('#userListBlock'); out.innerHTML = '<div class="small-muted">Loading…</div>';
-  try{
-    const users = await apiGet('users');
-    out.innerHTML = '';
-    if(!Array.isArray(users) || !users.length){ out.innerHTML = '<div class="small-muted">No users yet.</div>'; return; }
-    users.forEach(u=>{
-      const d = document.createElement('div'); d.style.padding='8px'; d.style.borderBottom='1px solid rgba(0,0,0,0.04)';
-      d.innerHTML = `<div style="font-weight:700">${escapeHtml(u.name||'—')}</div><div class="small-muted">${escapeHtml(u.email||'—')} <span style="float:right" class="tiny">ID: <code>${escapeHtml(u.id||'—')}</code></span></div>`;
-      out.appendChild(d);
-    });
-  }catch(e){ out.innerHTML = '<div class="small-muted">Failed loading users</div>'; }
-}
-
-// ---------- Google Identity (GSI) ----------
-let gsiInited = false;
-function renderGSI(containerId='gsi-signin'){
-  // Ensure GSI script loaded
-  if(!window.google || gsiInited) return;
-  gsiInited = true;
-  // callback
-  function handleCredentialResponse(response){
-    try{
-      const id_token = response.credential;
-      const payload = JSON.parse(atob(id_token.split('.')[1]));
-      // payload includes email, name, picture
-      const user = {
-        name: payload.name,
-        email: payload.email,
-        picture: payload.picture,
-        id_token,
-        localId: rid('usr')
-      };
-      STATE.user = user;
-      localStorage.setItem('bv_user', JSON.stringify(user));
-      // register user (append)
-      apiPost('users', { id: user.localId, name: user.name, email: user.email, createdAt: new Date().toISOString() }).catch(()=>{});
-      renderProfile();
-    }catch(e){ console.error('GSI parse error', e); }
-  }
-
-  window.google.accounts.id.initialize({
-    client_id: CONFIG.GOOGLE_CLIENT_ID,
-    callback: handleCredentialResponse
+    list.appendChild(div);
   });
-  // large button in header
-  window.google.accounts.id.renderButton(document.getElementById('gsi-signin'), { theme:'filled_blue', size:'large', text:'signin_with' });
-
-  // small button used in profile area
-  // render small later when needed
-  // optional auto prompt
-  // window.google.accounts.id.prompt();
-}
-function signOut(){
-  STATE.user = null;
-  localStorage.removeItem('bv_user');
-  renderProfile();
-  toast('Signed out');
 }
 
-// small sign-in for profile card
-function renderGSI_small(){
-  if(!window.google) return;
-  const el = document.getElementById('gsi-small');
-  if(!el) return;
-  window.google.accounts.id.renderButton(el, { theme:'outline', size:'small', text:'signin_with' });
+/* ================= SEARCH ================= */
+function searchVideos() {
+  const query = document.getElementById("searchInput").value.toLowerCase();
+  const results = videos.filter(v => v.title.toLowerCase().includes(query));
+  const list = document.getElementById("searchResults");
+  list.innerHTML = "";
+  results.forEach(v => {
+    const div = document.createElement("div");
+    div.className = "bg-white p-2 rounded shadow";
+    div.innerHTML = `
+      <h2 class="font-bold mb-2">${v.title}</h2>
+      ${createVideoPlayer(v.link)}
+    `;
+    div.onclick = () => addToHistory(v);
+    list.appendChild(div);
+  });
 }
 
-// ---------- Utilities ----------
-function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-// ---------- Init ----------
-(function init(){
-  renderNav();
-  setTab('home');
-  // Render GSI main
-  const gsitime = setInterval(()=>{ if(window.google){ renderGSI(); clearInterval(gsitime); } }, 200);
-  // render small if needed
-  const gsitime2 = setInterval(()=>{ if(window.google && qs('#gsi_container_small')){ renderGSI('gsi_container_small'); clearInterval(gsitime2); } }, 200);
-
-  // initial load
-  loadInitial();
+/* ================= HISTORY ================= */
+function addToHistory(video) {
+  if (!currentUser) return;
+  historyData.push({title: video.title, link: video.link, time: new Date().toISOString()});
   renderHistory();
+}
 
-  // restore user if present
-  if(STATE.user) renderProfile();
+function renderHistory() {
+  const list = document.getElementById("historyList");
+  list.innerHTML = "";
+  historyData.forEach(h => {
+    const div = document.createElement("div");
+    div.className = "bg-white p-2 rounded shadow";
+    div.innerHTML = `
+      <p class="font-bold">${h.title}</p>
+      ${createVideoPlayer(h.link)}
+      <p class="text-sm text-gray-500">Watched: ${new Date(h.time).toLocaleString()}</p>
+    `;
+    list.appendChild(div);
+  });
+}
 
-  // wire search pane show
-  qs('#searchInput').addEventListener('focus', ()=> setTab('search'));
-})();
+/* ================= GOOGLE LOGIN ================= */
+function handleCredentialResponse(response) {
+  const data = parseJwt(response.credential);
+  currentUser = {
+    name: data.name,
+    email: data.email,
+    id: Math.floor(Math.random()*1000000)
+  };
+  renderProfile();
+}
+
+function parseJwt(token) {
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  return JSON.parse(window.atob(base64));
+}
+
+function renderProfile() {
+  const div = document.getElementById("profileContent");
+  if (!currentUser) {
+    div.innerHTML = `<div id="g_id_onload"
+          data-client_id="${GOOGLE_CLIENT_ID}"
+          data-callback="handleCredentialResponse"></div>
+        <div class="g_id_signin" data-type="standard"></div>`;
+    return;
+  }
+  if (currentUser.email === ADMIN_EMAIL) {
+    div.innerHTML = `
+      <h2 class="font-bold">Admin Dashboard</h2>
+      <p>${currentUser.name} (${currentUser.email})</p>
+      <h3 class="mt-4 font-bold">Upload Video</h3>
+      <input id="vtitle" placeholder="Title" class="border p-1 w-full mb-2">
+      <input id="vlink" placeholder="Link" class="border p-1 w-full mb-2">
+      <input id="vcat" placeholder="Category" class="border p-1 w-full mb-2">
+      <button onclick="uploadVideo()" class="bg-indigo-600 text-white px-4 py-2 rounded">Upload</button>
+      <div id="uploadStatus" class="mt-2 text-sm"></div>
+    `;
+  } else {
+    div.innerHTML = `
+      <h2 class="font-bold">User Dashboard</h2>
+      <p>Name: ${currentUser.name}</p>
+      <p>Email: ${currentUser.email}</p>
+      <p>ID: ${currentUser.id}</p>
+    `;
+  }
+}
+
+/* ================= UPLOAD & DELETE ================= */
+async function uploadVideo() {
+  const title = document.getElementById("vtitle").value;
+  const link = document.getElementById("vlink").value;
+  const cat = document.getElementById("vcat").value;
+  const id = Math.floor(Math.random()*1000000); // unique ID
+
+  await fetch(`${SHEET_API}?sheet=videos`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify([{id, title, link, category:cat}])
+  });
+
+  document.getElementById("uploadStatus").innerText = "✅ Uploaded!";
+  loadVideos();
+}
+
+async function deleteVideo(videoId) {
+  if (!confirm("Are you sure you want to delete this video?")) return;
+  await fetch(`${SHEET_API}/id/${videoId}?sheet=videos`, {
+    method: "DELETE"
+  });
+  loadVideos();
+}
+
+/* ================= INIT ================= */
+window.onload = () => {
+  loadVideos();
+  renderProfile();
+};
 </script>
 </body>
 </html>
