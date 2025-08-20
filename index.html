@@ -227,6 +227,26 @@
       owner: OWNER_INFO,
     };
 
+    /**
+     * Converts a Google Drive 'view' link to a direct 'uc' link.
+     * If the link is not a Google Drive 'view' link, it returns the original link.
+     * @param {string} link The original thumbnail link.
+     * @returns {string} The corrected direct image link.
+     */
+    function getThumbnailLink(link) {
+      if (link && link.includes('drive.google.com/file/d/') && link.includes('/view')) {
+        try {
+          const parts = link.split('/d/');
+          const fileId = parts[1].split('/')[0];
+          return `https://drive.google.com/uc?export=view&id=${fileId}`;
+        } catch (e) {
+          console.error('Failed to parse Google Drive link:', e);
+          return link; // Fallback to original link on error
+        }
+      }
+      return link;
+    }
+
     async function loadInitial(){
       try{
         const videosRaw = await apiGet('videos').catch(()=>[]);
@@ -240,7 +260,7 @@
           season: r.season || '',
           episode: r.episode || '',
           description: r.description || '',
-          thumbnail: r.thumbnail || 'https://via.placeholder.com/150x225.png?text=No+Image'
+          thumbnail: getThumbnailLink(r.thumbnail) || 'https://via.placeholder.com/150x225.png?text=No+Image'
         })) : []);
         renderHomeContent();
         if(STATE.user && STATE.user.email === adminEmail){
@@ -360,7 +380,7 @@
       
       const episodeListHTML = firstSeasonEpisodes.map(ep => `
           <div class="episode-item" data-id="${ep.id}">
-              <img src="${ep.thumbnail}" alt="${ep.title}">
+              <img src="${getThumbnailLink(ep.thumbnail)}" alt="${ep.title}">
               <div class="info">
                   <div class="title">E${ep.episode}: ${ep.title}</div>
                   <div class="small-muted">...</div>
@@ -372,7 +392,7 @@
 
       page.innerHTML = `
           <div class="header">
-              <img src="${video.thumbnail}">
+              <img src="${getThumbnailLink(video.thumbnail)}">
               <div class="back-btn" onclick="hideVideoDetails()">←</div>
           </div>
           <div class="body">
@@ -408,7 +428,7 @@
           const seasonEpisodes = episodes.filter(ep => ep.season === selectedSeason).sort((a,b) => a.episode - b.episode);
           const newEpisodeListHTML = seasonEpisodes.map(ep => `
               <div class="episode-item" data-id="${ep.id}">
-                  <img src="${ep.thumbnail}" alt="${ep.title}">
+                  <img src="${getThumbnailLink(ep.thumbnail)}" alt="${ep.title}">
                   <div class="info">
                       <div class="title">E${ep.episode}: ${ep.title}</div>
                       <div class="small-muted">...</div>
