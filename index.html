@@ -85,6 +85,7 @@
           <div class="site-sub" id="siteAbout">Movie & Series Library</div>
         </div>
         <div style="flex:1"></div>
+        <div id="homeSignIn" style="display:none;"></div>
         <a href="https://drive.google.com/uc?export=download&id=1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw" style="
           display: inline-block;
           padding: 8px 14px;
@@ -97,7 +98,6 @@
         " download>
           Download App
         </a>
-        <div id="gsi-signin"></div>
       </div>
       <nav id="topNav">
         <button class="tab active" data-pane="home">🏠 Home</button>
@@ -189,8 +189,6 @@
               <div class="card-body">
                 <div style="font-weight:800;margin-bottom:8px">🔒 Login Info</div>
                 <div class="small-muted">Sign in with Google to view your profile and (if admin) the Admin Dashboard.</div>
-                <div style="height:8px"></div>
-                <div id="gsi-small"></div>
               </div>
             </div>
           </div>
@@ -300,13 +298,18 @@
             createdAt: r.createdAt || ''
         })) : []);
         
+        renderAll();
+      }catch(e){
+        console.error(e);
+      }
+    }
+
+    function renderAll() {
         renderHomeContent();
         if(STATE.user && STATE.user.email === adminEmail){
             renderManageVideos();
         }
-      }catch(e){
-        console.error(e);
-      }
+        renderProfile();
     }
 
     function renderHomeContent(){
@@ -319,6 +322,14 @@
       renderCategories(qs('#categoryChips'), categories);
       renderPaneMovies(STATE.videos.filter(v=>v.category.toLowerCase().includes('movie')));
       renderPaneSeries(STATE.videos.filter(v=>v.category.toLowerCase().includes('series')));
+
+      const homeSignIn = qs('#homeSignIn');
+      if (STATE.user) {
+        homeSignIn.style.display = 'none';
+      } else {
+        homeSignIn.style.display = 'block';
+        window.google.accounts.id.renderButton(homeSignIn, { theme:'outline', size:'large', text:'signin_with' });
+      }
     }
     
     function renderVideoSection(container, videos, isHorizontal = false){
@@ -666,60 +677,53 @@
           apiPost('users', { id: user.localId, name: user.name, email: user.email, createdAt: new Date().toISOString() }).catch(e => console.error("Error saving user:", e));
         }
         
-        renderProfile();
+        renderAll();
+        setPane('profile');
       }catch(e){ console.error('GSI parse error', e); }
     }
 
     function signOut(){
       STATE.user = null;
       localStorage.removeItem('bv_user');
-      renderProfile();
+      renderAll();
       toast('Signed out');
     }
 
     function renderProfile(){
       const area = qs('#profileArea');
       area.innerHTML = '';
-
       if(!STATE.user){
-        // Sign-in view
-        area.innerHTML = `
-          <div style="text-align:center;">
-            <div id="btnSignInGoogle" style="display:inline-block"></div>
-          </div>
-          <div style="margin-top:8px; text-align:center;" class="small-muted">Sign in with Google to view your profile and the Admin Dashboard (if you're an admin).</div>
-        `;
-        window.google.accounts.id.renderButton(qs('#btnSignInGoogle'), { theme:'filled_blue', size:'large', text:'signin_with' });
-        qs('#adminBlock').style.display = 'none';
-        return;
-      }
-
-      const u = STATE.user;
-      area.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:12px;align-items:center;padding:12px;text-align:center">
-          ${u.picture?`<img src="${u.picture}" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)">`:`<div style="width:96px;height:96px;border-radius:50%;background:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:3rem">🙂</div>`}
-          <div>
-            <div style="font-weight:800;font-size:1.2rem">${escapeHtml(u.name)}</div>
-            <div class="small-muted">${escapeHtml(u.email)}</div>
-            <div class="small-muted tiny">User ID: <code>${escapeHtml(u.localId)}</code></div>
-          </div>
-        </div>
-        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:12px 0"/>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="font-weight:700">My Favorites</div>
-          <button class="btn-primary" style="width:100%">View Favorite Videos</button>
-        </div>
-        <div style="margin-top:12px;text-align:center">
-          <button id="btnSignOut" class="btn-red" style="padding: 8px 24px;">Sign out</button>
-        </div>
-      `;
-      qs('#btnSignOut').onclick = ()=> signOut();
-
-      if(u.email === adminEmail){
-        qs('#adminBlock').style.display = 'block';
-        renderManageVideos();
+        area.innerHTML = `<div style="text-align:center;">
+            <div style="margin-top:8px; text-align:center;" class="small-muted">Sign in with Google to view your profile and the Admin Dashboard (if you're an admin).</div>
+        </div>`;
       } else {
-        qs('#adminBlock').style.display = 'none';
+        const u = STATE.user;
+        area.innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:12px;align-items:center;padding:12px;text-align:center">
+            ${u.picture?`<img src="${u.picture}" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)">`:`<div style="width:96px;height:96px;border-radius:50%;background:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:3rem">🙂</div>`}
+            <div>
+              <div style="font-weight:800;font-size:1.2rem">${escapeHtml(u.name)}</div>
+              <div class="small-muted">${escapeHtml(u.email)}</div>
+              <div class="small-muted tiny">User ID: <code>${escapeHtml(u.localId)}</code></div>
+            </div>
+          </div>
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:12px 0"/>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="font-weight:700">My Favorites</div>
+            <button class="btn-primary" style="width:100%">View Favorite Videos</button>
+          </div>
+          <div style="margin-top:12px;text-align:center">
+            <button id="btnSignOut" class="btn-red" style="padding: 8px 24px;">Sign out</button>
+          </div>
+        `;
+        qs('#btnSignOut').onclick = ()=> signOut();
+
+        if(u.email === adminEmail){
+          qs('#adminBlock').style.display = 'block';
+          renderManageVideos();
+        } else {
+          qs('#adminBlock').style.display = 'none';
+        }
       }
     }
 
@@ -741,14 +745,6 @@
         client_id: CONFIG.GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse
       });
-      // The button in the header is for display, the profile pane handles the actual login.
-      // This ensures the button in the profile tab is rendered properly every time.
-      if (!STATE.user) {
-        window.google.accounts.id.renderButton(
-          document.getElementById('gsi-signin'), 
-          { theme: 'filled_blue', size: 'large', text: 'signin_with' }
-        );
-      }
     })();
   </script>
 </body>
