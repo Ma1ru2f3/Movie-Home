@@ -646,49 +646,28 @@
       qs('#ownerContact').textContent = OWNER_INFO.contact;
     }
 
-    let gsiInited = false;
-    function renderGSI(){
-      if(!window.google || gsiInited) return;
-      gsiInited = true;
-      function handleCredentialResponse(response){
-        try{
-          const id_token = response.credential;
-          const payload = JSON.parse(atob(id_token.split('.')[1]));
-          const user = {
-            name: payload.name,
-            email: payload.email,
-            picture: payload.picture,
-            id_token,
-            localId: rid('usr')
-          };
-          
-          STATE.user = user;
-          localStorage.setItem('bv_user', JSON.stringify(user));
-          
-          const existingUser = STATE.users.find(u => u.email === user.email);
-          if (!existingUser) {
-            apiPost('users', { id: user.localId, name: user.name, email: user.email, createdAt: new Date().toISOString() }).catch(e => console.error("Error saving user:", e));
-          }
-          
-          renderProfile();
-        }catch(e){ console.error('GSI parse error', e); }
-      }
-
-      window.google.accounts.id.initialize({
-        client_id: CONFIG.GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse
-      });
-      // This will render the button in the header if needed.
-      const gsiHeader = document.getElementById('gsi-signin');
-      if (gsiHeader) {
-          window.google.accounts.id.renderButton(gsiHeader, { theme:'filled_blue', size:'large', text:'signin_with' });
-      }
-      
-      // This will render the button in the profile pane if needed.
-      const gsiProfile = document.getElementById('gsi_container_small');
-      if (gsiProfile) {
-          window.google.accounts.id.renderButton(gsiProfile, { theme:'outline', size:'large', text:'signin_with' });
-      }
+    function handleCredentialResponse(response){
+      try{
+        const id_token = response.credential;
+        const payload = JSON.parse(atob(id_token.split('.')[1]));
+        const user = {
+          name: payload.name,
+          email: payload.email,
+          picture: payload.picture,
+          id_token,
+          localId: rid('usr')
+        };
+        
+        STATE.user = user;
+        localStorage.setItem('bv_user', JSON.stringify(user));
+        
+        const existingUser = STATE.users.find(u => u.email === user.email);
+        if (!existingUser) {
+          apiPost('users', { id: user.localId, name: user.name, email: user.email, createdAt: new Date().toISOString() }).catch(e => console.error("Error saving user:", e));
+        }
+        
+        renderProfile();
+      }catch(e){ console.error('GSI parse error', e); }
     }
 
     function signOut(){
@@ -703,7 +682,7 @@
       area.innerHTML = '';
       if(!STATE.user){
         // Manually adding the div for the button and rendering it
-        area.innerHTML = `<div id="gsi_container_small"></div>
+        area.innerHTML = `<div id="gsi_container_small" class="gsi-button-container"></div>
                           <div style="margin-top:8px" class="small-muted">Sign in with Google to see profile & (if admin) the Admin Dashboard.</div>`;
         window.google.accounts.id.renderButton(document.getElementById('gsi_container_small'), { theme:'outline', size:'large', text:'signin_with' });
         qs('#adminBlock').style.display = 'none';
@@ -744,7 +723,14 @@
       renderSiteHeader();
       loadInitial();
       setPane('home');
-      renderGSI(); // Call renderGSI here to initialize the button listeners
+      window.google.accounts.id.initialize({
+        client_id: CONFIG.GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse
+      });
+      // Render the button on page load if the user is not signed in
+      if (!STATE.user) {
+          window.google.accounts.id.renderButton(document.getElementById('gsi-signin'), { theme:'filled_blue', size:'large', text:'signin_with' });
+      }
     })();
   </script>
 </body>
