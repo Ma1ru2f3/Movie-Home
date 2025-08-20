@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -512,8 +513,8 @@
         qs(`#pane${paneId.charAt(0).toUpperCase() + paneId.slice(1)}`).style.display = 'block';
         qsa('#topNav .tab').forEach(t => t.classList.remove('active'));
         qs(`#topNav [data-pane="${paneId}"]`).classList.add('active');
-        if(paneId === 'profile' && !STATE.user) {
-            renderGSI_small();
+        if(paneId === 'profile') {
+            renderProfile();
         }
     }
     
