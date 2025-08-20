@@ -52,7 +52,7 @@
     .scroll-x{overflow-x:auto;display:flex;gap:12px;padding:8px 0;scrollbar-width:none}
     .scroll-x::-webkit-scrollbar{display:none}
     .section-title{font-weight:800;font-size:18px;margin-top:20px;margin-bottom:12px}
-    .content-card{width:120px;flex-shrink:0}
+    .content-card{width:120px;flex-shrink:0;cursor:pointer}
     .content-card img{width:100%;height:180px;object-fit:cover;border-radius:8px}
     .content-card-title{font-size:14px;font-weight:600;margin-top:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
     .logo-container img{width:60px;height:60px;object-fit:contain;border-radius:10px}
@@ -67,7 +67,7 @@
     .details-page .btn-group{margin-top:15px;display:flex;gap:10px;justify-content:center}
     .details-page .overview{margin-top:20px;line-height:1.6}
     .episode-list{margin-top:20px}
-    .episode-item{display:flex;gap:15px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-color)}
+    .episode-item{display:flex;gap:15px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-color);cursor:pointer}
     .episode-item img{width:80px;height:50px;object-fit:cover;border-radius:6px}
     .episode-item .info{flex:1}
     .episode-item .title{font-weight:600}
@@ -316,29 +316,27 @@
       const popular = STATE.videos.filter(v => v.category.toLowerCase().includes('popular'));
       const categories = [...new Set(STATE.videos.map(v => v.category))];
       
-      renderVideoSection(qs('#trendingVideos'), trending, true);
-      renderVideoSection(qs('#popularVideos'), popular, true);
+      renderGroupedVideoSection(qs('#trendingVideos'), trending);
+      renderGroupedVideoSection(qs('#popularVideos'), popular);
       renderCategories(qs('#categoryChips'), categories);
-      renderPaneMovies(STATE.videos.filter(v=>v.category.toLowerCase().includes('movie')));
-      renderPaneSeries(STATE.videos.filter(v=>v.category.toLowerCase().includes('series')));
+      renderUngroupedVideos(qs('#moviesGrid'), STATE.videos.filter(v=>v.category.toLowerCase().includes('movie')));
+      renderGroupedVideoSection(qs('#seriesGrid'), STATE.videos.filter(v=>v.category.toLowerCase().includes('series')));
 
     }
     
-    function renderVideoSection(container, videos, isHorizontal = false){
+    function renderGroupedVideoSection(container, videos){
       container.innerHTML = '';
       if(!videos.length){
         container.innerHTML = '<div style="color:var(--text-secondary)">No videos found.</div>';
         return;
       }
-      const uniqueVideos = [];
-      const titles = new Set();
+      const groupedVideos = {};
       videos.forEach(v => {
-        if(!titles.has(v.title)){
-          titles.add(v.title);
-          uniqueVideos.push(v);
-        }
+          if (!groupedVideos[v.title]) {
+              groupedVideos[v.title] = v;
+          }
       });
-      uniqueVideos.forEach(v => {
+      Object.values(groupedVideos).forEach(v => {
         const card = document.createElement('div');
         card.className = 'content-card';
         card.innerHTML = `<img src="${v.thumbnail}" alt="${v.title}">
@@ -348,8 +346,7 @@
       });
     }
 
-    function renderPaneMovies(videos){
-      const container = qs('#moviesGrid');
+    function renderUngroupedVideos(container, videos) {
       container.innerHTML = '';
       videos.forEach(v => {
         const card = document.createElement('div');
@@ -362,28 +359,6 @@
       });
     }
 
-    function renderPaneSeries(videos){
-      const container = qs('#seriesGrid');
-      container.innerHTML = '';
-      const uniqueSeries = [];
-      const titles = new Set();
-      videos.forEach(v => {
-        if(!titles.has(v.title)){
-          titles.add(v.title);
-          uniqueSeries.push(v);
-        }
-      });
-      uniqueSeries.forEach(v => {
-        const card = document.createElement('div');
-        card.className = 'content-card';
-        card.style.width = '100%';
-        card.innerHTML = `<img src="${v.thumbnail}" alt="${v.title}">
-                          <div class="content-card-title">${escapeHtml(v.title)}</div>`;
-        card.onclick = () => showVideoDetails(v);
-        container.appendChild(card);
-      });
-    }
-    
     function renderCategories(container, categories){
       container.innerHTML = '';
       categories.forEach(cat => {
@@ -600,7 +575,7 @@
             d.style.padding = '8px';
             d.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
             d.style.display = 'flex';
-            d.style.flex-direction: 'column';
+            d.style.flexDirection = 'column';
             d.innerHTML = `<div><strong style="font-weight:700">${escapeHtml(u.name)}</strong></div>
                            <div class="small-muted tiny">${escapeHtml(u.email)}</div>
                            <div class="small-muted tiny">ID: <code>${escapeHtml(u.id)}</code></div>`;
