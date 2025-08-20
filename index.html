@@ -226,10 +226,28 @@
       history: JSON.parse(localStorage.getItem('bv_history') || '[]'),
       owner: OWNER_INFO,
     };
-
+    
     /**
      * Converts a Google Drive 'view' link to a direct 'uc' download link.
-     * This is the most reliable method for publicly shared files.
+     * @param {string} link The original video link.
+     * @returns {string} The corrected direct video link.
+     */
+    function getDirectLink(link) {
+      if (link && link.includes('drive.google.com/file/d/')) {
+        try {
+          const parts = link.split('/d/');
+          const fileId = parts[1].split('/')[0];
+          return `https://drive.google.com/uc?id=${fileId}&export=download`;
+        } catch (e) {
+          console.error('Failed to parse Google Drive link:', e);
+          return link;
+        }
+      }
+      return link;
+    }
+
+    /**
+     * Converts a Google Drive 'view' link to a direct 'thumbnail' link.
      * @param {string} link The original thumbnail link.
      * @returns {string} The corrected direct image link.
      */
@@ -238,7 +256,7 @@
         try {
           const parts = link.split('/d/');
           const fileId = parts[1].split('/')[0];
-          return `https://drive.google.com/uc?id=${fileId}&export=download`; // Updated for better reliability
+          return `https://drive.google.com/thumbnail?id=${fileId}`;
         } catch (e) {
           console.error('Failed to parse Google Drive link:', e);
           return link;
@@ -392,7 +410,10 @@
 
       page.innerHTML = `
           <div class="header">
-              <img src="${getThumbnailLink(video.thumbnail)}">
+              <video controls autoplay id="video-player">
+                  <source src="${getDirectLink(video.link)}" type="video/mp4">
+                  Your browser does not support the video tag.
+              </video>
               <div class="back-btn" onclick="hideVideoDetails()">←</div>
           </div>
           <div class="body">
@@ -441,7 +462,8 @@
                   const videoId = item.dataset.id;
                   const selectedVideo = STATE.videos.find(v => v.id === videoId);
                   if (selectedVideo) {
-                      window.open(selectedVideo.link, '_blank');
+                      qs('#video-player').src = getDirectLink(selectedVideo.link);
+                      qs('#video-player').play();
                   }
               });
           });
@@ -452,18 +474,22 @@
               const videoId = item.dataset.id;
               const selectedVideo = STATE.videos.find(v => v.id === videoId);
               if (selectedVideo) {
-                  window.open(selectedVideo.link, '_blank');
+                  qs('#video-player').src = getDirectLink(selectedVideo.link);
+                  qs('#video-player').play();
               }
           });
       });
       
       qs('.btn-primary').addEventListener('click', () => {
-          window.open(video.link, '_blank');
+          qs('#video-player').src = getDirectLink(video.link);
+          qs('#video-player').play();
       });
     }
 
     function hideVideoDetails(){
       qs('#videoDetailsPage').style.display = 'none';
+      const player = qs('#video-player');
+      if(player) player.pause();
     }
 
     // ---------- PANE NAVIGATION ----------
