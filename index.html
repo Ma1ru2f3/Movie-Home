@@ -188,7 +188,7 @@
             <div class="card">
               <div class="card-body">
                 <div style="font-weight:800;margin-bottom:8px">🔒 Login Info</div>
-                <div class="small-muted">Sign in with Google to view profile & (if admin) the Admin Dashboard.</div>
+                <div class="small-muted">Sign in with Google to view your profile and (if admin) the Admin Dashboard.</div>
                 <div style="height:8px"></div>
                 <div id="gsi-small"></div>
               </div>
@@ -680,32 +680,39 @@
     function renderProfile(){
       const area = qs('#profileArea');
       area.innerHTML = '';
+
       if(!STATE.user){
+        // Sign-in view
         area.innerHTML = `
           <div style="text-align:center;">
-            <button id="btnSignInGreen" class="btn-emerald" style="padding: 12px 24px; font-size: 16px;">Sign in with Google</button>
+            <div id="btnSignInGoogle" style="display:inline-block"></div>
           </div>
           <div style="margin-top:8px; text-align:center;" class="small-muted">Sign in to view your profile and the Admin Dashboard (if you're an admin).</div>
         `;
-        const btn = qs('#btnSignInGreen');
-        btn.addEventListener('click', () => {
-            // Manually trigger the GSI prompt
-            window.google.accounts.id.prompt(); 
-        });
+        window.google.accounts.id.renderButton(qs('#btnSignInGoogle'), { theme:'filled_blue', size:'large', text:'signin_with' });
         qs('#adminBlock').style.display = 'none';
         return;
       }
+
       const u = STATE.user;
-      area.innerHTML = `<div style="display:flex;gap:12px;align-items:center">
-          ${u.picture?`<img src="${u.picture}" style="width:64px;height:64px;border-radius:12px;object-fit:cover">`:`<div style="width:64px;height:64px;border-radius:12px;background:var(--text-secondary);display:flex;align-items:center;justify-content:center">🙂</div>`}
+      area.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:12px;align-items:center;padding:12px;text-align:center">
+          ${u.picture?`<img src="${u.picture}" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)">`:`<div style="width:96px;height:96px;border-radius:50%;background:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:3rem">🙂</div>`}
           <div>
-            <div style="font-weight:800">${escapeHtml(u.name)}</div>
+            <div style="font-weight:800;font-size:1.2rem">${escapeHtml(u.name)}</div>
             <div class="small-muted">${escapeHtml(u.email)}</div>
             <div class="small-muted tiny">User ID: <code>${escapeHtml(u.localId)}</code></div>
           </div>
-          <div style="flex:1"></div>
-          <div><button id="btnSignOut" class="btn-primary">Sign out</button></div>
-        </div>`;
+        </div>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:12px 0"/>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="font-weight:700">My Favorites</div>
+          <button class="btn-primary" style="width:100%">View Favorite Videos</button>
+        </div>
+        <div style="margin-top:12px;text-align:center">
+          <button id="btnSignOut" class="btn-red" style="padding: 8px 24px;">Sign out</button>
+        </div>
+      `;
       qs('#btnSignOut').onclick = ()=> signOut();
 
       if(u.email === adminEmail){
@@ -730,23 +737,18 @@
       renderSiteHeader();
       loadInitial();
       setPane('home');
-
       window.google.accounts.id.initialize({
         client_id: CONFIG.GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse
       });
-
-      // Always render the main sign-in button in the header
-      window.google.accounts.id.renderButton(
-        document.getElementById('gsi-signin'), 
-        { theme: 'filled_blue', size: 'large', text: 'signin_with' }
-      );
-      
-      // Also render the smaller sign-in button in the profile pane
-      window.accounts.id.renderButton(
-        document.getElementById('gsi-small'),
-        { theme: 'outline', size: 'small', text: 'signin_with' }
-      );
+      // The button in the header is for display, the profile pane handles the actual login.
+      // This ensures the button in the profile tab is rendered properly every time.
+      if (!STATE.user) {
+        window.google.accounts.id.renderButton(
+          document.getElementById('gsi-signin'), 
+          { theme: 'filled_blue', size: 'large', text: 'signin_with' }
+        );
+      }
     })();
   </script>
 </body>
