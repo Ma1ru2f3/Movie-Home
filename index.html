@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="bn">    
 <head>    
   <meta charset="utf-8" />    
@@ -82,6 +81,9 @@
         </div>    
         <div class="searchbar" style="max-width:520px;width:100%">    
           <input id="searchInput" type="text" placeholder="🔎 Search by title..." />    
+          <select id="seasonFilter">
+            <option value="">All Seasons</option>
+          </select>
           <div class="chip" id="resultCount">0</div>    
         </div>    
       </div>  
@@ -174,6 +176,13 @@
       GOOGLE_CLIENT_ID: "36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com"
     };
 
+    // Owner info hardcoded as per user request
+    const OWNER_INFO = {
+        name: "Bangla Video Hub",
+        about: "I am [Maruf Hossain], a video creator and creative content producer. I make fresh and high-quality content for my audience.",
+        contact: "Mymaruf94@gmail.com"
+    };
+
     // ---------- Helpers ----------
     const qs = sel => document.querySelector(sel);
     const qsa = sel => Array.from(document.querySelectorAll(sel));
@@ -223,7 +232,7 @@
     // ---------- State ----------
     let STATE = {
       videos: [],
-      owner: {},
+      owner: OWNER_INFO,
       user: JSON.parse(localStorage.getItem('bv_user') || 'null'),
       history: JSON.parse(localStorage.getItem('bv_history') || '[]')
     };
@@ -261,9 +270,8 @@
     async function loadInitial(){
       qs('#footerStatus').textContent = 'Loading...';
       try{
-        const [videosRaw, ownerRaw] = await Promise.all([
-          apiGet('videos').catch(()=>[]),
-          apiGet('ownerInfo').catch(()=>[])
+        const [videosRaw] = await Promise.all([
+          apiGet('videos').catch(()=>[])
         ]);
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
           id: r.id || r.ID || rid('vid'),
@@ -275,14 +283,9 @@
           season: r.season || '',
           episode: r.episode || ''
         })) : []);
-        if(Array.isArray(ownerRaw)){
-          let o = {};
-          ownerRaw.forEach(r => { if(r.key) o[r.key] = r.value; });
-          STATE.owner = o;
-        } else STATE.owner = {};
         renderSiteHeader();
-        renderVideosGrid();
-        qs('#resultCount').textContent = STATE.videos.length;
+        populateSeasonFilter();
+        filterAndRenderVideos();
         qs('#footerStatus').textContent = 'Ready';
         if(STATE.user && STATE.user.email === adminEmail){
             renderManageVideos();
@@ -294,23 +297,55 @@
     }
 
     function renderSiteHeader(){
-      qs('#siteName').textContent = STATE.owner.name || 'Bangla Video Hub';
-      qs('#siteAbout').textContent = STATE.owner.about || 'Video discovery with Google + SheetDB';
-      qs('#ownerName').textContent = STATE.owner.name || '—';
-      qs('#ownerAbout').textContent = STATE.owner.about || '—';
-      qs('#ownerContact').textContent = STATE.owner.contact || '—';
-      qs('#ownerNameInput').value = STATE.owner.name || '';
-      qs('#ownerAboutInput').value = STATE.owner.about || '';
-      qs('#ownerContactInput').value = STATE.owner.contact || '';
+      qs('#siteName').textContent = STATE.owner.name;
+      qs('#siteAbout').textContent = STATE.owner.about;
+      qs('#ownerName').textContent = STATE.owner.name;
+      qs('#ownerAbout').textContent = STATE.owner.about;
+      qs('#ownerContact').textContent = STATE.owner.contact;
+      qs('#ownerNameInput').value = STATE.owner.name;
+      qs('#ownerAboutInput').value = STATE.owner.about;
+      qs('#ownerContactInput').value = STATE.owner.contact;
     }
 
-    function renderVideosGrid(){
+    function populateSeasonFilter(){
+      const select = qs('#seasonFilter');
+      select.innerHTML = '<option value="">All Seasons</option>';
+      const seasons = [...new Set(STATE.videos.map(v => v.season).filter(s => s))].sort((a, b) => a - b);
+      seasons.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = `Season ${s}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function filterAndRenderVideos(){
+      const query = qs('#searchInput').value.trim().toLowerCase();
+      const season = qs('#seasonFilter').value;
+      let filteredVideos = STATE.videos;
+      
+      if(query){
+        filteredVideos = filteredVideos.filter(v => v.title && v.title.toLowerCase().includes(query));
+      }
+      
+      if(season){
+        filteredVideos = filteredVideos.filter(v => v.season === season);
+      }
+      
+      qs('#resultCount').textContent = filteredVideos.length;
+      renderVideosGrid(filteredVideos);
+    }
+    
+    qs('#searchInput').addEventListener('input', filterAndRenderVideos);
+    qs('#seasonFilter').addEventListener('change', filterAndRenderVideos);
+
+    function renderVideosGrid(videosToRender){
       const el = qs('#videosGrid'); el.innerHTML = '';
-      if(!STATE.videos.length){
-        el.innerHTML = '<div style="padding:18px" class="card-body">No videos yet. Admin can upload from Profile → Admin Dashboard.</div>';
+      if(!videosToRender.length){
+        el.innerHTML = '<div style="padding:18px" class="card-body">No videos match the filter.</div>';
         return;
       }
-      STATE.videos.forEach(v=>{
+      videosToRender.forEach(v=>{
         const card = document.createElement('div'); card.className='card';
         const embedSrc = getEmbedSrc(v.link);
         const playerHtml = embedSrc ? `<iframe src="${embedSrc}" allow="accelerometer; autoplay; encrypted-smedia; picture-in-picture" allowfullscreen></iframe>` : `<video controls><source src="${encodeURI(v.link)}"></video>`;
