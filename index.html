@@ -143,6 +143,7 @@
             <div id="adminBlock" class="card" style="display:none">
               <div class="card-body">
                 <div style="font-weight:800;margin-bottom:8px">🛠️ Admin Dashboard</div>
+                
                 <div style="font-weight:700">Upload Video</div>
                 <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
                   <input id="uploadTitle" type="text" placeholder="Title" />
@@ -161,6 +162,10 @@
                 <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
                 <div style="font-weight:700">Manage Videos</div>
                 <div id="manageVideosBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
+                
+                <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
+                <div style="font-weight:700">Manage Users</div>
+                <div id="manageUsersBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
               </div>
             </div>
             <div style="height:12px"></div>
@@ -222,6 +227,7 @@
 
     let STATE = {
       videos: [],
+      users: [], // Added to hold user data
       user: JSON.parse(localStorage.getItem('bv_user') || 'null'),
       history: JSON.parse(localStorage.getItem('bv_history') || '[]'),
       owner: OWNER_INFO,
@@ -241,13 +247,11 @@
       return null;
     }
 
-    // Function to generate the embed link
     function getEmbedLink(link) {
       const fileId = getFileIdFromLink(link);
       return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : link;
     }
 
-    // Previous thumbnail function is still useful
     function getThumbnailLink(link) {
       const fileId = getFileIdFromLink(link);
       return fileId ? `https://drive.google.com/thumbnail?id=${fileId}` : link;
@@ -255,7 +259,11 @@
 
     async function loadInitial(){
       try{
-        const videosRaw = await apiGet('videos').catch(()=>[]);
+        const [videosRaw, usersRaw] = await Promise.all([
+          apiGet('videos').catch(()=>[]),
+          apiGet('users').catch(()=>[])
+        ]);
+        
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
           id: r.id || r.ID || rid('vid'),
           title: r.title || r.Title || r.name || 'Untitled',
@@ -268,9 +276,18 @@
           description: r.description || '',
           thumbnail: getThumbnailLink(r.thumbnail) || 'https://via.placeholder.com/150x225.png?text=No+Image'
         })) : []);
+        
+        STATE.users = (Array.isArray(usersRaw) ? usersRaw.map(r => ({
+            id: r.id || r.ID,
+            name: r.name || r.Name || 'Unknown',
+            email: r.email || r.Email || 'No email',
+            createdAt: r.createdAt || ''
+        })) : []);
+        
         renderHomeContent();
         if(STATE.user && STATE.user.email === adminEmail){
             renderManageVideos();
+            renderManageUsers(); // Call new function to render user list
         }
       }catch(e){
         console.error(e);
@@ -295,7 +312,6 @@
         container.innerHTML = '<div style="color:var(--text-secondary)">No videos found.</div>';
         return;
       }
-      // Deduplicate videos by title
       const uniqueVideos = [];
       const titles = new Set();
       videos.forEach(v => {
@@ -304,7 +320,6 @@
           uniqueVideos.push(v);
         }
       });
-
       uniqueVideos.forEach(v => {
         const card = document.createElement('div');
         card.className = 'content-card';
@@ -360,7 +375,7 @@
         chip.onclick = () => {
           const filtered = STATE.videos.filter(v => v.category === cat);
           const grid = qs('#searchResults');
-          grid.innerHTML = ''; // Clear old content
+          grid.innerHTML = '';
           filtered.forEach(v => {
             const card = document.createElement('div');
             card.className = 'card';
@@ -372,7 +387,7 @@
             card.onclick = () => showVideoDetails(v);
             grid.appendChild(card);
           });
-          setPane('search'); // Switch to search pane
+          setPane('search');
         };
         container.appendChild(chip);
       });
@@ -477,13 +492,13 @@
       if(player) player.src = '';
     }
 
-    // ---------- PANE NAVIGATION ----------
     function setPane(paneId){
         qsa('.pane').forEach(p => p.style.display = 'none');
         qs(`#pane${paneId.charAt(0).toUpperCase() + paneId.slice(1)}`).style.display = 'block';
         qsa('#topNav .tab').forEach(t => t.classList.remove('active'));
         qs(`#topNav [data-pane="${paneId}"]`).classList.add('active');
     }
+    
     qsa('#topNav .tab').forEach(btn => {
         btn.addEventListener('click', () => {
             const paneId = btn.dataset.pane;
@@ -491,7 +506,6 @@
         });
     });
     
-    // ---------- SEARCH LOGIC ----------
     qs('#searchInput').addEventListener('input', (e) => {
         const query = e.target.value.trim().toLowerCase();
         const resultsContainer = qs('#searchResults');
@@ -518,7 +532,6 @@
         }
     });
 
-    // ---------- Admin Dashboard Logic ----------
     function renderManageVideos(){
       const out = qs('#manageVideosBlock');
       out.innerHTML = '';
@@ -554,6 +567,26 @@
       });
     }
 
+    function renderManageUsers(){
+        const out = qs('#manageUsersBlock');
+        out.innerHTML = '';
+        if(!STATE.users.length){
+            out.innerHTML = '<div class="small-muted">No users found.</div>';
+            return;
+        }
+        STATE.users.forEach(u => {
+            const d = document.createElement('div');
+            d.style.padding = '8px';
+            d.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+            d.style.display = 'flex';
+            d.style.flexDirection = 'column';
+            d.innerHTML = `<div><strong style="font-weight:700">${escapeHtml(u.name)}</strong></div>
+                           <div class="small-muted tiny">${escapeHtml(u.email)}</div>
+                           <div class="small-muted tiny">ID: ${escapeHtml(u.id)}</div>`;
+            out.appendChild(d);
+        });
+    }
+
     qs('#btnUpload').addEventListener('click', async ()=>{
       if(!STATE.user || STATE.user.email !== adminEmail){ toast('Only admin can upload (sign in with admin email).'); return; }
       const title = qs('#uploadTitle').value.trim();
@@ -587,9 +620,6 @@
       }
     });
     
-    // GSI & Auth logic
-    
-    // Hardcoded owner info as per user request
     function renderSiteHeader(){
       qs('#siteName').textContent = OWNER_INFO.name;
       qs('#siteAbout').textContent = OWNER_INFO.about;
@@ -597,7 +627,6 @@
       qs('#ownerAbout').textContent = OWNER_INFO.about;
       qs('#ownerContact').textContent = OWNER_INFO.contact;
     }
-
 
     let gsiInited = false;
     function renderGSI(containerId='gsi-signin'){
@@ -627,6 +656,7 @@
       });
       window.google.accounts.id.renderButton(document.getElementById('gsi-signin'), { theme:'filled_blue', size:'large', text:'signin_with' });
     }
+
     function signOut(){
       STATE.user = null;
       localStorage.removeItem('bv_user');
@@ -665,11 +695,11 @@
       if(u.email === adminEmail){
         qs('#adminBlock').style.display = 'block';
         renderManageVideos();
+        renderManageUsers();
       } else {
         qs('#adminBlock').style.display = 'none';
       }
     }
-
 
     function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
 
