@@ -59,7 +59,7 @@
     .logo-container{flex-shrink:0}
     .details-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
     .details-page .header{position:relative;height:300px;overflow:hidden;background:var(--card-bg)}
-    .details-page .header img{width:100%;height:100%;object-fit:cover;opacity:0.6}
+    .details-page .header iframe{width:100%;height:100%;}
     .details-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
     .details-page .body{padding:20px}
     .details-page h1{font-size:24px;margin:0;font-weight:800}
@@ -241,11 +241,13 @@
       return null;
     }
 
-    function getDirectLink(link) {
+    // Function to generate the embed link
+    function getEmbedLink(link) {
       const fileId = getFileIdFromLink(link);
-      return fileId ? `https://drive.google.com/uc?id=${fileId}&export=download` : link;
+      return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : link;
     }
 
+    // Previous thumbnail function is still useful
     function getThumbnailLink(link) {
       const fileId = getFileIdFromLink(link);
       return fileId ? `https://drive.google.com/thumbnail?id=${fileId}` : link;
@@ -396,10 +398,7 @@
 
       page.innerHTML = `
           <div class="header">
-              <video controls autoplay id="video-player">
-                  <source src="${getDirectLink(video.link)}" type="video/mp4">
-                  Your browser does not support the video tag.
-              </video>
+              <iframe src="${getEmbedLink(video.link)}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
               <div class="back-btn" onclick="hideVideoDetails()">←</div>
           </div>
           <div class="body">
@@ -448,8 +447,8 @@
                   const videoId = item.dataset.id;
                   const selectedVideo = STATE.videos.find(v => v.id === videoId);
                   if (selectedVideo) {
-                      qs('#video-player').src = getDirectLink(selectedVideo.link);
-                      qs('#video-player').play();
+                      const iframe = qs('#video-player');
+                      iframe.src = getEmbedLink(selectedVideo.link);
                   }
               });
           });
@@ -460,22 +459,22 @@
               const videoId = item.dataset.id;
               const selectedVideo = STATE.videos.find(v => v.id === videoId);
               if (selectedVideo) {
-                  qs('#video-player').src = getDirectLink(selectedVideo.link);
-                  qs('#video-player').play();
+                  const iframe = qs('#video-player');
+                  iframe.src = getEmbedLink(selectedVideo.link);
               }
           });
       });
       
       qs('.btn-primary').addEventListener('click', () => {
-          qs('#video-player').src = getDirectLink(video.link);
-          qs('#video-player').play();
+          const iframe = qs('#video-player');
+          iframe.src = getEmbedLink(video.link);
       });
     }
 
     function hideVideoDetails(){
       qs('#videoDetailsPage').style.display = 'none';
       const player = qs('#video-player');
-      if(player) player.pause();
+      if(player) player.src = '';
     }
 
     // ---------- PANE NAVIGATION ----------
