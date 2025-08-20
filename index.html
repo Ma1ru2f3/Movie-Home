@@ -684,7 +684,7 @@
       const area = qs('#profileArea'); area.innerHTML = '';
       if(!STATE.user){
         area.innerHTML = `<div id="gsi_container_small"></div><div style="margin-top:8px" class="small-muted">Sign in with Google to see profile & (if admin) the Admin Dashboard.</div>`;
-        renderGSI('gsi_container_small');
+        window.google.accounts.id.renderButton(document.getElementById('gsi_container_small'), { theme:'outline', size:'large', text:'signin_with' });
         qs('#adminBlock').style.display = 'none';
         return;
       }
