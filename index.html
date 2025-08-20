@@ -97,7 +97,6 @@
         " download>
           Download App
         </a>
-        <div id="gsi-signin"></div>
       </div>
       <nav id="topNav">
         <button class="tab active" data-pane="home">🏠 Home</button>
@@ -188,7 +187,7 @@
             <div class="card">
               <div class="card-body">
                 <div style="font-weight:800;margin-bottom:8px">🔒 Login Info</div>
-                <div class="small-muted">Sign in with Google to view your profile and (if admin) the Admin Dashboard.</div>
+                <div id="gsi-profile-signin" style="margin-top: 10px;"></div>
               </div>
             </div>
           </div>
@@ -323,13 +322,6 @@
       renderPaneMovies(STATE.videos.filter(v=>v.category.toLowerCase().includes('movie')));
       renderPaneSeries(STATE.videos.filter(v=>v.category.toLowerCase().includes('series')));
 
-      const gsiDiv = qs('#gsi-signin');
-      if (STATE.user) {
-        gsiDiv.style.display = 'none';
-      } else {
-        gsiDiv.style.display = 'block';
-        window.google.accounts.id.renderButton(gsiDiv, { theme: 'filled_blue', size: 'large', text: 'signin_with' });
-      }
     }
     
     function renderVideoSection(container, videos, isHorizontal = false){
@@ -696,6 +688,8 @@
         area.innerHTML = `<div style="text-align:center;">
             <div style="margin-top:8px; text-align:center;" class="small-muted">Sign in with Google to view your profile and the Admin Dashboard (if you're an admin).</div>
         </div>`;
+        qs('#gsi-profile-signin').style.display = 'block';
+        window.google.accounts.id.renderButton(qs('#gsi-profile-signin'), { theme: 'filled_blue', size: 'large', text: 'signin_with' });
       } else {
         const u = STATE.user;
         area.innerHTML = `
@@ -717,6 +711,7 @@
           </div>
         `;
         qs('#btnSignOut').onclick = ()=> signOut();
+        qs('#gsi-profile-signin').style.display = 'none';
 
         if(u.email === adminEmail){
           qs('#adminBlock').style.display = 'block';
@@ -745,12 +740,6 @@
         client_id: CONFIG.GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse
       });
-      if (!STATE.user) {
-        window.google.accounts.id.renderButton(
-          document.getElementById('gsi-signin'), 
-          { theme: 'filled_blue', size: 'large', text: 'signin_with' }
-        );
-      }
     })();
   </script>
 </body>
