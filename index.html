@@ -67,7 +67,7 @@
 
   // Load videos from SheetDB
   async function loadVideos(){
-    const url = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr'; // আপনার SheetDB API
+    const url = 'https://sheetdb.io/api/v1/8j681cv0tysp5'; // আপনার SheetDB API
     const homeSection = document.getElementById('homeSection');
     homeSection.innerHTML = 'Loading videos...';
     try {
@@ -77,7 +77,7 @@
       data.forEach(video=>{
         const title = video.title || 'Untitled';
         const link = video.link || '';
-        const category = video.category || 'General';
+        const catagory = video.category || 'General';
         let videoElem = '';
 
         if(link.includes('youtube.com') || link.includes('youtu.be')){
