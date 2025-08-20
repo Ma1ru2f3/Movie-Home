@@ -325,15 +325,17 @@
       });
     }
 
+    // SEARCH FUNCTIONALITY
     qs('#searchInput').addEventListener('input', (e)=>{
       const q = e.target.value.trim().toLowerCase();
       if (q.length > 0) {
           setTab('search');
-          const res = STATE.videos.filter(v=> v.title.toLowerCase().includes(q));
+          const res = STATE.videos.filter(v => v.title && v.title.toLowerCase().includes(q));
           qs('#resultCount').textContent = res.length;
           renderSearchResults(res);
       } else {
           setTab('home');
+          qs('#resultCount').textContent = STATE.videos.length;
       }
     });
 
