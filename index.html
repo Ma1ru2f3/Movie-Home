@@ -687,8 +687,10 @@
           </div>
           <div style="margin-top:8px; text-align:center;" class="small-muted">Sign in to view your profile and the Admin Dashboard (if you're an admin).</div>
         `;
-        qs('#btnSignInGreen').addEventListener('click', () => {
-            window.google.accounts.id.prompt();
+        const btn = qs('#btnSignInGreen');
+        btn.addEventListener('click', () => {
+            // Manually trigger the GSI prompt
+            window.google.accounts.id.prompt(); 
         });
         qs('#adminBlock').style.display = 'none';
         return;
