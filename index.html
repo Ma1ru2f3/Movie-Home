@@ -238,7 +238,7 @@
         try {
           const parts = link.split('/d/');
           const fileId = parts[1].split('/')[0];
-          return `https://drive.google.com/uc?export=view&id=${fileId}`;
+          return `https://drive.google.com/thumbnail?id=${fileId}`; // Changed to thumbnail API
         } catch (e) {
           console.error('Failed to parse Google Drive link:', e);
           return link; // Fallback to original link on error
