@@ -713,8 +713,8 @@
 
     qs('#btnShowUsers').addEventListener('click', () => {
         const userBlock = qs('#manageUsersBlock');
-        const isHidden = userBlock.classList.toggle('hidden');
-        if (!isHidden) {
+        userBlock.classList.toggle('hidden');
+        if (!userBlock.classList.contains('hidden')) {
             renderManageUsers();
         }
     });
