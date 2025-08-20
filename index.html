@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
   <meta charset="utf-8" />
@@ -18,12 +18,12 @@
     }
     html,body{height:100%;margin:0;background:var(--bg-dark);color:var(--text-primary)}
     .container{max-width:1100px;margin:0 auto;padding:18px}
-    header{position:sticky;top:0;background:var(--bg-dark);border-bottom:1px solid var(--border-color);z-index:100}
+    header{position:sticky;top:0;background:var(--bg-dark);border-bottom:1px solid var(--border-color);z-index:100;padding:18px 0;}
     .hdr{display:flex;align-items:center;gap:12px;padding:14px 0}
     .logo{font-size:26px}
     .site-title{font-weight:800;font-size:18px}
     .site-sub{font-size:12px;color:var(--text-secondary)}
-    nav{display:flex;gap:8px;padding:10px 0}
+    nav{display:flex;gap:8px;}
     .tab{padding:8px 14px;border-radius:999px;background:var(--card-bg);font-weight:600;cursor:pointer;color:var(--text-primary);border:1px solid var(--border-color)}
     .tab.active{background:var(--accent);color:white;box-shadow:0 4px 12px rgba(2,6,23,0.06)}
     main{padding:18px 0;padding-bottom:100px}
@@ -46,7 +46,6 @@
     .progress-wrap{height:10px;background:var(--border-color);border-radius:999px;overflow:hidden}
     .progress-bar{height:100%;background:linear-gradient(90deg,#34d399,#f59e0b);width:0%}
     .owner-block{padding:12px;border-radius:10px;background:var(--card-bg);border:1px dashed rgba(255,255,255,0.1)}
-    footer{position:fixed;bottom:0;left:0;right:0;padding:18px 0;background:var(--card-bg);text-align:center;color:var(--text-secondary);font-size:13px;border-top:1px solid var(--border-color)}
     .searchbar{display:flex;gap:8px}
     .chip{display:inline-block;padding:6px 10px;border-radius:999px;background:var(--card-bg);border:1px solid var(--border-color);font-weight:600;cursor:pointer}
     .small-muted{font-size:12px;color:var(--text-secondary)}
@@ -77,29 +76,32 @@
 </head>
 <body>
   <div id="app">
+    <header class="container">
+      <div class="hdr">
+        <div class="logo">🎬</div>
+        <div>
+          <div class="site-title" id="siteName">Video Hub</div>
+          <div class="site-sub" id="siteAbout">Movie & Series Library</div>
+        </div>
+        <div style="flex:1"></div>
+        <div id="gsi-signin"></div>
+      </div>
+      <nav id="topNav">
+        <button class="tab active" data-pane="home">🏠 Home</button>
+        <button class="tab" data-pane="search">🔍 Search</button>
+        <button class="tab" data-pane="movies">🎞️ Movies</button>
+        <button class="tab" data-pane="series">📺 Series</button>
+        <button class="tab" data-pane="profile">👤 Profile</button>
+      </nav>
+    </header>
     <main class="container">
       <div id="paneHome" class="pane">
-        <div class="hdr">
-          <div class="logo">🎬</div>
-          <div>
-            <div class="site-title" id="siteName">Video Hub</div>
-            <div class="site-sub" id="siteAbout">Movie & Series Library</div>
-          </div>
-          <div style="flex:1"></div>
-          <div id="gsi-signin"></div>
-        </div>
-        <div class="section-title">Popular</div>
-        <div class="scroll-x">
-          <div class="logo-container"> <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Crunchyroll_Logo.svg/2560px-Crunchyroll_Logo.svg.png"> </div>
-          <div class="logo-container"> <img src="https://cdn.freebiesupply.com/logos/large/2x/netflix-logo-png-transparent.png"> </div>
-          <div class="logo-container"> <img src="https://i.pinimg.com/originals/ce/c8/1f/cec81f9532588d01b1a7d65b758b731f.png"> </div>
-        </div>
-        <div class="section-title">Categories</div>
-        <div class="scroll-x" id="categoryChips"></div>
         <div class="section-title">Trending</div>
         <div class="scroll-x" id="trendingVideos"></div>
         <div class="section-title">Most Popular</div>
         <div class="scroll-x" id="popularVideos"></div>
+        <div class="section-title">Categories</div>
+        <div class="scroll-x" id="categoryChips"></div>
       </div>
       <div id="paneSearch" class="pane" style="display:none">
         <div class="col" style="margin-bottom:12px">
@@ -175,17 +177,6 @@
       </div>
     </main>
     <div id="videoDetailsPage" class="details-page"></div>
-    <footer>
-      <div class="container">
-        <nav id="bottomNav">
-          <button class="tab active" data-pane="home">🏠 Home</button>
-          <button class="tab" data-pane="search">🔍 Search</button>
-          <button class="tab" data-pane="movies">🎞️ Movies</button>
-          <button class="tab" data-pane="series">📺 Series</button>
-          <button class="tab" data-pane="profile">👤 Profile</button>
-        </nav>
-      </div>
-    </footer>
   </div>
   <script>
     const CONFIG = {
@@ -459,10 +450,10 @@
     function setPane(paneId){
         qsa('.pane').forEach(p => p.style.display = 'none');
         qs(`#pane${paneId.charAt(0).toUpperCase() + paneId.slice(1)}`).style.display = 'block';
-        qsa('#bottomNav .tab').forEach(t => t.classList.remove('active'));
-        qs(`#bottomNav [data-pane="${paneId}"]`).classList.add('active');
+        qsa('#topNav .tab').forEach(t => t.classList.remove('active'));
+        qs(`#topNav [data-pane="${paneId}"]`).classList.add('active');
     }
-    qsa('#bottomNav .tab').forEach(btn => {
+    qsa('#topNav .tab').forEach(btn => {
         btn.addEventListener('click', () => {
             const paneId = btn.dataset.pane;
             setPane(paneId);
