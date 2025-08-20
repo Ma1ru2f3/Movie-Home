@@ -49,6 +49,12 @@
     .searchbar{display:flex;gap:8px}    
     .chip{display:inline-block;padding:6px 10px;border-radius:999px;background:linear-gradient(90deg,#fff,#fff);border:1px solid rgba(0,0,0,0.04);font-weight:600}    
     .small-muted{font-size:12px;color:var(--muted)}    
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-content { display: none; position: absolute; background-color: white; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; border-radius: 8px; right: 0; }
+    .dropdown-content a { color: black; padding: 12px 16px; text-decoration: none; display: block; cursor: pointer; }
+    .dropdown-content a:hover { background-color: #f1f1f1 }
+    .dropdown:hover .dropdown-content { display: block; }
+
     @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} nav{overflow:auto} }    
   </style>  
 </head>    
@@ -119,6 +125,8 @@
                 <input id="uploadTitle" type="text" placeholder="Title" />    
                 <input id="uploadLink" type="text" placeholder="Video link (YouTube/Facebook/Drive/TikTok/MP4)" />    
                 <input id="uploadCategory" type="text" placeholder="Category" />    
+                <input id="uploadSeason" type="text" placeholder="Season" />    
+                <input id="uploadEpisode" type="text" placeholder="Episode" />    
                 <div class="row">    
                   <button id="btnUpload" class="btn-emerald">Upload</button>    
                   <div style="flex:1"></div>    
@@ -263,7 +271,9 @@
           link: r.link || r.Link || r.url || '',
           category: r.category || r.Category || r.cat || '',
           uploadedBy: r.uploadedBy || r.UploadedBy || '',
-          uploadDate: r.uploadDate || r.UploadDate || ''
+          uploadDate: r.uploadDate || r.UploadDate || '',
+          season: r.season || '',
+          episode: r.episode || ''
         })) : []);
         if(Array.isArray(ownerRaw)){
           let o = {};
@@ -316,11 +326,22 @@
               <button class="btn-primary" data-id="${v.id}">▶️ Play</button>
               <button data-open class="small-muted">🔗 Open</button>
               <div style="flex:1"></div>
+              <div class="dropdown">
+                  <span style="font-weight: 700; cursor: pointer;">...</span>
+                  <div class="dropdown-content">
+                    <a href="#" class="season-episode-info" data-season="${escapeHtml(v.season)}" data-episode="${escapeHtml(v.episode)}">Season: ${escapeHtml(v.season)}, Episode: ${escapeHtml(v.episode)}</a>
+                    <a href="${escapeHtml(v.link)}" target="_blank">Open Link</a>
+                  </div>
+              </div>
               <div class="small-muted tiny">${v.uploadDate? new Date(v.uploadDate).toLocaleString() : ''}</div>
             </div>
           </div>`;
         card.querySelector('[data-open]').onclick = ()=> window.open(v.link,'_blank');
         card.querySelector('.btn-primary').onclick = async ()=>{ onPlay(v); };
+        card.querySelector('.season-episode-info').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert(`Season: ${v.season || 'N/A'}\nEpisode: ${v.episode || 'N/A'}`);
+        });
         el.appendChild(card);
       });
     }
@@ -414,13 +435,15 @@
       const title = qs('#uploadTitle').value.trim();
       const link = qs('#uploadLink').value.trim();
       const category = qs('#uploadCategory').value.trim();
+      const season = qs('#uploadSeason').value.trim();
+      const episode = qs('#uploadEpisode').value.trim();
       if(!title || !link){ toast('Title and Link required'); return; }
       const pb = qs('#uploadProgress'); pb.style.width = '5%';
       let p = 5; const iv = setInterval(()=>{ p = Math.min(95, p+8); pb.style.width = p+'%'; }, 180);
       try{
         const row = {
           id: rid('vid'),
-          title, link, category,
+          title, link, category, season, episode,
           uploadedBy: STATE.user.email,
           uploadDate: new Date().toISOString()
         };
@@ -428,6 +451,7 @@
         clearInterval(iv); pb.style.width = '100%';
         setTimeout(()=> pb.style.width = '0%', 500);
         qs('#uploadTitle').value=''; qs('#uploadLink').value=''; qs('#uploadCategory').value='';
+        qs('#uploadSeason').value=''; qs('#uploadEpisode').value='';
         toast('Upload successful — added to Home!');
         await loadInitial();
       }catch(e){
