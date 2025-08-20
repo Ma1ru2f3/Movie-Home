@@ -44,7 +44,7 @@
     <div id="adminPanel" style="display:none;">
       <h3>Admin Dashboard</h3>
       <input type="text" id="videoTitle" placeholder="Title">
-      <input type="text" id="videoLink" placeholder="MP4/YouTube/Facebook/Drive link">
+      <input type="text" id="videoLink" placeholder="MP4/YouTube/Drive link">
       <input type="text" id="videoCategory" placeholder="Category">
       <button onclick="uploadVideo()">Upload Video</button>
       <div class="progress-bar"><div class="progress" id="uploadProgress"></div></div>
@@ -67,44 +67,33 @@
 
   // Load videos from SheetDB
   async function loadVideos(){
-    const url = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr';
+    const url = 'https://sheetdb.io/api/v1/3p5l2ilgzemvr'; // আপনার SheetDB API
     const homeSection = document.getElementById('homeSection');
     homeSection.innerHTML = 'Loading videos...';
     try {
       const res = await fetch(url);
       const data = await res.json();
       homeSection.innerHTML = '';
-
       data.forEach(video=>{
-        const title = video.Title || video.title || 'Untitled';
-        const category = video.category || video.Category || 'General';
-        const link = video.Link || video.link || '';
-
+        const title = video.title || 'Untitled';
+        const link = video.link || '';
+        const category = video.category || 'General';
         let videoElem = '';
 
-        if(!link){
-          videoElem = `<p>No link provided</p>`;
-        }
-        else if(link.includes('youtube.com') || link.includes('youtu.be')){
-          let videoId = link.includes('v=') ? link.split('v=')[1].split('&')[0] : link.split('/').pop();
+        if(link.includes('youtube.com') || link.includes('youtu.be')){
+          let videoId = '';
+          if(link.includes('v=')){
+              videoId = link.split('v=')[1].split('&')[0];
+          } else {
+              videoId = link.split('/').pop();
+          }
           videoElem = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
-        }
-        else if(link.includes('drive.google.com')){
-          let fileId = '';
-          if(link.includes('/file/d/')) fileId = link.split('/file/d/')[1].split('/')[0];
-          else if(link.includes('id=')) fileId = link.split('id=')[1].split('&')[0];
-          if(fileId){
-            const driveLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
-            videoElem = `<video controls><source src="${driveLink}" type="video/mp4">Your browser does not support the video tag.</video>`;
-          } else videoElem = `<a href="${link}" target="_blank">Watch Video</a>`;
-        }
-        else if(link.endsWith('.mp4')){
+        } else if(link.includes('drive.google.com')){
+          // Drive direct link
           videoElem = `<video controls><source src="${link}" type="video/mp4">Your browser does not support the video tag.</video>`;
-        }
-        else if(link.includes('facebook.com') && link.includes('video')){
-          videoElem = `<iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(link)}&show_text=0&width=560" width="560" height="315" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>`;
-        }
-        else{
+        } else if(link.includes('.mp4')){
+          videoElem = `<video controls><source src="${link}" type="video/mp4">Your browser does not support the video tag.</video>`;
+        } else {
           videoElem = `<a href="${link}" target="_blank">Watch Video</a>`;
         }
 
@@ -113,7 +102,6 @@
         card.innerHTML = `<h4>${title} (${category})</h4>${videoElem}`;
         homeSection.appendChild(card);
       });
-
     } catch(e){
       homeSection.innerHTML = 'Failed to load videos ❌';
       console.error(e);
@@ -187,7 +175,7 @@
     progressElem.style.width='0%';
     statusElem.innerText='Uploading...';
     let width=0;
-    const interval = setInterval(()=>{width+=10; if(width<=100) progressElem.style.width=width+'%';},100);
+    const interval = setInterval(()=>{width+=10; progressElem.style.width=width+'%';},100);
     try{
       await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data})});
       clearInterval(interval);
@@ -201,5 +189,6 @@
     }
   }
 </script>
+
 </body>
 </html>
