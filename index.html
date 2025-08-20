@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -648,7 +647,7 @@
     }
 
     let gsiInited = false;
-    function renderGSI(containerId='gsi-signin'){
+    function renderGSI(){
       if(!window.google || gsiInited) return;
       gsiInited = true;
       function handleCredentialResponse(response){
@@ -679,7 +678,17 @@
         client_id: CONFIG.GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse
       });
-      window.google.accounts.id.renderButton(document.getElementById('gsi-signin'), { theme:'filled_blue', size:'large', text:'signin_with' });
+      // This will render the button in the header if needed.
+      const gsiHeader = document.getElementById('gsi-signin');
+      if (gsiHeader) {
+          window.google.accounts.id.renderButton(gsiHeader, { theme:'filled_blue', size:'large', text:'signin_with' });
+      }
+      
+      // This will render the button in the profile pane if needed.
+      const gsiProfile = document.getElementById('gsi_container_small');
+      if (gsiProfile) {
+          window.google.accounts.id.renderButton(gsiProfile, { theme:'outline', size:'large', text:'signin_with' });
+      }
     }
 
     function signOut(){
@@ -689,17 +698,13 @@
       toast('Signed out');
     }
 
-    function renderGSI_small(){
-      if(!window.google) return;
-      const el = document.getElementById('gsi-small');
-      if(!el) return;
-      window.google.accounts.id.renderButton(el, { theme:'outline', size:'large', text:'signin_with' });
-    }
-
     function renderProfile(){
-      const area = qs('#profileArea'); area.innerHTML = '';
+      const area = qs('#profileArea');
+      area.innerHTML = '';
       if(!STATE.user){
-        area.innerHTML = `<div id="gsi_container_small"></div><div style="margin-top:8px" class="small-muted">Sign in with Google to see profile & (if admin) the Admin Dashboard.</div>`;
+        // Manually adding the div for the button and rendering it
+        area.innerHTML = `<div id="gsi_container_small"></div>
+                          <div style="margin-top:8px" class="small-muted">Sign in with Google to see profile & (if admin) the Admin Dashboard.</div>`;
         window.google.accounts.id.renderButton(document.getElementById('gsi_container_small'), { theme:'outline', size:'large', text:'signin_with' });
         qs('#adminBlock').style.display = 'none';
         return;
@@ -738,8 +743,8 @@
     (function init(){
       renderSiteHeader();
       loadInitial();
-      if(STATE.user) renderProfile();
       setPane('home');
+      renderGSI(); // Call renderGSI here to initialize the button listeners
     })();
   </script>
 </body>
