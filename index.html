@@ -512,6 +512,9 @@
         qs(`#pane${paneId.charAt(0).toUpperCase() + paneId.slice(1)}`).style.display = 'block';
         qsa('#topNav .tab').forEach(t => t.classList.remove('active'));
         qs(`#topNav [data-pane="${paneId}"]`).classList.add('active');
+        if(paneId === 'profile' && !STATE.user) {
+            renderGSI_small();
+        }
     }
     
     qsa('#topNav .tab').forEach(btn => {
@@ -689,7 +692,7 @@
       if(!window.google) return;
       const el = document.getElementById('gsi-small');
       if(!el) return;
-      window.google.accounts.id.renderButton(el, { theme:'outline', size:'small', text:'signin_with' });
+      window.google.accounts.id.renderButton(el, { theme:'outline', size:'large', text:'signin_with' });
     }
 
     function renderProfile(){
