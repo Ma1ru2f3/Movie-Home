@@ -206,7 +206,7 @@
         if(u.hostname.includes('tiktok.com')){
             const parts = u.pathname.split('/');
             const videoId = parts[parts.length - 1] || parts[parts.length - 2];
-            if(videoId) return `https://www.tiktok.com/embed/v2/${videoId}?lang=en`;
+            if(videoId) return `https://www.tiktok.com/embed/v2/${videoId}`;
         }
       }catch(e){}
       return null;
@@ -303,7 +303,7 @@
       STATE.videos.forEach(v=>{
         const card = document.createElement('div'); card.className='card';
         const embedSrc = getEmbedSrc(v.link);
-        const playerHtml = embedSrc ? `<iframe src="${embedSrc}" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : `<video controls><source src="${encodeURI(v.link)}"></video>`;
+        const playerHtml = embedSrc ? `<iframe src="${embedSrc}" allow="accelerometer; autoplay; encrypted-smedia; picture-in-picture" allowfullscreen></iframe>` : `<video controls><source src="${encodeURI(v.link)}"></video>`;
         card.innerHTML = `<div class="aspect-video">${playerHtml}</div>
           <div class="card-body">
             <div style="font-weight:700">${escapeHtml(v.title)}</div>
@@ -327,10 +327,16 @@
 
     qs('#searchInput').addEventListener('input', (e)=>{
       const q = e.target.value.trim().toLowerCase();
-      const res = STATE.videos.filter(v=> v.title.toLowerCase().includes(q));
-      qs('#resultCount').textContent = res.length;
-      renderSearchResults(res);
+      if (q.length > 0) {
+          setTab('search');
+          const res = STATE.videos.filter(v=> v.title.toLowerCase().includes(q));
+          qs('#resultCount').textContent = res.length;
+          renderSearchResults(res);
+      } else {
+          setTab('home');
+      }
     });
+
     function renderSearchResults(list){
       const el = qs('#searchResults'); el.innerHTML = '';
       if(!list.length) el.innerHTML = '<div class="card-body">No results.</div>';
