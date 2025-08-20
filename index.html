@@ -608,6 +608,14 @@
         });
     }
 
+    qs('#btnShowUsers').addEventListener('click', () => {
+        const userBlock = qs('#manageUsersBlock');
+        userBlock.classList.toggle('hidden');
+        if (!userBlock.classList.contains('hidden')) {
+            renderManageUsers();
+        }
+    });
+
     qs('#btnUpload').addEventListener('click', async ()=>{
       if(!STATE.user || STATE.user.email !== adminEmail){ toast('Only admin can upload (sign in with admin email).'); return; }
       const title = qs('#uploadTitle').value.trim();
