@@ -72,6 +72,7 @@
     .episode-item .info{flex:1}
     .episode-item .title{font-weight:600}
     @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} nav{overflow:auto} .details-page .header{height:200px} }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -164,8 +165,11 @@
                 <div id="manageVideosBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
                 
                 <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
-                <div style="font-weight:700">Manage Users</div>
-                <div id="manageUsersBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
+                <div style="font-weight:700; display: flex; align-items: center; justify-content: space-between;">
+                    <span>Manage Users</span>
+                    <button id="btnShowUsers" class="btn-primary" style="padding: 6px 10px;">Show Users</button>
+                </div>
+                <div id="manageUsersBlock" class="hidden" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
               </div>
             </div>
             <div style="height:12px"></div>
@@ -227,7 +231,7 @@
 
     let STATE = {
       videos: [],
-      users: [], // Added to hold user data
+      users: [], 
       user: JSON.parse(localStorage.getItem('bv_user') || 'null'),
       history: JSON.parse(localStorage.getItem('bv_history') || '[]'),
       owner: OWNER_INFO,
@@ -287,7 +291,6 @@
         renderHomeContent();
         if(STATE.user && STATE.user.email === adminEmail){
             renderManageVideos();
-            renderManageUsers(); // Call new function to render user list
         }
       }catch(e){
         console.error(e);
@@ -643,9 +646,15 @@
             id_token,
             localId: rid('usr')
           };
+          
           STATE.user = user;
           localStorage.setItem('bv_user', JSON.stringify(user));
-          apiPost('users', { id: user.localId, name: user.name, email: user.email, createdAt: new Date().toISOString() }).catch(()=>{});
+          
+          const existingUser = STATE.users.find(u => u.email === user.email);
+          if (!existingUser) {
+            apiPost('users', { id: user.localId, name: user.name, email: user.email, createdAt: new Date().toISOString() }).catch(e => console.error("Error saving user:", e));
+          }
+          
           renderProfile();
         }catch(e){ console.error('GSI parse error', e); }
       }
@@ -695,13 +704,20 @@
       if(u.email === adminEmail){
         qs('#adminBlock').style.display = 'block';
         renderManageVideos();
-        renderManageUsers();
       } else {
         qs('#adminBlock').style.display = 'none';
       }
     }
 
     function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
+
+    qs('#btnShowUsers').addEventListener('click', () => {
+        const userBlock = qs('#manageUsersBlock');
+        const isHidden = userBlock.classList.toggle('hidden');
+        if (!isHidden) {
+            renderManageUsers();
+        }
+    });
 
     (function init(){
       renderSiteHeader();
