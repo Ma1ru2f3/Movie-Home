@@ -361,7 +361,8 @@
 
     function renderCategories(container, categories){
       container.innerHTML = '';
-      categories.forEach(cat => {
+      const uniqueCategories = [...new Set(categories)];
+      uniqueCategories.forEach(cat => {
         const chip = document.createElement('div');
         chip.className = 'chip';
         chip.textContent = cat;
