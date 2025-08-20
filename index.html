@@ -1,256 +1,753 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Video Hub</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root{
+      --bg-dark: #121212;
+      --card-bg: #1e1e1e;
+      --text-primary: #ffffff;
+      --text-secondary: #b3b3b3;
+      --accent: #ef233c;
+      --border-color: #333333;
+      --rounded: 10px;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;margin:0;background:var(--bg-dark);color:var(--text-primary)}
+    .container{max-width:1100px;margin:0 auto;padding:18px}
+    header{position:sticky;top:0;background:var(--bg-dark);border-bottom:1px solid var(--border-color);z-index:100;padding:18px 0;}
+    .hdr{display:flex;align-items:center;gap:12px;padding:14px 0}
+    .logo{font-size:26px}
+    .site-title{font-weight:800;font-size:18px}
+    .site-sub{font-size:12px;color:var(--text-secondary)}
+    nav{display:flex;gap:8px;}
+    .tab{padding:8px 14px;border-radius:999px;background:var(--card-bg);font-weight:600;cursor:pointer;color:var(--text-primary);border:1px solid var(--border-color)}
+    .tab.active{background:var(--accent);color:white;box-shadow:0 4px 12px rgba(2,6,23,0.06)}
+    main{padding:18px 0;padding-bottom:100px}
+    .grid{display:grid;gap:14px}
+    .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+    .card{background:var(--card-bg);border-radius:var(--rounded);overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.2)}
+    .aspect-video{background:#000;color:white;position:relative;padding-top:56.25%}
+    .aspect-video iframe,.aspect-video video{position:absolute;left:0;top:0;width:100%;height:100%;border:0}
+    .card-body{padding:12px}
+    .meta{display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px}
+    input[type="text"],textarea,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--border-color);outline:none;background:var(--card-bg);color:var(--text-primary)}
+    button{cursor:pointer;border:0;padding:8px 12px;border-radius:10px;font-weight:700}
+    .btn-primary{background:linear-gradient(90deg,#60a5fa,#7c3aed);color:white}
+    .btn-emerald{background:linear-gradient(90deg,#34d399,#10b981);color:white}
+    .btn-red{background:linear-gradient(90deg,#ef4444,#dc2626);color:white}
+    .muted{color:var(--text-secondary)}
+    .tiny{font-size:12px}
+    .row{display:flex;gap:12px;align-items:center}
+    .col{display:flex;flex-direction:column;gap:8px}
+    .progress-wrap{height:10px;background:var(--border-color);border-radius:999px;overflow:hidden}
+    .progress-bar{height:100%;background:linear-gradient(90deg,#34d399,#f59e0b);width:0%}
+    .owner-block{padding:12px;border-radius:10px;background:var(--card-bg);border:1px dashed rgba(255,255,255,0.1)}
+    .searchbar{display:flex;gap:8px}
+    .chip{display:inline-block;padding:6px 10px;border-radius:999px;background:var(--card-bg);border:1px solid var(--border-color);font-weight:600;cursor:pointer}
+    .small-muted{font-size:12px;color:var(--text-secondary)}
+    .scroll-x{overflow-x:auto;display:flex;gap:12px;padding:8px 0;scrollbar-width:none}
+    .scroll-x::-webkit-scrollbar{display:none}
+    .section-title{font-weight:800;font-size:18px;margin-top:20px;margin-bottom:12px}
+    .content-card{width:120px;flex-shrink:0}
+    .content-card img{width:100%;height:180px;object-fit:cover;border-radius:8px}
+    .content-card-title{font-size:14px;font-weight:600;margin-top:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+    .logo-container img{width:60px;height:60px;object-fit:contain;border-radius:10px}
+    .logo-container{flex-shrink:0}
+    .details-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
+    .details-page .header{position:relative;height:300px;overflow:hidden;background:var(--card-bg)}
+    .details-page .header iframe{width:100%;height:100%;}
+    .details-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
+    .details-page .body{padding:20px}
+    .details-page h1{font-size:24px;margin:0;font-weight:800}
+    .details-page .meta-info{display:flex;gap:10px;margin-top:8px;color:var(--text-secondary);font-size:14px}
+    .details-page .btn-group{margin-top:15px;display:flex;gap:10px;justify-content:center}
+    .details-page .overview{margin-top:20px;line-height:1.6}
+    .episode-list{margin-top:20px}
+    .episode-item{display:flex;gap:15px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-color)}
+    .episode-item img{width:80px;height:50px;object-fit:cover;border-radius:6px}
+    .episode-item .info{flex:1}
+    .episode-item .title{font-weight:600}
+    @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} nav{overflow:auto} .details-page .header{height:200px} }
+    .hidden { display: none; }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-900">
-
-  <!-- Navbar -->
-  <nav class="flex justify-around bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4">
-    <button onclick="showPage('home')" class="font-bold">🏠 Home</button>
-    <button onclick="showPage('search')" class="font-bold">🔍 Search</button>
-    <button onclick="showPage('history')" class="font-bold">⏳ History</button>
-    <button onclick="showPage('profile')" class="font-bold">👤 Profile</button>
-  </nav>
-
-  <!-- Pages -->
-  <div id="pages" class="p-4">
-    <!-- Home -->
-    <div id="home" class="page">
-      <h1 class="text-xl font-bold mb-4">🏠 Home</h1>
-      <div id="videoList" class="grid gap-4"></div>
-    </div>
-
-    <!-- Search -->
-    <div id="search" class="page hidden">
-      <h1 class="text-xl font-bold mb-4">🔍 Search</h1>
-      <input id="searchInput" type="text" placeholder="Search by title..." 
-             class="p-2 border rounded w-full mb-4"
-             onkeyup="searchVideos()">
-      <div id="searchResults" class="grid gap-4"></div>
-    </div>
-
-    <!-- History -->
-    <div id="history" class="page hidden">
-      <h1 class="text-xl font-bold mb-4">⏳ History</h1>
-      <div id="historyList" class="grid gap-4"></div>
-    </div>
-
-    <!-- Profile -->
-    <div id="profile" class="page hidden">
-      <h1 class="text-xl font-bold mb-4">👤 Profile</h1>
-      <div id="profileContent"></div>
-    </div>
+<body>
+  <div id="app">
+    <header class="container">
+      <div class="hdr">
+        <div class="logo">🎬</div>
+        <div>
+          <div class="site-title" id="siteName">Video Hub</div>
+          <div class="site-sub" id="siteAbout">Movie & Series Library</div>
+        </div>
+        <div style="flex:1"></div>
+        <a href="https://drive.google.com/uc?export=download&id=1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw" style="
+          display: inline-block;
+          padding: 8px 14px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #ef4444, #dc2626);
+          color: white;
+          text-decoration: none;
+          font-weight: 600;
+          margin-right: 12px;
+        " download>
+          Download App
+        </a>
+        <div id="gsi-signin"></div>
+      </div>
+      <nav id="topNav">
+        <button class="tab active" data-pane="home">🏠 Home</button>
+        <button class="tab" data-pane="search">🔍 Search</button>
+        <button class="tab" data-pane="movies">🎞️ Movies</button>
+        <button class="tab" data-pane="series">📺 Series</button>
+        <button class="tab" data-pane="profile">👤 Profile</button>
+      </nav>
+    </header>
+    <main class="container">
+      <div id="paneHome" class="pane">
+        <div class="section-title">Trending</div>
+        <div class="scroll-x" id="trendingVideos"></div>
+        <div class="section-title">Most Popular</div>
+        <div class="scroll-x" id="popularVideos"></div>
+        <div class="section-title">Categories</div>
+        <div class="scroll-x" id="categoryChips"></div>
+      </div>
+      <div id="paneSearch" class="pane" style="display:none">
+        <div class="col" style="margin-bottom:12px">
+          <div style="font-weight:800;font-size:24px">Search</div>
+          <input id="searchInput" type="text" placeholder="🔎 Search by title..." />
+        </div>
+        <div id="searchResults" class="grid cols-2"></div>
+      </div>
+      <div id="paneMovies" class="pane" style="display:none">
+        <div style="font-weight:800;font-size:24px">Movies</div>
+        <div id="moviesGrid" class="grid cols-2"></div>
+      </div>
+      <div id="paneSeries" class="pane" style="display:none">
+        <div style="font-weight:800;font-size:24px">Series</div>
+        <div id="seriesGrid" class="grid cols-2"></div>
+      </div>
+      <div id="paneProfile" class="pane" style="display:none">
+        <div class="grid" style="grid-template-columns:1fr 360px;gap:14px">
+          <div class="col">
+            <div class="card">
+              <div class="card-body">
+                <div style="font-weight:800;margin-bottom:8px">👤 Profile</div>
+                <div id="profileArea"></div>
+              </div>
+            </div>
+            <div style="height:14px"></div>
+            <div class="card">
+              <div class="card-body">
+                <div style="font-weight:800;margin-bottom:8px">📣 Owner Info</div>
+                <div class="owner-block" id="ownerInfoBlock">
+                  <div><strong id="ownerName"></strong></div>
+                  <div class="small-muted" id="ownerAbout"></div>
+                  <div class="small-muted">Contact: <span id="ownerContact"></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div id="adminBlock" class="card" style="display:none">
+              <div class="card-body">
+                <div style="font-weight:800;margin-bottom:8px">🛠️ Admin Dashboard</div>
+                
+                <div style="font-weight:700">Upload Video</div>
+                <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
+                  <input id="uploadTitle" type="text" placeholder="Title" />
+                  <input id="uploadLink" type="text" placeholder="Video link" />
+                  <input id="uploadCategory" type="text" placeholder="Category" />
+                  <input id="uploadSeason" type="text" placeholder="Season" />
+                  <input id="uploadEpisode" type="text" placeholder="Episode" />
+                  <textarea id="uploadDescription" rows="3" placeholder="Description"></textarea>
+                  <input id="uploadThumbnail" type="text" placeholder="Thumbnail link" />
+                  <div class="row">
+                    <button id="btnUpload" class="btn-emerald">Upload</button>
+                    <div style="flex:1"></div>
+                  </div>
+                  <div class="progress-wrap"><div id="uploadProgress" class="progress-bar"></div></div>
+                </div>
+                <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
+                <div style="font-weight:700">Manage Videos</div>
+                <div id="manageVideosBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
+                
+                <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
+                <div style="font-weight:700; display: flex; align-items: center; justify-content: space-between;">
+                    <span>Manage Users</span>
+                    <button id="btnShowUsers" class="btn-primary" style="padding: 6px 10px;">Show Users</button>
+                </div>
+                <div id="manageUsersBlock" class="hidden" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
+              </div>
+            </div>
+            <div style="height:12px"></div>
+            <div class="card">
+              <div class="card-body">
+                <div style="font-weight:800;margin-bottom:8px">🔒 Login Info</div>
+                <div class="small-muted">Sign in with Google to view profile & (if admin) the Admin Dashboard.</div>
+                <div style="height:8px"></div>
+                <div id="gsi-small"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div id="videoDetailsPage" class="details-page"></div>
   </div>
+  <script>
+    const CONFIG = {
+      ADMIN_EMAIL: "mymaruf94@gmail.com",
+      SHEETDB_API: "https://sheetdb.io/api/v1/8j681cv0tysp5",
+      GOOGLE_CLIENT_ID: "119036146469-73jdpok05fq99vfq8naat0airpdcn8f1.apps.googleusercontent.com"
+    };
 
-<script>
-/* ================= CONFIG ================= */
-const ADMIN_EMAIL = "mymaruf94@gmail.com";
-const SHEET_API = "https://sheetdb.io/api/v1/8j681cv0tysp5";
-const GOOGLE_CLIENT_ID = "36874627982-u6mhk7hmn0do1btuk7rs1p8tbnddne14.apps.googleusercontent.com";
+    const OWNER_INFO = {
+        name: "Video Hub",
+        about: "Your home for anime & series.",
+        contact: "Mymaruf94@gmail.com"
+    };
 
-let currentUser = null;
-let videos = [];
-let historyData = [];
+    const qs = sel => document.querySelector(sel);
+    const qsa = sel => Array.from(document.querySelectorAll(sel));
+    const api = CONFIG.SHEETDB_API;
+    const adminEmail = CONFIG.ADMIN_EMAIL;
 
-/* ================= NAVIGATION ================= */
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-}
-
-/* ================= EMBED HELPER ================= */
-function getEmbedUrl(url) {
-  if (url.includes("youtube.com/watch?v=")) {
-    const videoId = url.split("v=")[1].split("&")[0];
-    return `https://www.youtube.com/embed/${videoId}`;
-  }
-  if (url.includes("youtu.be/")) {
-    const videoId = url.split("youtu.be/")[1].split("?")[0];
-    return `https://www.youtube.com/embed/${videoId}`;
-  }
-  if (url.includes("drive.google.com")) {
-    const match = url.match(/\/d\/(.*)\/view/);
-    if (match && match[1]) return `https://drive.google.com/file/d/${match[1]}/preview`;
-  }
-  if (url.includes("facebook.com")) {
-    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0&width=560`;
-  }
-  if (url.includes("tiktok.com")) {
-    if (url.includes("/video/")) return `https://www.tiktok.com/embed/v2/${url.split("/video/")[1].split("?")[0]}`;
-  }
-  if (url.endsWith(".mp4")) return url;
-  return url;
-}
-
-function createVideoPlayer(url) {
-  const embedUrl = getEmbedUrl(url);
-  if (embedUrl.endsWith(".mp4")) {
-    return `<video controls width="100%" class="rounded-lg">
-              <source src="${embedUrl}" type="video/mp4">
-              Your browser does not support HTML5 video.
-            </video>`;
-  } else {
-    return `<iframe width="100%" height="315" 
-              src="${embedUrl}" frameborder="0" allowfullscreen
-              class="rounded-lg"></iframe>`;
-  }
-}
-
-/* ================= VIDEO LOAD ================= */
-async function loadVideos() {
-  const res = await fetch(`${SHEET_API}?sheet=videos`);
-  videos = await res.json();
-  renderVideos();
-}
-
-function renderVideos() {
-  const list = document.getElementById("videoList");
-  list.innerHTML = "";
-  videos.forEach(v => {
-    const div = document.createElement("div");
-    div.className = "bg-white p-2 rounded shadow relative";
-
-    let deleteBtn = "";
-    if (currentUser && currentUser.email === ADMIN_EMAIL) {
-      deleteBtn = `<button onclick="deleteVideo('${v.id}')" 
-                    class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
-                    🗑️ Delete</button>`;
+    function toast(msg){
+      console.log('TOAST:', msg);
+      alert(msg);
     }
 
-    div.innerHTML = `
-      ${deleteBtn}
-      <h2 class="font-bold mb-2">${v.title}</h2>
-      ${createVideoPlayer(v.link)}
-    `;
-    div.onclick = (e) => {
-      if (e.target.tagName !== "BUTTON") addToHistory(v);
+    function apiGet(sheet){
+      return fetch(`${api}?sheet=${encodeURIComponent(sheet)}`).then(r=>r.json());
+    }
+    function apiPost(sheet, rowObj){
+      return fetch(`${api}?sheet=${encodeURIComponent(sheet)}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ data: rowObj })
+      }).then(r=>r.json());
+    }
+    function apiDelete(sheet, id){
+      return fetch(`${api}/id/${encodeURIComponent(id)}?sheet=${encodeURIComponent(sheet)}`, {
+        method: 'DELETE',
+        headers: {'Content-Type':'application/json'}
+      }).then(r=>r.json());
+    }
+
+    function rid(prefix='id'){ return `${prefix}_${Math.random().toString(36).slice(2,9)}${Date.now().toString().slice(-4)}` }
+
+    let STATE = {
+      videos: [],
+      users: [], 
+      user: JSON.parse(localStorage.getItem('bv_user') || 'null'),
+      history: JSON.parse(localStorage.getItem('bv_history') || '[]'),
+      owner: OWNER_INFO,
     };
-    list.appendChild(div);
-  });
-}
+    
+    function getFileIdFromLink(link) {
+      if (link && link.includes('drive.google.com/file/d/')) {
+        try {
+          const parts = link.split('/d/');
+          const fileId = parts[1].split('/')[0];
+          return fileId;
+        } catch (e) {
+          console.error('Failed to parse Google Drive link:', e);
+          return null;
+        }
+      }
+      return null;
+    }
 
-/* ================= SEARCH ================= */
-function searchVideos() {
-  const query = document.getElementById("searchInput").value.toLowerCase();
-  const results = videos.filter(v => v.title.toLowerCase().includes(query));
-  const list = document.getElementById("searchResults");
-  list.innerHTML = "";
-  results.forEach(v => {
-    const div = document.createElement("div");
-    div.className = "bg-white p-2 rounded shadow";
-    div.innerHTML = `
-      <h2 class="font-bold mb-2">${v.title}</h2>
-      ${createVideoPlayer(v.link)}
-    `;
-    div.onclick = () => addToHistory(v);
-    list.appendChild(div);
-  });
-}
+    function getEmbedLink(link) {
+      const fileId = getFileIdFromLink(link);
+      return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : link;
+    }
 
-/* ================= HISTORY ================= */
-function addToHistory(video) {
-  if (!currentUser) return;
-  historyData.push({title: video.title, link: video.link, time: new Date().toISOString()});
-  renderHistory();
-}
+    function getThumbnailLink(link) {
+      const fileId = getFileIdFromLink(link);
+      return fileId ? `https://drive.google.com/thumbnail?id=${fileId}` : link;
+    }
 
-function renderHistory() {
-  const list = document.getElementById("historyList");
-  list.innerHTML = "";
-  historyData.forEach(h => {
-    const div = document.createElement("div");
-    div.className = "bg-white p-2 rounded shadow";
-    div.innerHTML = `
-      <p class="font-bold">${h.title}</p>
-      ${createVideoPlayer(h.link)}
-      <p class="text-sm text-gray-500">Watched: ${new Date(h.time).toLocaleString()}</p>
-    `;
-    list.appendChild(div);
-  });
-}
+    async function loadInitial(){
+      try{
+        const [videosRaw, usersRaw] = await Promise.all([
+          apiGet('videos').catch(()=>[]),
+          apiGet('users').catch(()=>[])
+        ]);
+        
+        STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
+          id: r.id || r.ID || rid('vid'),
+          title: r.title || r.Title || r.name || 'Untitled',
+          link: r.link || r.Link || r.url || '',
+          category: r.category || r.Category || r.cat || '',
+          uploadedBy: r.uploadedBy || r.UploadedBy || '',
+          uploadDate: r.uploadDate || r.UploadDate || '',
+          season: r.season || '',
+          episode: r.episode || '',
+          description: r.description || '',
+          thumbnail: getThumbnailLink(r.thumbnail) || 'https://via.placeholder.com/150x225.png?text=No+Image'
+        })) : []);
+        
+        STATE.users = (Array.isArray(usersRaw) ? usersRaw.map(r => ({
+            id: r.id || r.ID,
+            name: r.name || r.Name || 'Unknown',
+            email: r.email || r.Email || 'No email',
+            createdAt: r.createdAt || ''
+        })) : []);
+        
+        renderHomeContent();
+        if(STATE.user && STATE.user.email === adminEmail){
+            renderManageVideos();
+        }
+      }catch(e){
+        console.error(e);
+      }
+    }
 
-/* ================= GOOGLE LOGIN ================= */
-function handleCredentialResponse(response) {
-  const data = parseJwt(response.credential);
-  currentUser = {
-    name: data.name,
-    email: data.email,
-    id: Math.floor(Math.random()*1000000)
-  };
-  renderProfile();
-}
+    function renderHomeContent(){
+      const trending = STATE.videos.filter(v => v.category.toLowerCase().includes('trending'));
+      const popular = STATE.videos.filter(v => v.category.toLowerCase().includes('popular'));
+      const categories = [...new Set(STATE.videos.map(v => v.category))];
+      
+      renderVideoSection(qs('#trendingVideos'), trending, true);
+      renderVideoSection(qs('#popularVideos'), popular, true);
+      renderCategories(qs('#categoryChips'), categories);
+      renderPaneMovies(STATE.videos.filter(v=>v.category.toLowerCase().includes('movie')));
+      renderPaneSeries(STATE.videos.filter(v=>v.category.toLowerCase().includes('series')));
+    }
+    
+    function renderVideoSection(container, videos, isHorizontal = false){
+      container.innerHTML = '';
+      if(!videos.length){
+        container.innerHTML = '<div style="color:var(--text-secondary)">No videos found.</div>';
+        return;
+      }
+      const uniqueVideos = [];
+      const titles = new Set();
+      videos.forEach(v => {
+        if(!titles.has(v.title)){
+          titles.add(v.title);
+          uniqueVideos.push(v);
+        }
+      });
+      uniqueVideos.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'content-card';
+        card.innerHTML = `<img src="${v.thumbnail}" alt="${v.title}">
+                          <div class="content-card-title">${escapeHtml(v.title)}</div>`;
+        card.onclick = () => showVideoDetails(v);
+        container.appendChild(card);
+      });
+    }
 
-function parseJwt(token) {
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  return JSON.parse(window.atob(base64));
-}
+    function renderPaneMovies(videos){
+      const container = qs('#moviesGrid');
+      container.innerHTML = '';
+      videos.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'content-card';
+        card.style.width = '100%';
+        card.innerHTML = `<img src="${v.thumbnail}" alt="${v.title}">
+                          <div class="content-card-title">${escapeHtml(v.title)}</div>`;
+        card.onclick = () => showVideoDetails(v);
+        container.appendChild(card);
+      });
+    }
 
-function renderProfile() {
-  const div = document.getElementById("profileContent");
-  if (!currentUser) {
-    div.innerHTML = `<div id="g_id_onload"
-          data-client_id="${GOOGLE_CLIENT_ID}"
-          data-callback="handleCredentialResponse"></div>
-        <div class="g_id_signin" data-type="standard"></div>`;
-    return;
-  }
-  if (currentUser.email === ADMIN_EMAIL) {
-    div.innerHTML = `
-      <h2 class="font-bold">Admin Dashboard</h2>
-      <p>${currentUser.name} (${currentUser.email})</p>
-      <h3 class="mt-4 font-bold">Upload Video</h3>
-      <input id="vtitle" placeholder="Title" class="border p-1 w-full mb-2">
-      <input id="vlink" placeholder="Link" class="border p-1 w-full mb-2">
-      <input id="vcat" placeholder="Category" class="border p-1 w-full mb-2">
-      <button onclick="uploadVideo()" class="bg-indigo-600 text-white px-4 py-2 rounded">Upload</button>
-      <div id="uploadStatus" class="mt-2 text-sm"></div>
-    `;
-  } else {
-    div.innerHTML = `
-      <h2 class="font-bold">User Dashboard</h2>
-      <p>Name: ${currentUser.name}</p>
-      <p>Email: ${currentUser.email}</p>
-      <p>ID: ${currentUser.id}</p>
-    `;
-  }
-}
+    function renderPaneSeries(videos){
+      const container = qs('#seriesGrid');
+      container.innerHTML = '';
+      const uniqueSeries = [];
+      const titles = new Set();
+      videos.forEach(v => {
+        if(!titles.has(v.title)){
+          titles.add(v.title);
+          uniqueSeries.push(v);
+        }
+      });
+      uniqueSeries.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'content-card';
+        card.style.width = '100%';
+        card.innerHTML = `<img src="${v.thumbnail}" alt="${v.title}">
+                          <div class="content-card-title">${escapeHtml(v.title)}</div>`;
+        card.onclick = () => showVideoDetails(v);
+        container.appendChild(card);
+      });
+    }
+    
+    function renderCategories(container, categories){
+      container.innerHTML = '';
+      categories.forEach(cat => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.textContent = cat;
+        chip.onclick = () => {
+          const filtered = STATE.videos.filter(v => v.category === cat);
+          const grid = qs('#searchResults');
+          grid.innerHTML = '';
+          filtered.forEach(v => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<div class="card-body">
+                                <div style="font-weight:700">${escapeHtml(v.title)}</div>
+                                <div class="small-muted">${escapeHtml(v.category)}</div>
+                                <div class="small-muted">Season ${escapeHtml(v.season)}, Episode ${escapeHtml(v.episode)}</div>
+                              </div>`;
+            card.onclick = () => showVideoDetails(v);
+            grid.appendChild(card);
+          });
+          setPane('search');
+        };
+        container.appendChild(chip);
+      });
+    }
 
-/* ================= UPLOAD & DELETE ================= */
-async function uploadVideo() {
-  const title = document.getElementById("vtitle").value;
-  const link = document.getElementById("vlink").value;
-  const cat = document.getElementById("vcat").value;
-  const id = Math.floor(Math.random()*1000000); // unique ID
+    function showVideoDetails(video){
+      const page = qs('#videoDetailsPage');
+      const episodes = STATE.videos.filter(v => v.title === video.title);
+      const seasons = [...new Set(episodes.map(e => e.season).filter(s => s))].sort((a,b) => a-b);
+      const firstSeasonEpisodes = episodes.filter(e => e.season === seasons[0]).sort((a,b) => a.episode - b.episode);
+      
+      const episodeListHTML = firstSeasonEpisodes.map(ep => `
+          <div class="episode-item" data-id="${ep.id}">
+              <img src="${getThumbnailLink(ep.thumbnail)}" alt="${ep.title}">
+              <div class="info">
+                  <div class="title">E${ep.episode}: ${ep.title}</div>
+                  <div class="small-muted">...</div>
+              </div>
+          </div>
+      `).join('');
+      
+      const seasonOptions = seasons.map(s => `<option value="${s}">Season ${s}</option>`).join('');
 
-  await fetch(`${SHEET_API}?sheet=videos`, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify([{id, title, link, category:cat}])
-  });
+      page.innerHTML = `
+          <div class="header">
+              <iframe id="video-player" src="${getEmbedLink(video.link)}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+              <div class="back-btn" onclick="hideVideoDetails()">←</div>
+          </div>
+          <div class="body">
+              <h1>${escapeHtml(video.title)}</h1>
+              <div class="meta-info">
+                  <div>${escapeHtml(video.category)}</div>
+                  <div>·</div>
+                  <div>${escapeHtml(video.season ? `Season ${video.season}` : 'Movie')}</div>
+                  <div>·</div>
+                  <div>${video.uploadDate ? new Date(video.uploadDate).getFullYear() : ''}</div>
+              </div>
+              <div class="btn-group">
+                  <button class="btn-primary">▶️ Watch Now</button>
+                  <button class="btn-emerald">⭐ Favourite</button>
+                  <button class="btn-red">🔗 Share</button>
+              </div>
+              <div class="overview">${escapeHtml(video.description)}</div>
+              <div class="episode-list">
+                  <div style="font-weight:700;margin-bottom:10px">Episodes</div>
+                  <select id="seasonSelector">
+                      ${seasonOptions}
+                  </select>
+                  <div id="episodesContainer">
+                      ${episodeListHTML}
+                  </div>
+              </div>
+          </div>
+      `;
+      page.style.display = 'block';
 
-  document.getElementById("uploadStatus").innerText = "✅ Uploaded!";
-  loadVideos();
-}
+      qs('#seasonSelector').addEventListener('change', (e) => {
+          const selectedSeason = e.target.value;
+          const seasonEpisodes = episodes.filter(ep => ep.season === selectedSeason).sort((a,b) => a.episode - b.episode);
+          const newEpisodeListHTML = seasonEpisodes.map(ep => `
+              <div class="episode-item" data-id="${ep.id}">
+                  <img src="${getThumbnailLink(ep.thumbnail)}" alt="${ep.title}">
+                  <div class="info">
+                      <div class="title">E${ep.episode}: ${ep.title}</div>
+                      <div class="small-muted">...</div>
+                  </div>
+              </div>
+          `).join('');
+          qs('#episodesContainer').innerHTML = newEpisodeListHTML;
+          qsa('#episodesContainer .episode-item').forEach(item => {
+              item.addEventListener('click', () => {
+                  const videoId = item.dataset.id;
+                  const selectedVideo = STATE.videos.find(v => v.id === videoId);
+                  if (selectedVideo) {
+                      const iframe = qs('#video-player');
+                      iframe.src = getEmbedLink(selectedVideo.link);
+                  }
+              });
+          });
+      });
+      
+      qsa('#episodesContainer .episode-item').forEach(item => {
+          item.addEventListener('click', () => {
+              const videoId = item.dataset.id;
+              const selectedVideo = STATE.videos.find(v => v.id === videoId);
+              if (selectedVideo) {
+                  const iframe = qs('#video-player');
+                  iframe.src = getEmbedLink(selectedVideo.link);
+              }
+          });
+      });
+      
+      qs('.btn-primary').addEventListener('click', () => {
+          const iframe = qs('#video-player');
+          iframe.src = getEmbedLink(video.link);
+      });
+    }
 
-async function deleteVideo(videoId) {
-  if (!confirm("Are you sure you want to delete this video?")) return;
-  await fetch(`${SHEET_API}/id/${videoId}?sheet=videos`, {
-    method: "DELETE"
-  });
-  loadVideos();
-}
+    function hideVideoDetails(){
+      qs('#videoDetailsPage').style.display = 'none';
+      const player = qs('#video-player');
+      if(player) player.src = '';
+    }
 
-/* ================= INIT ================= */
-window.onload = () => {
-  loadVideos();
-  renderProfile();
-};
-</script>
+    function setPane(paneId){
+        qsa('.pane').forEach(p => p.style.display = 'none');
+        qs(`#pane${paneId.charAt(0).toUpperCase() + paneId.slice(1)}`).style.display = 'block';
+        qsa('#topNav .tab').forEach(t => t.classList.remove('active'));
+        qs(`#topNav [data-pane="${paneId}"]`).classList.add('active');
+        if(paneId === 'profile') {
+            renderProfile();
+        }
+    }
+    
+    qsa('#topNav .tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const paneId = btn.dataset.pane;
+            setPane(paneId);
+        });
+    });
+    
+    qs('#searchInput').addEventListener('input', (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        const resultsContainer = qs('#searchResults');
+        resultsContainer.innerHTML = '';
+        if(query.length > 0){
+            const filteredVideos = STATE.videos.filter(v => 
+                v.title && v.title.toLowerCase().includes(query)
+            );
+            if(filteredVideos.length === 0){
+                resultsContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary)">No results found.</div>';
+            } else {
+                filteredVideos.forEach(v => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `<div class="card-body">
+                                        <div style="font-weight:700">${escapeHtml(v.title)}</div>
+                                        <div class="small-muted">${escapeHtml(v.category)}</div>
+                                        <div class="small-muted">Season ${escapeHtml(v.season)}, Episode ${escapeHtml(v.episode)}</div>
+                                      </div>`;
+                    card.onclick = () => showVideoDetails(v);
+                    resultsContainer.appendChild(card);
+                });
+            }
+        }
+    });
+
+    function renderManageVideos(){
+      const out = qs('#manageVideosBlock');
+      out.innerHTML = '';
+      if(!STATE.videos.length){
+        out.innerHTML = '<div class="small-muted">No videos to manage.</div>';
+        return;
+      }
+      STATE.videos.forEach(v => {
+        const d = document.createElement('div');
+        d.style.padding = '8px';
+        d.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+        d.style.display = 'flex';
+        d.style.alignItems = 'center';
+        d.innerHTML = `<div style="flex:1;">
+            <div style="font-weight:700">${escapeHtml(v.title)}</div>
+            <div class="small-muted tiny">${escapeHtml(v.link)}</div>
+          </div>
+          <button class="btn-red" data-id="${v.id}">Delete</button>`;
+        out.appendChild(d);
+        d.querySelector('.btn-red').addEventListener('click', async () => {
+          if (confirm(`Are you sure you want to delete "${v.title}"?`)) {
+            try {
+              toast(`Deleting video...`);
+              await apiDelete('videos', v.id);
+              toast('Video deleted successfully!');
+              await loadInitial();
+            } catch (e) {
+              console.error(e);
+              toast('Failed to delete video.');
+            }
+          }
+        });
+      });
+    }
+
+    function renderManageUsers(){
+        const out = qs('#manageUsersBlock');
+        out.innerHTML = '';
+        if(!STATE.users.length){
+            out.innerHTML = '<div class="small-muted">No users found.</div>';
+            return;
+        }
+        STATE.users.forEach(u => {
+            const d = document.createElement('div');
+            d.style.padding = '8px';
+            d.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+            d.style.display = 'flex';
+            d.style.flexDirection = 'column';
+            d.innerHTML = `<div><strong style="font-weight:700">${escapeHtml(u.name)}</strong></div>
+                           <div class="small-muted tiny">${escapeHtml(u.email)}</div>
+                           <div class="small-muted tiny">ID: <code>${escapeHtml(u.id)}</code></div>`;
+            out.appendChild(d);
+        });
+    }
+
+    qs('#btnUpload').addEventListener('click', async ()=>{
+      if(!STATE.user || STATE.user.email !== adminEmail){ toast('Only admin can upload (sign in with admin email).'); return; }
+      const title = qs('#uploadTitle').value.trim();
+      const link = qs('#uploadLink').value.trim();
+      const category = qs('#uploadCategory').value.trim();
+      const season = qs('#uploadSeason').value.trim();
+      const episode = qs('#uploadEpisode').value.trim();
+      const description = qs('#uploadDescription').value.trim();
+      const thumbnail = qs('#uploadThumbnail').value.trim();
+      if(!title || !link){ toast('Title and Link required'); return; }
+      const pb = qs('#uploadProgress'); pb.style.width = '5%';
+      let p = 5; const iv = setInterval(()=>{ p = Math.min(95, p+8); pb.style.width = p+'%'; }, 180);
+      try{
+        const row = {
+          id: rid('vid'),
+          title, link, category, season, episode, description, thumbnail,
+          uploadedBy: STATE.user.email,
+          uploadDate: new Date().toISOString()
+        };
+        await apiPost('videos', row);
+        clearInterval(iv); pb.style.width = '100%';
+        setTimeout(()=> pb.style.width = '0%', 500);
+        qs('#uploadTitle').value=''; qs('#uploadLink').value=''; qs('#uploadCategory').value='';
+        qs('#uploadSeason').value=''; qs('#uploadEpisode').value='';
+        qs('#uploadDescription').value=''; qs('#uploadThumbnail').value='';
+        toast('Upload successful!');
+        await loadInitial();
+      }catch(e){
+        clearInterval(iv); pb.style.width = '0%';
+        console.error(e); toast('Upload failed');
+      }
+    });
+    
+    function renderSiteHeader(){
+      qs('#siteName').textContent = OWNER_INFO.name;
+      qs('#siteAbout').textContent = OWNER_INFO.about;
+      qs('#ownerName').textContent = OWNER_INFO.name;
+      qs('#ownerAbout').textContent = OWNER_INFO.about;
+      qs('#ownerContact').textContent = OWNER_INFO.contact;
+    }
+
+    function handleCredentialResponse(response){
+      try{
+        const id_token = response.credential;
+        const payload = JSON.parse(atob(id_token.split('.')[1]));
+        const user = {
+          name: payload.name,
+          email: payload.email,
+          picture: payload.picture,
+          id_token,
+          localId: rid('usr')
+        };
+        
+        STATE.user = user;
+        localStorage.setItem('bv_user', JSON.stringify(user));
+        
+        const existingUser = STATE.users.find(u => u.email === user.email);
+        if (!existingUser) {
+          apiPost('users', { id: user.localId, name: user.name, email: user.email, createdAt: new Date().toISOString() }).catch(e => console.error("Error saving user:", e));
+        }
+        
+        renderProfile();
+      }catch(e){ console.error('GSI parse error', e); }
+    }
+
+    function signOut(){
+      STATE.user = null;
+      localStorage.removeItem('bv_user');
+      renderProfile();
+      toast('Signed out');
+    }
+
+    function renderProfile(){
+      const area = qs('#profileArea');
+      area.innerHTML = '';
+      if(!STATE.user){
+        area.innerHTML = `
+          <div style="text-align:center;">
+            <button id="btnSignInGreen" class="btn-emerald" style="padding: 12px 24px; font-size: 16px;">Sign in with Google</button>
+          </div>
+          <div style="margin-top:8px; text-align:center;" class="small-muted">Sign in to view your profile and the Admin Dashboard (if you're an admin).</div>
+        `;
+        const btn = qs('#btnSignInGreen');
+        btn.addEventListener('click', () => {
+            // Manually trigger the GSI prompt
+            window.google.accounts.id.prompt(); 
+        });
+        qs('#adminBlock').style.display = 'none';
+        return;
+      }
+      const u = STATE.user;
+      area.innerHTML = `<div style="display:flex;gap:12px;align-items:center">
+          ${u.picture?`<img src="${u.picture}" style="width:64px;height:64px;border-radius:12px;object-fit:cover">`:`<div style="width:64px;height:64px;border-radius:12px;background:var(--text-secondary);display:flex;align-items:center;justify-content:center">🙂</div>`}
+          <div>
+            <div style="font-weight:800">${escapeHtml(u.name)}</div>
+            <div class="small-muted">${escapeHtml(u.email)}</div>
+            <div class="small-muted tiny">User ID: <code>${escapeHtml(u.localId)}</code></div>
+          </div>
+          <div style="flex:1"></div>
+          <div><button id="btnSignOut" class="btn-primary">Sign out</button></div>
+        </div>`;
+      qs('#btnSignOut').onclick = ()=> signOut();
+
+      if(u.email === adminEmail){
+        qs('#adminBlock').style.display = 'block';
+        renderManageVideos();
+      } else {
+        qs('#adminBlock').style.display = 'none';
+      }
+    }
+
+    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
+
+    qs('#btnShowUsers').addEventListener('click', () => {
+        const userBlock = qs('#manageUsersBlock');
+        userBlock.classList.toggle('hidden');
+        if (!userBlock.classList.contains('hidden')) {
+            renderManageUsers();
+        }
+    });
+
+    (function init(){
+      renderSiteHeader();
+      loadInitial();
+      setPane('home');
+
+      window.google.accounts.id.initialize({
+        client_id: CONFIG.GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse
+      });
+
+      // Always render the main sign-in button in the header
+      window.google.accounts.id.renderButton(
+        document.getElementById('gsi-signin'), 
+        { theme: 'filled_blue', size: 'large', text: 'signin_with' }
+      );
+      
+      // Also render the smaller sign-in button in the profile pane
+      window.accounts.id.renderButton(
+        document.getElementById('gsi-small'),
+        { theme: 'outline', size: 'small', text: 'signin_with' }
+      );
+    })();
+  </script>
 </body>
 </html>
