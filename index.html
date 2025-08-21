@@ -52,7 +52,7 @@
     .content-card-title{font-size:14px;font-weight:600;margin-top:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
     .logo-container img{width:60px;height:60px;object-fit:contain;border-radius:10px}
     .logo-container{flex-shrink:0}
-    .details-page, .auth-page, .admin-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
+    .details-page, .auth-page, .admin-page, .upcoming-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
     
     .auth-page {
         display: flex;
@@ -75,9 +75,9 @@
     
     .details-page .header{position:relative;height:300px;overflow:hidden;background:var(--card-bg)}
     .details-page .header iframe{width:100%;height:100%;}
-    .details-page .back-btn, .auth-page .back-btn, .admin-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
-    .details-page .body, .auth-page .body, .admin-page .body{padding:20px}
-    .details-page h1, .auth-page h1, .admin-page h1{font-size:24px;margin:0;font-weight:800}
+    .details-page .back-btn, .auth-page .back-btn, .admin-page .back-btn, .upcoming-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
+    .details-page .body, .auth-page .body, .admin-page .body, .upcoming-page .body{padding:20px}
+    .details-page h1, .auth-page h1, .admin-page h1, .upcoming-page h1{font-size:24px;margin:0;font-weight:800}
     .details-page .meta-info{display:flex;gap:10px;margin-top:8px;color:var(--text-secondary);font-size:14px}
     .details-page .btn-group{margin-top:15px;display:flex;gap:10px;justify-content:center}
     .details-page .overview{margin-top:20px;line-height:1.6}
@@ -170,6 +170,22 @@
         margin-top: 15px;
         display: block;
     }
+    
+    .upcoming-list .item {
+        background: var(--card-bg);
+        border-radius: var(--rounded);
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+    .upcoming-list .item h3 {
+        margin: 0 0 5px 0;
+        font-size: 18px;
+    }
+    .upcoming-list .item p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -227,10 +243,10 @@
             <div class="card" onclick="openAdminLogin()">
               <div class="card-body">Admin Login</div>
             </div>
-            <div class="card" onclick="showFeatureAlert('Settings')">
+            <div class="card" onclick="openPage('settings')">
               <div class="card-body">Settings</div>
             </div>
-            <div class="card" onclick="showComingSoonAlert('Upcoming')">
+            <div class="card" onclick="openUpcomingPage()">
               <div class="card-body">Upcoming</div>
             </div>
             <div class="card" onclick="showComingSoonAlert('Shuffle Play')">
@@ -242,7 +258,7 @@
             <div class="card" onclick="showDownloads()">
               <div class="card-body">Downloads</div>
             </div>
-            <div class="card" onclick="showFeatureAlert('Genre')">
+            <div class="card" onclick="showGenrePage()">
               <div class="card-body">Genre</div>
             </div>
             <div class="card" onclick="promptRequest()">
@@ -315,6 +331,7 @@
             </div>
             <div class="admin-nav">
                 <button class="btn active" data-admin-pane="upload">Upload</button>
+                <button class="btn" data-admin-pane="upcoming">Upcoming</button>
                 <button class="btn" data-admin-pane="users">Users</button>
                 <button class="btn" data-admin-pane="reports">Reports</button>
                 <button class="btn" data-admin-pane="requests">Requests</button>
@@ -334,6 +351,19 @@
                             <input id="uploadThumbnail" type="text" placeholder="Thumbnail link" />
                             <button id="btnUpload" class="btn-emerald">Upload</button>
                             <div class="progress-wrap"><div id="uploadProgress" class="progress-bar"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="admin-upcoming-pane" class="admin-pane hidden">
+                <div class="card">
+                    <div class="card-body">
+                        <div style="font-weight:700">Add Upcoming Content</div>
+                        <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
+                            <input id="upcomingTitle" type="text" placeholder="Title" />
+                            <input id="upcomingReleaseDate" type="date" placeholder="Release Date" />
+                            <textarea id="upcomingDescription" rows="3" placeholder="Description"></textarea>
+                            <button id="btnAddUpcoming" class="btn-primary">Add Upcoming</button>
                         </div>
                     </div>
                 </div>
@@ -366,6 +396,38 @@
     </div>
 
     <div id="videoDetailsPage" class="details-page"></div>
+    <div id="settingsPage" class="details-page hidden">
+        <div class="body">
+            <div class="back-btn" onclick="hidePage('settings')">←</div>
+            <h1 style="margin-top: 50px;">Settings</h1>
+            <div class="profile-info">
+                <img src="https://via.placeholder.com/60" alt="Profile Picture" />
+                <div>
+                    <div class="name">Maruf</div>
+                    <div class="email small-muted">mymaruf94@gmail.com</div>
+                    <a href="javascript:void(0)" onclick="toast('Edit Profile under development')">Edit</a>
+                </div>
+            </div>
+            <div class="more-options">
+                <div class="card" onclick="toast('My Profile under development')">
+                    <div class="card-body">My Profile</div>
+                </div>
+                <div class="card" onclick="toast('Subscription under development')">
+                    <div class="card-body">Subscription</div>
+                </div>
+                <div class="card" onclick="logout()">
+                    <div class="card-body">Logout</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="upcomingPage" class="upcoming-page hidden">
+        <div class="body">
+            <div class="back-btn" onclick="hidePage('upcoming')">←</div>
+            <h1 style="margin-top: 50px;">Upcoming</h1>
+            <div id="upcomingList" class="upcoming-list"></div>
+        </div>
+    </div>
     <div id="termsPage" class="details-page hidden">
         <div class="body">
             <div class="back-btn" onclick="hidePage('terms')">←</div>
@@ -423,6 +485,14 @@
             <div class="back-btn" onclick="hidePage('downloads')">←</div>
             <h1 style="margin-top: 50px;">Your Downloads</h1>
             <div id="downloadsGrid" class="grid cols-2"></div>
+        </div>
+    </div>
+    <div id="genrePage" class="details-page hidden">
+        <div class="body">
+            <div class="back-btn" onclick="hidePage('genre')">←</div>
+            <h1 style="margin-top: 50px;">All Genres</h1>
+            <div style="font-size: 14px; margin-bottom: 20px; color: var(--text-secondary);">Search Your Favourite Genre</div>
+            <div id="genreGrid" class="grid cols-2"></div>
         </div>
     </div>
   </div>
@@ -483,6 +553,7 @@
       users: [], 
       reports: [],
       requests: [],
+      upcoming: [],
       isAdmin: false,
       favorites: JSON.parse(localStorage.getItem('bv_favorites') || '[]'),
       downloads: JSON.parse(localStorage.getItem('bv_downloads') || '[]'),
@@ -519,11 +590,12 @@
 
     async function loadInitial(){
       try{
-        const [videosRaw, usersRaw, reportsRaw, requestsRaw] = await Promise.all([
+        const [videosRaw, usersRaw, reportsRaw, requestsRaw, upcomingRaw] = await Promise.all([
           apiGet('videos').catch(()=>[]),
           apiGet('users').catch(()=>[]),
           apiGet('reports').catch(()=>[]),
-          apiGet('requests').catch(()=>[])
+          apiGet('requests').catch(()=>[]),
+          apiGet('upcoming_videos').catch(()=>[])
         ]);
         
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
@@ -556,7 +628,11 @@
         STATE.requests = Array.isArray(requestsRaw) ? requestsRaw.map(r => ({
             id: r.id, name: r.name, email: r.email, request: r.request, createdAt: r.createdAt
         })) : [];
-        
+
+        STATE.upcoming = Array.isArray(upcomingRaw) ? upcomingRaw.map(r => ({
+            id: r.id, title: r.title, release_date: r.release_date, description: r.description
+        })) : [];
+
         renderHomeContent();
       }catch(e){
         console.error(e);
@@ -842,6 +918,50 @@
         }
     }
 
+    function showGenrePage() {
+        const page = qs('#genrePage');
+        const genres = [
+            "Horror", "Music", "Western", "TV Movie", "Kids", "Super Power", 
+            "Shounen", "School", "Dub", "Adventure", "War & Politics", "Mystery", 
+            "Thriller", "Family", "Romance", "Science Fiction", "Comedy", "Fantasy", 
+            "Drama", "Crime", "Action & Adventure", "Animation"
+        ];
+        const genreGrid = qs('#genreGrid');
+        genreGrid.innerHTML = '';
+        genres.forEach(genre => {
+            const genreCard = document.createElement('div');
+            genreCard.className = 'card';
+            genreCard.innerHTML = `<div class="card-body" style="text-align: center;">
+                <h3 style="margin-top:0;">${genre}</h3>
+            </div>`;
+            genreCard.onclick = () => {
+                toast(`Showing content for ${genre}`);
+            };
+            genreGrid.appendChild(genreCard);
+        });
+        openPage('genre');
+    }
+
+    function openUpcomingPage() {
+        const upcomingList = qs('#upcomingList');
+        upcomingList.innerHTML = '';
+        if (STATE.upcoming.length === 0) {
+            upcomingList.innerHTML = '<div style="text-align:center;color:var(--text-secondary)">No upcoming videos announced yet.</div>';
+        } else {
+            STATE.upcoming.forEach(item => {
+                const upcomingItem = document.createElement('div');
+                upcomingItem.className = 'item';
+                upcomingItem.innerHTML = `
+                    <h3>${escapeHtml(item.title)}</h3>
+                    <p>Release Date: ${new Date(item.release_date).toLocaleDateString()}</p>
+                    <p>${escapeHtml(item.description)}</p>
+                `;
+                upcomingList.appendChild(upcomingItem);
+            });
+        }
+        openPage('upcoming');
+    }
+
     function toggleAuthForm(form) {
         if (form === 'login') {
             qs('#signupForm').classList.add('hidden');
@@ -977,6 +1097,37 @@
         });
         // Initial render of upload pane
         qs('#admin-upload-pane').classList.remove('hidden');
+
+        // Add event listener for adding upcoming content
+        qs('#btnAddUpcoming').addEventListener('click', addUpcomingVideo);
+    }
+
+    async function addUpcomingVideo() {
+        const title = qs('#upcomingTitle').value.trim();
+        const release_date = qs('#upcomingReleaseDate').value.trim();
+        const description = qs('#upcomingDescription').value.trim();
+
+        if (!title || !release_date) {
+            toast('Title and Release Date are required.');
+            return;
+        }
+
+        try {
+            const newUpcoming = {
+                id: rid('upc'),
+                title: title,
+                release_date: release_date,
+                description: description
+            };
+            await apiPost('upcoming_videos', newUpcoming);
+            toast('Upcoming video added successfully!');
+            qs('#upcomingTitle').value = '';
+            qs('#upcomingReleaseDate').value = '';
+            qs('#upcomingDescription').value = '';
+        } catch (e) {
+            console.error(e);
+            toast('Failed to add upcoming video.');
+        }
     }
     
     async function renderUserList() {
