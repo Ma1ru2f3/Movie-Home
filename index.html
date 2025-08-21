@@ -227,7 +227,8 @@
                 
                 <div style="font-weight:700">Upload Video</div>
                 <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
-                  <input id="uploadTitle" type="text" placeholder="Title" />
+                  <input id="uploadId" type="text" placeholder="Series/Movie ID (e.g., Naruto_Shippuden)" />
+                  <input id="uploadTitle" type="text" placeholder="Title (e.g., Naruto Shippuden)" />
                   <input id="uploadLink" type="text" placeholder="Video link" />
                   <input id="uploadCategory" type="text" placeholder="Category" />
                   <input id="uploadSeason" type="text" placeholder="Season" />
@@ -379,6 +380,12 @@
         headers: {'Content-Type':'application/json'}
       }).then(r=>r.json());
     }
+    function apiDeleteBySeriesId(sheet, seriesId){
+      return fetch(`${api}/search?sheet=${encodeURIComponent(sheet)}&id=${encodeURIComponent(seriesId)}`, {
+        method: 'DELETE',
+        headers: {'Content-Type':'application/json'}
+      }).then(r=>r.json());
+    }
 
     function rid(prefix='id'){ return `${prefix}_${Math.random().toString(36).slice(2,9)}${Date.now().toString().slice(-4)}` }
 
@@ -427,17 +434,18 @@
         ]);
         
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
+          seriesId: r.seriesId || r.SeriesID || rid('ser'),
           id: r.id || r.ID || rid('vid'),
           title: r.title || r.Title || r.name || 'Untitled',
           link: r.link || r.Link || r.url || '',
           category: r.category || r.Category || r.cat || '',
           uploadedBy: r.uploadedBy || r.UploadedBy || '',
           uploadDate: r.uploadDate || r.UploadDate || '',
-          season: r.season || '',
-          episode: r.episode || '',
+          season: r.season || '1',
+          episode: r.episode || '1',
           description: r.description || '',
           thumbnail: getThumbnailLink(r.thumbnail) || 'https://via.placeholder.com/150x225.png?text=No+Image'
-        })) : []);
+        })).sort((a, b) => a.seriesId.localeCompare(b.seriesId) || a.season - b.season || a.episode - b.episode) : []);
         
         STATE.users = (Array.isArray(usersRaw) ? usersRaw.map(r => ({
             id: r.id || r.ID,
@@ -453,16 +461,26 @@
       }
     }
 
+    function getUniqueSeries() {
+      const uniqueSeries = new Map();
+      STATE.videos.forEach(video => {
+        if (!uniqueSeries.has(video.seriesId)) {
+          uniqueSeries.set(video.seriesId, video);
+        }
+      });
+      return Array.from(uniqueSeries.values());
+    }
+
     function renderHomeContent(){
-      const trending = STATE.videos.filter(v => v.category.toLowerCase().includes('trending'));
-      const popular = STATE.videos.filter(v => v.category.toLowerCase().includes('popular'));
+      const trending = getUniqueSeries().filter(v => v.category.toLowerCase().includes('trending'));
+      const popular = getUniqueSeries().filter(v => v.category.toLowerCase().includes('popular'));
       const categories = [...new Set(STATE.videos.map(v => v.category))];
       
       renderVideoSection(qs('#trendingVideos'), trending, true);
       renderVideoSection(qs('#popularVideos'), popular, true);
       renderCategories(qs('#categoryChips'), categories);
-      renderPaneMovies(STATE.videos.filter(v=>v.category.toLowerCase().includes('movie')));
-      renderPaneSeries(STATE.videos.filter(v=>v.category.toLowerCase().includes('series')));
+      renderPaneMovies(getUniqueSeries().filter(v => v.category.toLowerCase().includes('movie')));
+      renderPaneSeries(getUniqueSeries().filter(v => v.category.toLowerCase().includes('series')));
     }
     
     function renderVideoSection(container, videos, isHorizontal = false){
@@ -471,15 +489,7 @@
         container.innerHTML = '<div style="color:var(--text-secondary)">No videos found.</div>';
         return;
       }
-      const uniqueVideos = [];
-      const titles = new Set();
       videos.forEach(v => {
-        if(!titles.has(v.title)){
-          titles.add(v.title);
-          uniqueVideos.push(v);
-        }
-      });
-      uniqueVideos.forEach(v => {
         const card = document.createElement('div');
         card.className = 'content-card';
         card.innerHTML = `<img src="${v.thumbnail}" onerror="this.src='https://via.placeholder.com/150x225.png?text=No+Image'" alt="${v.title}">
@@ -506,15 +516,7 @@
     function renderPaneSeries(videos){
       const container = qs('#seriesGrid');
       container.innerHTML = '';
-      const uniqueSeries = [];
-      const titles = new Set();
       videos.forEach(v => {
-        if(!titles.has(v.title)){
-          titles.add(v.title);
-          uniqueSeries.push(v);
-        }
-      });
-      uniqueSeries.forEach(v => {
         const card = document.createElement('div');
         card.className = 'content-card';
         card.style.width = '100%';
@@ -552,26 +554,15 @@
       });
     }
 
-    function showVideoDetails(video){
+    function showVideoDetails(series) {
       const page = qs('#videoDetailsPage');
-      const episodes = STATE.videos.filter(v => v.title === video.title);
-      const seasons = [...new Set(episodes.map(e => e.season).filter(s => s))].sort((a,b) => a-b);
-      const firstSeasonEpisodes = episodes.filter(e => e.season === seasons[0]).sort((a,b) => a.episode - b.episode);
+      const episodes = STATE.videos.filter(v => v.seriesId === series.seriesId)
+                                   .sort((a, b) => a.season - b.season || a.episode - b.episode);
+      const seasons = [...new Set(episodes.map(e => e.season))].sort((a,b) => a-b);
+      const firstEpisode = episodes[0];
       
-      const episodeListHTML = firstSeasonEpisodes.map(ep => `
-          <div class="episode-item" data-id="${ep.id}">
-              <img src="${getThumbnailLink(ep.thumbnail)}" onerror="this.src='https://via.placeholder.com/80x50.png?text=No+Image'" alt="${ep.title}">
-              <div class="info">
-                  <div class="title">E${ep.episode}: ${ep.title}</div>
-                  <div class="small-muted">...</div>
-              </div>
-          </div>
-      `).join('');
-      
-      const seasonOptions = seasons.map(s => `<option value="${s}">Season ${s}</option>`).join('');
-      
-      const isFavorite = STATE.favorites.includes(video.id);
-      const isDownloaded = STATE.downloads.includes(video.id);
+      const isFavorite = STATE.favorites.includes(series.seriesId);
+      const isDownloaded = STATE.downloads.includes(series.seriesId);
       
       const favoriteBtnClass = isFavorite ? 'btn-emerald' : 'btn-primary';
       const downloadBtnClass = isDownloaded ? 'btn-emerald' : 'btn-primary';
@@ -581,105 +572,98 @@
 
       page.innerHTML = `
           <div class="header">
-              <iframe id="video-player" src="${getEmbedLink(video.link)}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+              <iframe id="video-player" src="${getEmbedLink(firstEpisode.link)}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
               <div class="back-btn" onclick="hideVideoDetails()">←</div>
           </div>
           <div class="body">
-              <h1>${escapeHtml(video.title)}</h1>
+              <h1>${escapeHtml(series.title)}</h1>
               <div class="meta-info">
-                  <div>${escapeHtml(video.category)}</div>
+                  <div>${escapeHtml(series.category)}</div>
                   <div>·</div>
-                  <div>${escapeHtml(video.season ? `Season ${video.season}` : 'Movie')}</div>
+                  <div>${escapeHtml(series.season ? `Season ${series.season}` : 'Movie')}</div>
                   <div>·</div>
-                  <div>${video.uploadDate ? new Date(video.uploadDate).getFullYear() : ''}</div>
+                  <div>${series.uploadDate ? new Date(series.uploadDate).getFullYear() : ''}</div>
               </div>
               <div class="btn-group">
-                  <button class="btn-primary">▶️ Watch Now</button>
-                  <button id="favoriteBtn" class="${favoriteBtnClass}" data-id="${video.id}">${favoriteBtnText}</button>
-                  <button id="downloadBtn" class="${downloadBtnClass}" data-id="${video.id}">${downloadBtnText}</button>
+                  <button class="btn-primary" onclick="playCurrentVideo()">▶️ Watch Now</button>
+                  <button id="favoriteBtn" class="${favoriteBtnClass}" data-id="${series.seriesId}">${favoriteBtnText}</button>
+                  <button id="downloadBtn" class="${downloadBtnClass}" data-id="${series.seriesId}">${downloadBtnText}</button>
               </div>
-              <div class="overview">${escapeHtml(video.description)}</div>
+              <div class="overview">${escapeHtml(series.description)}</div>
               <div class="episode-list">
                   <div style="font-weight:700;margin-bottom:10px">Episodes</div>
-                  <select id="seasonSelector">
-                      ${seasonOptions}
-                  </select>
-                  <div id="episodesContainer">
-                      ${episodeListHTML}
-                  </div>
+                  ${seasons.length > 1 ? `
+                  <select id="seasonSelector" style="margin-bottom: 10px;">
+                      ${seasons.map(s => `<option value="${s}">Season ${s}</option>`).join('')}
+                  </select>` : ''}
+                  <div id="episodesContainer"></div>
               </div>
           </div>
       `;
       page.style.display = 'block';
 
-      qs('#seasonSelector').addEventListener('change', (e) => {
-          const selectedSeason = e.target.value;
-          const seasonEpisodes = episodes.filter(ep => ep.season === selectedSeason).sort((a,b) => a.episode - b.episode);
-          const newEpisodeListHTML = seasonEpisodes.map(ep => `
-              <div class="episode-item" data-id="${ep.id}">
-                  <img src="${getThumbnailLink(ep.thumbnail)}" onerror="this.src='https://via.placeholder.com/80x50.png?text=No+Image'" alt="${ep.title}">
-                  <div class="info">
-                      <div class="title">E${ep.episode}: ${ep.title}</div>
-                      <div class="small-muted">...</div>
-                  </div>
+      function renderEpisodes(selectedSeason) {
+        const episodesContainer = qs('#episodesContainer');
+        const seasonEpisodes = episodes.filter(ep => ep.season === selectedSeason).sort((a,b) => a.episode - b.episode);
+        episodesContainer.innerHTML = seasonEpisodes.map(ep => `
+          <div class="episode-item" data-videoid="${ep.id}" data-link="${ep.link}">
+              <img src="${getThumbnailLink(ep.thumbnail)}" onerror="this.src='https://via.placeholder.com/80x50.png?text=No+Image'" alt="${ep.title}">
+              <div class="info">
+                  <div class="title">E${ep.episode}: ${ep.title}</div>
+                  <div class="small-muted">...</div>
               </div>
-          `).join('');
-          qs('#episodesContainer').innerHTML = newEpisodeListHTML;
-          qsa('#episodesContainer .episode-item').forEach(item => {
-              item.addEventListener('click', () => {
-                  const videoId = item.dataset.id;
-                  const selectedVideo = STATE.videos.find(v => v.id === videoId);
-                  if (selectedVideo) {
-                      const iframe = qs('#video-player');
-                      iframe.src = getEmbedLink(selectedVideo.link);
-                  }
-              });
-          });
-      });
+          </div>
+        `).join('');
+        qsa('#episodesContainer .episode-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const link = item.dataset.link;
+                const iframe = qs('#video-player');
+                iframe.src = getEmbedLink(link);
+            });
+        });
+      }
+
+      if (seasons.length > 0) {
+        renderEpisodes(seasons[0]);
+        if (seasons.length > 1) {
+            qs('#seasonSelector').addEventListener('change', (e) => {
+                renderEpisodes(e.target.value);
+            });
+        }
+      }
       
-      qsa('#episodesContainer .episode-item').forEach(item => {
-          item.addEventListener('click', () => {
-              const videoId = item.dataset.id;
-              const selectedVideo = STATE.videos.find(v => v.id === videoId);
-              if (selectedVideo) {
-                  const iframe = qs('#video-player');
-                  iframe.src = getEmbedLink(selectedVideo.link);
-              }
-          });
-      });
-      
-      qs('.btn-primary').addEventListener('click', () => {
+      window.playCurrentVideo = function() {
           const iframe = qs('#video-player');
-          iframe.src = getEmbedLink(video.link);
-      });
+          iframe.src = getEmbedLink(firstEpisode.link);
+      }
       
       // Favorite Button Logic
       qs('#favoriteBtn').addEventListener('click', () => {
-          const videoId = video.id;
-          if (STATE.favorites.includes(videoId)) {
-              STATE.favorites = STATE.favorites.filter(id => id !== videoId);
+          const seriesId = series.seriesId;
+          if (STATE.favorites.includes(seriesId)) {
+              STATE.favorites = STATE.favorites.filter(id => id !== seriesId);
               toast('Removed from favorites.');
           } else {
-              STATE.favorites.push(videoId);
+              STATE.favorites.push(seriesId);
               toast('Added to favorites!');
           }
           localStorage.setItem('bv_favorites', JSON.stringify(STATE.favorites));
           // Update button state visually
           const favoriteBtn = qs('#favoriteBtn');
-          const isFavorited = STATE.favorites.includes(videoId);
+          const isFavorited = STATE.favorites.includes(seriesId);
           favoriteBtn.className = isFavorited ? 'btn-emerald' : 'btn-primary';
           favoriteBtn.textContent = isFavorited ? '⭐ Favorited' : '⭐ Favorite';
       });
 
       // Download Button Logic
       qs('#downloadBtn').addEventListener('click', () => {
-          const videoId = video.id;
-          if (STATE.downloads.includes(videoId)) {
+          const seriesId = series.seriesId;
+          if (STATE.downloads.includes(seriesId)) {
               toast('Already added to downloads.');
           } else {
-              STATE.downloads.push(videoId);
+              STATE.downloads.push(seriesId);
               localStorage.setItem('bv_downloads', JSON.stringify(STATE.downloads));
-              toast('Video added to downloads!');
+              toast('Series added to downloads!');
               // Update button state visually
               const downloadBtn = qs('#downloadBtn');
               downloadBtn.className = 'btn-emerald';
@@ -774,12 +758,12 @@
     function showFavorites() {
         const favoritesContainer = qs('#favoritesGrid');
         favoritesContainer.innerHTML = '';
-        const favoritedVideos = STATE.videos.filter(v => STATE.favorites.includes(v.id));
+        const favoritedSeries = getUniqueSeries().filter(v => STATE.favorites.includes(v.seriesId));
 
-        if (favoritedVideos.length === 0) {
+        if (favoritedSeries.length === 0) {
             favoritesContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary)">You have no favorites yet.</div>';
         } else {
-            favoritedVideos.forEach(v => {
+            favoritedSeries.forEach(v => {
                 const card = document.createElement('div');
                 card.className = 'content-card';
                 card.style.width = '100%';
@@ -795,12 +779,12 @@
     function showDownloads() {
         const downloadsContainer = qs('#downloadsGrid');
         downloadsContainer.innerHTML = '';
-        const downloadedVideos = STATE.videos.filter(v => STATE.downloads.includes(v.id));
+        const downloadedSeries = getUniqueSeries().filter(v => STATE.downloads.includes(v.seriesId));
         
-        if (downloadedVideos.length === 0) {
-            downloadsContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary)">You have not downloaded any videos.</div>';
+        if (downloadedSeries.length === 0) {
+            downloadsContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary)">You have not downloaded any series.</div>';
         } else {
-            downloadedVideos.forEach(v => {
+            downloadedSeries.forEach(v => {
                 const card = document.createElement('div');
                 card.className = 'content-card';
                 card.style.width = '100%';
@@ -818,7 +802,7 @@
         const resultsContainer = qs('#searchResults');
         resultsContainer.innerHTML = '';
         if(query.length > 0){
-            const filteredVideos = STATE.videos.filter(v => 
+            const filteredVideos = getUniqueSeries().filter(v => 
                 v.title && v.title.toLowerCase().includes(query)
             );
             if(filteredVideos.length === 0){
@@ -846,7 +830,8 @@
         out.innerHTML = '<div class="small-muted">No videos to manage.</div>';
         return;
       }
-      STATE.videos.forEach(v => {
+      const uniqueSeries = getUniqueSeries();
+      uniqueSeries.forEach(v => {
         const d = document.createElement('div');
         d.style.padding = '8px';
         d.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
@@ -854,20 +839,20 @@
         d.style.alignItems = 'center';
         d.innerHTML = `<div style="flex:1;">
             <div style="font-weight:700">${escapeHtml(v.title)}</div>
-            <div class="small-muted tiny">${escapeHtml(v.link)}</div>
+            <div class="small-muted tiny">Series ID: <code>${escapeHtml(v.seriesId)}</code></div>
           </div>
-          <button class="btn-red" data-id="${v.id}">Delete</button>`;
+          <button class="btn-red" data-id="${v.seriesId}">Delete Series</button>`;
         out.appendChild(d);
         d.querySelector('.btn-red').addEventListener('click', async () => {
-          if (confirm(`Are you sure you want to delete "${v.title}"?`)) {
+          if (confirm(`Are you sure you want to delete the entire series "${v.title}"? This will delete all episodes.`)) {
             try {
-              toast(`Deleting video...`);
-              await apiDelete('videos', v.id);
-              toast('Video deleted successfully!');
+              toast(`Deleting series...`);
+              await apiDeleteBySeriesId('videos', v.seriesId);
+              toast('Series deleted successfully!');
               await loadInitial();
             } catch (e) {
               console.error(e);
-              toast('Failed to delete video.');
+              toast('Failed to delete series.');
             }
           }
         });
@@ -896,6 +881,7 @@
 
     qs('#btnUpload').addEventListener('click', async ()=>{
       if(!STATE.user || STATE.user.email !== adminEmail){ toast('Only admin can upload (sign in with admin email).'); return; }
+      const seriesId = qs('#uploadId').value.trim();
       const title = qs('#uploadTitle').value.trim();
       const link = qs('#uploadLink').value.trim();
       const category = qs('#uploadCategory').value.trim();
@@ -903,11 +889,12 @@
       const episode = qs('#uploadEpisode').value.trim();
       const description = qs('#uploadDescription').value.trim();
       const thumbnail = qs('#uploadThumbnail').value.trim();
-      if(!title || !link){ toast('Title and Link required'); return; }
+      if(!seriesId || !title || !link){ toast('Series ID, Title and Link are required'); return; }
       const pb = qs('#uploadProgress'); pb.style.width = '5%';
       let p = 5; const iv = setInterval(()=>{ p = Math.min(95, p+8); pb.style.width = p+'%'; }, 180);
       try{
         const row = {
+          seriesId: seriesId,
           id: rid('vid'),
           title, link, category, season, episode, description, thumbnail,
           uploadedBy: STATE.user.email,
@@ -916,8 +903,8 @@
         await apiPost('videos', row);
         clearInterval(iv); pb.style.width = '100%';
         setTimeout(()=> pb.style.width = '0%', 500);
-        qs('#uploadTitle').value=''; qs('#uploadLink').value=''; qs('#uploadCategory').value='';
-        qs('#uploadSeason').value=''; qs('#uploadEpisode').value='';
+        qs('#uploadId').value=''; qs('#uploadTitle').value=''; qs('#uploadLink').value='';
+        qs('#uploadCategory').value=''; qs('#uploadSeason').value=''; qs('#uploadEpisode').value='';
         qs('#uploadDescription').value=''; qs('#uploadThumbnail').value='';
         toast('Upload successful!');
         await loadInitial();
