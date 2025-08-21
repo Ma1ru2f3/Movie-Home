@@ -73,6 +73,13 @@
     .episode-item .title{font-weight:600}
     @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} nav{overflow:auto} .details-page .header{height:200px} }
     .hidden { display: none; }
+    .manage-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border-bottom: 1px solid var(--border-color);
+    }
   </style>
 </head>
 <body>
@@ -155,16 +162,16 @@
             <div id="adminBlock" class="card" style="display:none">
               <div class="card-body">
                 <div style="font-weight:800;margin-bottom:8px">🛠️ Admin Dashboard</div>
-                
+
                 <div style="font-weight:700">Upload Video</div>
                 <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
                   <input id="uploadTitle" type="text" placeholder="Title" />
                   <input id="uploadLink" type="text" placeholder="Video link" />
+                  <input id="uploadThumbnail" type="text" placeholder="Thumbnail link" />
                   <input id="uploadCategory" type="text" placeholder="Category" />
                   <input id="uploadSeason" type="text" placeholder="Season" />
                   <input id="uploadEpisode" type="text" placeholder="Episode" />
                   <textarea id="uploadDescription" rows="3" placeholder="Description"></textarea>
-                  <input id="uploadThumbnail" type="text" placeholder="Thumbnail link" />
                   <div class="row">
                     <button id="btnUpload" class="btn-emerald">Upload</button>
                     <div style="flex:1"></div>
@@ -174,7 +181,7 @@
                 <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
                 <div style="font-weight:700">Manage Videos</div>
                 <div id="manageVideosBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
-                
+
                 <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
                 <div style="font-weight:700; display: flex; align-items: center; justify-content: space-between;">
                     <span>Manage Users</span>
@@ -199,13 +206,15 @@
   <script>
     const CONFIG = {
       ADMIN_EMAIL: "mymaruf94@gmail.com",
-      SHEETDB_API: "https://sheetdb.io/api/v1/8j681cv0tysp5",
+      // SheetDB.io API ID
+      SHEETDB_API: "https://sheetdb.io/api/v1/119036146469-73jdpok05fq99vfq8naat0airpdcn8f1.apps.googleusercontent.com", 
+      // Google Client ID
       GOOGLE_CLIENT_ID: "119036146469-73jdpok05fq99vfq8naat0airpdcn8f1.apps.googleusercontent.com"
     };
 
     const OWNER_INFO = {
         name: "Video Hub",
-        about: "Your home for anime & series.",
+        about: "Your home for movies and series.",
         contact: "Mymaruf94@gmail.com"
     };
 
@@ -242,15 +251,13 @@
       videos: [],
       users: [], 
       user: JSON.parse(localStorage.getItem('bv_user') || 'null'),
-      history: JSON.parse(localStorage.getItem('bv_history') || '[]'),
       owner: OWNER_INFO,
     };
-    
+
     function getFileIdFromLink(link) {
-      if (link && link.includes('drive.google.com/file/d/')) {
+      if (link && (link.includes('drive.google.com/file/d/') || link.includes('drive.google.com/open?id=') || link.includes('drive.google.com/uc?export=download&id='))) {
         try {
-          const parts = link.split('/d/');
-          const fileId = parts[1].split('/')[0];
+          const fileId = link.match(/\/d\/(.*?)\/|\?id=(.*?)$/)[1];
           return fileId;
         } catch (e) {
           console.error('Failed to parse Google Drive link:', e);
@@ -276,7 +283,7 @@
           apiGet('videos').catch(()=>[]),
           apiGet('users').catch(()=>[])
         ]);
-        
+
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
           id: r.id || r.ID || rid('vid'),
           title: r.title || r.Title || r.name || 'Untitled',
@@ -289,14 +296,14 @@
           description: r.description || '',
           thumbnail: getThumbnailLink(r.thumbnail) || 'https://via.placeholder.com/150x225.png?text=No+Image'
         })) : []);
-        
+
         STATE.users = (Array.isArray(usersRaw) ? usersRaw.map(r => ({
-            id: r.id || r.ID,
+            id: r.id || r.ID || rid('usr'),
             name: r.name || r.Name || 'Unknown',
             email: r.email || r.Email || 'No email',
-            createdAt: r.createdAt || ''
+            googleId: r.googleId || r.GoogleId || ''
         })) : []);
-        
+
         renderAll();
       }catch(e){
         console.error(e);
@@ -315,7 +322,7 @@
       const trending = STATE.videos.filter(v => v.category.toLowerCase().includes('trending'));
       const popular = STATE.videos.filter(v => v.category.toLowerCase().includes('popular'));
       const categories = [...new Set(STATE.videos.map(v => v.category))];
-      
+
       renderGroupedVideoSection(qs('#trendingVideos'), trending);
       renderGroupedVideoSection(qs('#popularVideos'), popular);
       renderCategories(qs('#categoryChips'), categories);
@@ -323,7 +330,7 @@
       renderGroupedVideoSection(qs('#seriesGrid'), STATE.videos.filter(v=>v.category.toLowerCase().includes('series')));
 
     }
-    
+
     function renderGroupedVideoSection(container, videos){
       container.innerHTML = '';
       if(!videos.length){
@@ -348,12 +355,18 @@
 
     function renderUngroupedVideos(container, videos) {
       container.innerHTML = '';
+      if(!videos.length){
+        container.innerHTML = '<div style="color:var(--text-secondary)">No videos found.</div>';
+        return;
+      }
       videos.forEach(v => {
         const card = document.createElement('div');
-        card.className = 'content-card';
-        card.style.width = '100%';
-        card.innerHTML = `<img src="${v.thumbnail}" alt="${v.title}">
-                          <div class="content-card-title">${escapeHtml(v.title)}</div>`;
+        card.className = 'card';
+        card.innerHTML = `<div class="card-body">
+                            <div style="font-weight:700">${escapeHtml(v.title)}</div>
+                            <div class="small-muted">${escapeHtml(v.category)}</div>
+                            <div class="small-muted">Season ${escapeHtml(v.season)}, Episode ${escapeHtml(v.episode)}</div>
+                          </div>`;
         card.onclick = () => showVideoDetails(v);
         container.appendChild(card);
       });
@@ -363,24 +376,29 @@
       container.innerHTML = '';
       const uniqueCategories = [...new Set(categories)];
       uniqueCategories.forEach(cat => {
+        if(!cat) return;
         const chip = document.createElement('div');
         chip.className = 'chip';
         chip.textContent = cat;
         chip.onclick = () => {
-          const filtered = STATE.videos.filter(v => v.category === cat);
+          const filtered = STATE.videos.filter(v => v.category.toLowerCase() === cat.toLowerCase());
           const grid = qs('#searchResults');
           grid.innerHTML = '';
-          filtered.forEach(v => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `<div class="card-body">
-                                <div style="font-weight:700">${escapeHtml(v.title)}</div>
-                                <div class="small-muted">${escapeHtml(v.category)}</div>
-                                <div class="small-muted">Season ${escapeHtml(v.season)}, Episode ${escapeHtml(v.episode)}</div>
-                              </div>`;
-            card.onclick = () => showVideoDetails(v);
-            grid.appendChild(card);
-          });
+          if (filtered.length === 0) {
+            grid.innerHTML = '<div style="text-align:center;color:var(--text-secondary);width:100%">No results found.</div>';
+          } else {
+            filtered.forEach(v => {
+              const card = document.createElement('div');
+              card.className = 'card';
+              card.innerHTML = `<div class="card-body">
+                                  <div style="font-weight:700">${escapeHtml(v.title)}</div>
+                                  <div class="small-muted">${escapeHtml(v.category)}</div>
+                                  <div class="small-muted">Season ${escapeHtml(v.season)}, Episode ${escapeHtml(v.episode)}</div>
+                                </div>`;
+              card.onclick = () => showVideoDetails(v);
+              grid.appendChild(card);
+            });
+          }
           setPane('search');
         };
         container.appendChild(chip);
@@ -392,17 +410,17 @@
       const episodes = STATE.videos.filter(v => v.title === video.title);
       const seasons = [...new Set(episodes.map(e => e.season).filter(s => s))].sort((a,b) => a-b);
       const firstSeasonEpisodes = episodes.filter(e => e.season === seasons[0]).sort((a,b) => a.episode - b.episode);
-      
+
       const episodeListHTML = firstSeasonEpisodes.map(ep => `
           <div class="episode-item" data-id="${ep.id}">
               <img src="${getThumbnailLink(ep.thumbnail)}" alt="${ep.title}">
               <div class="info">
-                  <div class="title">E${ep.episode}: ${ep.title}</div>
+                  <div class="title">E${escapeHtml(ep.episode)}: ${escapeHtml(ep.title)}</div>
                   <div class="small-muted">...</div>
               </div>
           </div>
       `).join('');
-      
+
       const seasonOptions = seasons.map(s => `<option value="${s}">Season ${s}</option>`).join('');
 
       page.innerHTML = `
@@ -445,7 +463,7 @@
               <div class="episode-item" data-id="${ep.id}">
                   <img src="${getThumbnailLink(ep.thumbnail)}" alt="${ep.title}">
                   <div class="info">
-                      <div class="title">E${ep.episode}: ${ep.title}</div>
+                      <div class="title">E${escapeHtml(ep.episode)}: ${escapeHtml(ep.title)}</div>
                       <div class="small-muted">...</div>
                   </div>
               </div>
@@ -462,7 +480,7 @@
               });
           });
       });
-      
+
       qsa('#episodesContainer .episode-item').forEach(item => {
           item.addEventListener('click', () => {
               const videoId = item.dataset.id;
@@ -473,7 +491,7 @@
               }
           });
       });
-      
+
       qs('.btn-primary').addEventListener('click', () => {
           const iframe = qs('#video-player');
           iframe.src = getEmbedLink(video.link);
@@ -495,24 +513,25 @@
             renderProfile();
         }
     }
-    
+
     qsa('#topNav .tab').forEach(btn => {
         btn.addEventListener('click', () => {
             const paneId = btn.dataset.pane;
             setPane(paneId);
         });
     });
-    
+
     qs('#searchInput').addEventListener('input', (e) => {
         const query = e.target.value.trim().toLowerCase();
         const resultsContainer = qs('#searchResults');
         resultsContainer.innerHTML = '';
         if(query.length > 0){
             const filteredVideos = STATE.videos.filter(v => 
-                v.title && v.title.toLowerCase().includes(query)
+                (v.title && v.title.toLowerCase().includes(query)) ||
+                (v.category && v.category.toLowerCase().includes(query))
             );
             if(filteredVideos.length === 0){
-                resultsContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary)">No results found.</div>';
+                resultsContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary);width:100%">No results found.</div>';
             } else {
                 filteredVideos.forEach(v => {
                     const card = document.createElement('div');
@@ -538,21 +557,19 @@
       }
       STATE.videos.forEach(v => {
         const d = document.createElement('div');
-        d.style.padding = '8px';
-        d.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-        d.style.display = 'flex';
-        d.style.alignItems = 'center';
+        d.className = 'manage-item';
         d.innerHTML = `<div style="flex:1;">
             <div style="font-weight:700">${escapeHtml(v.title)}</div>
             <div class="small-muted tiny">${escapeHtml(v.link)}</div>
           </div>
           <button class="btn-red" data-id="${v.id}">Delete</button>`;
         out.appendChild(d);
-        d.querySelector('.btn-red').addEventListener('click', async () => {
-          if (confirm(`Are you sure you want to delete "${v.title}"?`)) {
+        d.querySelector('.btn-red').addEventListener('click', async (e) => {
+          const videoId = e.target.dataset.id;
+          if (confirm(`Are you sure you want to delete this video?`)) {
             try {
               toast(`Deleting video...`);
-              await apiDelete('videos', v.id);
+              await apiDelete('videos', videoId);
               toast('Video deleted successfully!');
               await loadInitial();
             } catch (e) {
@@ -573,10 +590,7 @@
         }
         STATE.users.forEach(u => {
             const d = document.createElement('div');
-            d.style.padding = '8px';
-            d.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-            d.style.display = 'flex';
-            d.style.flexDirection = 'column';
+            d.className = 'manage-item';
             d.innerHTML = `<div><strong style="font-weight:700">${escapeHtml(u.name)}</strong></div>
                            <div class="small-muted tiny">${escapeHtml(u.email)}</div>
                            <div class="small-muted tiny">ID: <code>${escapeHtml(u.id)}</code></div>`;
@@ -624,7 +638,7 @@
         console.error(e); toast('Upload failed');
       }
     });
-    
+
     function renderSiteHeader(){
       qs('#siteName').textContent = OWNER_INFO.name;
       qs('#siteAbout').textContent = OWNER_INFO.about;
@@ -641,18 +655,19 @@
           name: payload.name,
           email: payload.email,
           picture: payload.picture,
+          googleId: payload.sub,
           id_token,
           localId: rid('usr')
         };
-        
+
         STATE.user = user;
         localStorage.setItem('bv_user', JSON.stringify(user));
-        
+
         const existingUser = STATE.users.find(u => u.email === user.email);
         if (!existingUser) {
-          apiPost('users', { id: user.localId, name: user.name, email: user.email, createdAt: new Date().toISOString() }).catch(e => console.error("Error saving user:", e));
+          apiPost('users', { id: user.localId, name: user.name, email: user.email, googleId: user.googleId }).catch(e => console.error("Error saving user:", e));
         }
-        
+
         renderAll();
         setPane('profile');
       }catch(e){ console.error('GSI parse error', e); }
@@ -668,7 +683,7 @@
     function renderProfile(){
       const area = qs('#profileArea');
       const gsiButtonDiv = qs('#gsi-profile-signin');
-      
+
       if(!STATE.user){
         area.innerHTML = `<div style="text-align:center;">
             <div style="margin-top:8px; text-align:center;" class="small-muted">Sign in with Google to view your profile and the Admin Dashboard (if you're an admin).</div>
