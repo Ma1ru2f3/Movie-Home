@@ -63,6 +63,84 @@
     .episode-item .title { font-weight: 600; }
     .hidden { display: none; }
     .manage-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--border-color); }
+    
+    /* More Menu Specific CSS */
+    .more-menu-pane {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg-dark);
+        z-index: 300;
+        transform: translateX(100%);
+        transition: transform 0.3s ease-in-out;
+        padding: 20px;
+        box-sizing: border-box;
+        overflow-y: auto;
+    }
+    .more-menu-pane.active {
+        transform: translateX(0);
+    }
+    .more-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 0;
+        border-bottom: 1px solid var(--border-color);
+        cursor: pointer;
+    }
+    .more-menu-item .icon { font-size: 20px; }
+    .more-menu-item .text { font-size: 16px; font-weight: 600; }
+    .more-menu-item .arrow { margin-left: auto; color: var(--text-secondary); }
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .profile-header img {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .profile-header .info .name { font-weight: 800; font-size: 18px; }
+    .profile-header .info .email { font-size: 14px; color: var(--text-secondary); }
+    
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: var(--bg-dark);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      z-index: 400;
+    }
+
+    .bottom-nav-item {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .bottom-nav-item.active {
+      color: var(--text-primary);
+    }
+
+    .bottom-nav-item .icon {
+      font-size: 24px;
+    }
+
   </style>
 </head>
 <body>
@@ -81,13 +159,6 @@
           Download App
         </a>
       </div>
-      <nav id="topNav">
-        <button class="tab active" data-pane="home">🏠 Home</button>
-        <button class="tab" data-pane="search">🔍 Search</button>
-        <button class="tab" data-pane="movies">🎞️ Movies</button>
-        <button class="tab" data-pane="series">📺 Series</button>
-        <button class="tab" data-pane="profile">👤 Profile</button>
-      </nav>
     </header>
 
     <main class="container">
@@ -117,61 +188,115 @@
         <div style="font-weight:800;font-size:24px">Series</div>
         <div id="seriesGrid" class="grid cols-2"></div>
       </div>
-
-      <div id="paneProfile" class="pane" style="display:none">
-        <div class="grid" style="grid-template-columns:1fr 360px;gap:14px">
-          <div class="col">
-            <div class="card">
-              <div class="card-body">
-                <div style="font-weight:800;margin-bottom:8px">👤 My Profile</div>
-                <div id="profileArea"></div>
-              </div>
-            </div>
-          </div>
-          <div class="col">
-            <div id="adminBlock" class="card" style="display:none">
-              <div class="card-body">
-                <div style="font-weight:800;margin-bottom:8px">🛠️ Admin Dashboard</div>
-                <div style="font-weight:700">Upload Video</div>
-                <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
-                  <input id="uploadTitle" type="text" placeholder="Title" />
-                  <input id="uploadLink" type="text" placeholder="Video link" />
-                  <input id="uploadThumbnail" type="text" placeholder="Thumbnail link" />
-                  <input id="uploadCategory" type="text" placeholder="Category" />
-                  <input id="uploadSeason" type="text" placeholder="Season" />
-                  <input id="uploadEpisode" type="text" placeholder="Episode" />
-                  <textarea id="uploadDescription" rows="3" placeholder="Description"></textarea>
-                  <div class="row">
-                    <button id="btnUpload" class="btn-emerald">Upload</button>
-                    <div style="flex:1"></div>
-                  </div>
-                  <div class="progress-wrap"><div id="uploadProgress" class="progress-bar"></div></div>
-                </div>
-                <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
-                <div style="font-weight:700">Manage Videos</div>
-                <div id="manageVideosBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
-                <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
-                <div style="font-weight:700; display: flex; align-items: center; justify-content: space-between;">
-                    <span>Manage Users</span>
-                    <button id="btnShowUsers" class="btn-primary" style="padding: 6px 10px;">Show Users</button>
-                </div>
-                <div id="manageUsersBlock" class="hidden" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
-              </div>
-            </div>
-            <div style="height:12px"></div>
-            <div class="card">
-              <div class="card-body">
-                <div style="font-weight:800;margin-bottom:8px">🔒 Login Info</div>
-                <div id="gsi-profile-signin"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </main>
 
     <div id="videoDetailsPage" class="details-page"></div>
 
+    <div id="moreMenuPane" class="more-menu-pane">
+        <div style="font-size:24px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;gap:15px">
+            <span id="closeMoreMenu" style="cursor:pointer">←</span> Global Settings
+        </div>
+        <div id="profileSection" class="profile-header"></div>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);" />
+        <div id="moreMenuOptions">
+            <div class="more-menu-item">
+                <span class="icon">⚙️</span>
+                <span class="text">Settings</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="more-menu-item">
+                <span class="icon">🗓️</span>
+                <span class="text">Upcoming</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="more-menu-item">
+                <span class="icon">🔀</span>
+                <span class="text">Shuffle Play</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="more-menu-item">
+                <span class="icon">⭐</span>
+                <span class="text">Favorites</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="more-menu-item">
+                <span class="icon">⬇️</span>
+                <span class="text">Downloads</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="more-menu-item">
+                <span class="icon">🗂️</span>
+                <span class="text">Genre</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="more-menu-item">
+                <span class="icon">💬</span>
+                <span class="text">Request</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="more-menu-item">
+                <span class="icon">⚠️</span>
+                <span class="text">Report</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="more-menu-item">
+                <span class="icon">📜</span>
+                <span class="text">Terms & Conditions</span>
+                <span class="arrow">></span>
+            </div>
+            <div class="more-menu-item">
+                <span class="icon">🔐</span>
+                <span class="text">Privacy Policy</span>
+                <span class="arrow">></span>
+            </div>
+        </div>
+        
+        <div id="adminBlock" style="margin-top:20px; display:none;">
+            <div style="font-weight:800;font-size:18px;margin-bottom:12px">🛠️ Admin Dashboard</div>
+            <div style="font-weight:700">Upload Video</div>
+            <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
+              <input id="uploadTitle" type="text" placeholder="Title" />
+              <input id="uploadLink" type="text" placeholder="Video link" />
+              <input id="uploadThumbnail" type="text" placeholder="Thumbnail link" />
+              <input id="uploadCategory" type="text" placeholder="Category" />
+              <input id="uploadSeason" type="text" placeholder="Season" />
+              <input id="uploadEpisode" type="text" placeholder="Episode" />
+              <textarea id="uploadDescription" rows="3" placeholder="Description"></textarea>
+              <div class="row">
+                <button id="btnUpload" class="btn-emerald">Upload</button>
+                <div style="flex:1"></div>
+              </div>
+              <div class="progress-wrap"><div id="uploadProgress" class="progress-bar"></div></div>
+            </div>
+            <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
+            <div style="font-weight:700">Manage Videos</div>
+            <div id="manageVideosBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
+            <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
+            <div style="font-weight:700; display: flex; align-items: center; justify-content: space-between;">
+                <span>Manage Users</span>
+                <button id="btnShowUsers" class="btn-primary" style="padding: 6px 10px;">Show Users</button>
+            </div>
+            <div id="manageUsersBlock" class="hidden" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="bottom-nav-item active" data-pane="home">
+        <span class="icon">🏠</span> Home
+      </div>
+      <div class="bottom-nav-item" data-pane="search">
+        <span class="icon">🔍</span> Search
+      </div>
+      <div class="bottom-nav-item" data-pane="movies">
+        <span class="icon">🎞️</span> Movies
+      </div>
+      <div class="bottom-nav-item" data-pane="series">
+        <span class="icon">📺</span> Series
+      </div>
+      <div class="bottom-nav-item" data-pane="more">
+        <span class="icon">☰</span> More
+      </div>
+    </div>
   </div>
 
   <script>
@@ -284,7 +409,7 @@
         if(STATE.user && STATE.user.email === adminEmail){
             renderManageVideos();
         }
-        renderProfile();
+        renderProfileHeader();
     }
 
     function renderHomeContent(){
@@ -475,19 +600,26 @@
 
     function setPane(paneId){
         qsa('.pane').forEach(p => p.style.display = 'none');
-        qs(`#pane${paneId.charAt(0).toUpperCase() + paneId.slice(1)}`).style.display = 'block';
-        qsa('#topNav .tab').forEach(t => t.classList.remove('active'));
-        qs(`#topNav [data-pane="${paneId}"]`).classList.add('active');
-        if(paneId === 'profile') {
-            renderProfile();
+        if (paneId !== 'more') {
+            qs(`#pane${paneId.charAt(0).toUpperCase() + paneId.slice(1)}`).style.display = 'block';
+            qs('#moreMenuPane').classList.remove('active');
+        } else {
+            qs('#moreMenuPane').classList.add('active');
         }
+        
+        qsa('.bottom-nav-item').forEach(t => t.classList.remove('active'));
+        qs(`.bottom-nav-item[data-pane="${paneId}"]`).classList.add('active');
     }
 
-    qsa('#topNav .tab').forEach(btn => {
+    qsa('.bottom-nav-item').forEach(btn => {
         btn.addEventListener('click', () => {
             const paneId = btn.dataset.pane;
             setPane(paneId);
         });
+    });
+
+    qs('#closeMoreMenu').addEventListener('click', () => {
+        qs('#moreMenuPane').classList.remove('active');
     });
 
     qs('#searchInput').addEventListener('input', (e) => {
@@ -635,52 +767,62 @@
         }
 
         renderAll();
-        setPane('profile');
+        renderProfileHeader();
       }catch(e){ console.error('GSI parse error', e); }
     }
 
     function signOut(){
       STATE.user = null;
       localStorage.removeItem('bv_user');
-      renderAll();
+      renderProfileHeader();
       toast('Signed out');
     }
 
-    function renderProfile(){
-      const area = qs('#profileArea');
-      const gsiButtonDiv = qs('#gsi-profile-signin');
-
+    function renderProfileHeader(){
+      const area = qs('#profileSection');
+      const adminBlock = qs('#adminBlock');
+      const gsiButtonContainer = document.createElement('div');
+      gsiButtonContainer.id = 'gsi-profile-signin-container';
+      
+      area.innerHTML = '';
       if(!STATE.user){
-        area.innerHTML = `<div style="text-align:center;">
-            <div style="margin-top:8px; text-align:center;" class="small-muted">Sign in with Google to view your profile and the Admin Dashboard (if you're an admin).</div>
-        </div>`;
-        gsiButtonDiv.style.display = 'block';
-        window.google.accounts.id.renderButton(gsiButtonDiv, { theme: 'filled_blue', size: 'large', text: 'signin_with' });
-        qs('#adminBlock').style.display = 'none';
+        area.innerHTML = `
+          <div class="profile-header">
+            <span class="icon" style="font-size: 60px;">👤</span>
+            <div class="info">
+              <div class="name">Guest User</div>
+              <div class="email">Sign in to manage profile</div>
+            </div>
+          </div>
+          <div style="text-align: center; margin-top: 20px;">
+              <button id="btnSignIn" class="btn-primary" style="padding: 10px 20px;">Sign In with Google</button>
+          </div>
+        `;
+        qs('#btnSignIn').onclick = () => {
+            google.accounts.id.prompt();
+        };
+        adminBlock.style.display = 'none';
       } else {
         const u = STATE.user;
         area.innerHTML = `
-          <div style="display:flex;flex-direction:column;gap:12px;align-items:center;padding:12px;text-align:center">
-            ${u.picture?`<img src="${u.picture}" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--accent-red)">`:`<div style="width:96px;height:96px;border-radius:50%;background:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:3rem">🙂</div>`}
-            <div>
-              <div style="font-weight:800;font-size:1.2rem">${escapeHtml(u.name)}</div>
-              <div class="small-muted">${escapeHtml(u.email)}</div>
-              <div class="small-muted tiny">User ID: <code>${escapeHtml(u.localId)}</code></div>
+          <div class="profile-header">
+            ${u.picture ? `<img src="${u.picture}" alt="${u.name}">` : `<span class="icon" style="font-size: 60px;">👤</span>`}
+            <div class="info">
+              <div class="name">${escapeHtml(u.name)}</div>
+              <div class="email">${escapeHtml(u.email)}</div>
             </div>
           </div>
-          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:12px 0"/>
-          <div style="margin-top:12px;text-align:center">
-            <button id="btnSignOut" class="btn-red" style="padding: 8px 24px;">Sign out</button>
+          <div style="text-align: center; margin-top: 20px;">
+              <button id="btnSignOut" class="btn-red" style="padding: 10px 20px;">Logout</button>
           </div>
         `;
         qs('#btnSignOut').onclick = ()=> signOut();
-        gsiButtonDiv.style.display = 'none';
 
         if(u.email === adminEmail){
-          qs('#adminBlock').style.display = 'block';
+          adminBlock.style.display = 'block';
           renderManageVideos();
         } else {
-          qs('#adminBlock').style.display = 'none';
+          adminBlock.style.display = 'none';
         }
       }
     }
@@ -703,6 +845,7 @@
         client_id: CONFIG.GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse
       });
+      renderProfileHeader();
     })();
   </script>
 </body>
