@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Video Hub</title>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root{
       --bg-dark: #121212;
@@ -53,12 +52,22 @@
     .content-card-title{font-size:14px;font-weight:600;margin-top:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
     .logo-container img{width:60px;height:60px;object-fit:contain;border-radius:10px}
     .logo-container{flex-shrink:0}
-    .details-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
+    .details-page, .signup-page, .gatekeeper-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
+    .gatekeeper-page {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+    }
+    .gatekeeper-page h1{font-size: 28px; margin-bottom: 12px;}
+    .gatekeeper-page p {color: var(--text-secondary); margin-bottom: 24px;}
     .details-page .header{position:relative;height:300px;overflow:hidden;background:var(--card-bg)}
     .details-page .header iframe{width:100%;height:100%;}
-    .details-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
-    .details-page .body{padding:20px}
-    .details-page h1{font-size:24px;margin:0;font-weight:800}
+    .details-page .back-btn, .signup-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
+    .details-page .body, .signup-page .body{padding:20px}
+    .details-page h1, .signup-page h1{font-size:24px;margin:0;font-weight:800}
     .details-page .meta-info{display:flex;gap:10px;margin-top:8px;color:var(--text-secondary);font-size:14px}
     .details-page .btn-group{margin-top:15px;display:flex;gap:10px;justify-content:center}
     .details-page .overview{margin-top:20px;line-height:1.6}
@@ -72,8 +81,6 @@
     .more-options h2{margin-top:0;font-size:20px;font-weight:700;}
     @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} .details-page .header{height:200px} }
     .hidden { display: none; }
-
-    /* Bottom Navigation Styles */
     nav{
         position: fixed;
         bottom: 0;
@@ -82,7 +89,7 @@
         background: var(--bg-dark);
         border-top: 1px solid var(--border-color);
         z-index: 100;
-        display: flex;
+        display: none; /* Hide by default */
         justify-content: space-around;
         padding: 10px 0;
     }
@@ -102,7 +109,6 @@
     .tab span.icon { font-size: 24px; }
     .tab.active{ color: var(--text-primary); }
     .tab.active .icon { color: var(--accent); }
-    
     .profile-info {
         display: flex;
         align-items: center;
@@ -122,145 +128,169 @@
 </head>
 <body>
   <div id="app">
-    <header class="container">
-      <div class="hdr">
-        <div class="logo">🎬</div>
-        <div>
-          <div class="site-title" id="siteName">Video Hub</div>
-          <div class="site-sub" id="siteAbout">Movie & Series Library</div>
+    <div id="mainContent" class="hidden">
+      <header class="container">
+        <div class="hdr">
+          <div class="logo">🎬</div>
+          <div>
+            <div class="site-title" id="siteName">Video Hub</div>
+            <div class="site-sub" id="siteAbout">Movie & Series Library</div>
+          </div>
+          <div style="flex:1"></div>
+          <a href="javascript:void(0)" onclick="logout()" style="
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            margin-right: 12px;
+          ">
+            Logout
+          </a>
         </div>
-        <div style="flex:1"></div>
-        <a href="https://drive.google.com/uc?export=download&id=1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw" style="
-          display: inline-block;
-          padding: 8px 14px;
-          border-radius: 999px;
-          background: linear-gradient(90deg, #ef4444, #dc2626);
-          color: white;
-          text-decoration: none;
-          font-weight: 600;
-          margin-right: 12px;
-        " download>
-          Download App
-        </a>
-      </div>
-    </header>
-    <main class="container">
-      <div id="paneHome" class="pane">
-        <div class="section-title">Trending</div>
-        <div class="scroll-x" id="trendingVideos"></div>
-        <div class="section-title">Most Popular</div>
-        <div class="scroll-x" id="popularVideos"></div>
-        <div class="section-title">Categories</div>
-        <div class="scroll-x" id="categoryChips"></div>
-      </div>
-      <div id="paneSearch" class="pane" style="display:none">
-        <div class="col" style="margin-bottom:12px">
-          <div style="font-weight:800;font-size:24px">Search</div>
-          <input id="searchInput" type="text" placeholder="🔎 Search by title..." />
+      </header>
+      <main class="container">
+        <div id="paneHome" class="pane">
+          <div class="section-title">Trending</div>
+          <div class="scroll-x" id="trendingVideos"></div>
+          <div class="section-title">Most Popular</div>
+          <div class="scroll-x" id="popularVideos"></div>
+          <div class="section-title">Categories</div>
+          <div class="scroll-x" id="categoryChips"></div>
         </div>
-        <div id="searchResults" class="grid cols-2"></div>
-      </div>
-      <div id="paneMovies" class="pane" style="display:none">
-        <div style="font-weight:800;font-size:24px">Movies</div>
-        <div id="moviesGrid" class="grid cols-2"></div>
-      </div>
-      <div id="paneSeries" class="pane" style="display:none">
-        <div style="font-weight:800;font-size:24px">Series</div>
-        <div id="seriesGrid" class="grid cols-2"></div>
-      </div>
-      <div id="paneMore" class="pane" style="display:none">
-        <div style="font-weight:800;font-size:24px; margin-bottom: 20px;">More</div>
-
-        <div id="profileSection" class="card" style="margin-bottom: 20px;">
-            <div class="card-body">
-                <div class="profile-info hidden">
-                    <img id="profilePicture" src="" alt="Profile Picture">
-                    <div>
-                        <div id="profileName" class="name"></div>
-                        <div id="profileEmail" class="small-muted"></div>
+        <div id="paneSearch" class="pane" style="display:none">
+          <div class="col" style="margin-bottom:12px">
+            <div style="font-weight:800;font-size:24px">Search</div>
+            <input id="searchInput" type="text" placeholder="🔎 Search by title..." />
+          </div>
+          <div id="searchResults" class="grid cols-2"></div>
+        </div>
+        <div id="paneMovies" class="pane" style="display:none">
+          <div style="font-weight:800;font-size:24px">Movies</div>
+          <div id="moviesGrid" class="grid cols-2"></div>
+        </div>
+        <div id="paneSeries" class="pane" style="display:none">
+          <div style="font-weight:800;font-size:24px">Series</div>
+          <div id="seriesGrid" class="grid cols-2"></div>
+        </div>
+        <div id="paneMore" class="pane" style="display:none">
+          <div style="font-weight:800;font-size:24px; margin-bottom: 20px;">More</div>
+          <div class="more-options">
+            <div class="card" onclick="openAdminLogin()">
+              <div class="card-body">Admin Login</div>
+            </div>
+            <div class="card" onclick="showFeatureAlert('Settings')">
+              <div class="card-body">Settings</div>
+            </div>
+            <div class="card" onclick="showComingSoonAlert('Upcoming')">
+              <div class="card-body">Upcoming</div>
+            </div>
+            <div class="card" onclick="showComingSoonAlert('Shuffle Play')">
+              <div class="card-body">Shuffle Play</div>
+            </div>
+            <div class="card" onclick="showFavorites()">
+              <div class="card-body">Favorites</div>
+            </div>
+            <div class="card" onclick="showDownloads()">
+              <div class="card-body">Downloads</div>
+            </div>
+            <div class="card" onclick="showFeatureAlert('Genre')">
+              <div class="card-body">Genre</div>
+            </div>
+            <div class="card" onclick="promptRequest()">
+              <div class="card-body">Request</div>
+            </div>
+            <div class="card" onclick="promptReport()">
+              <div class="card-body">Report</div>
+            </div>
+            <div class="card" onclick="openPage('terms')">
+              <div class="card-body">Terms & Conditions</div>
+            </div>
+            <div class="card" onclick="openPage('privacy')">
+              <div class="card-body">Privacy policy</div>
+            </div>
+            
+            <div id="adminBlock" class="card hidden" style="margin-top: 20px;">
+                <div class="card-body">
+                  <div style="font-weight:800;margin-bottom:8px">🛠️ Admin Dashboard</div>
+                  
+                  <div style="font-weight:700">Upload Video</div>
+                  <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
+                    <input id="uploadId" type="text" placeholder="Series/Movie ID (e.g., Naruto_Shippuden)" />
+                    <input id="uploadTitle" type="text" placeholder="Title (e.g., Naruto Shippuden)" />
+                    <input id="uploadLink" type="text" placeholder="Video link" />
+                    <input id="uploadCategory" type="text" placeholder="Category" />
+                    <input id="uploadSeason" type="text" placeholder="Season" />
+                    <input id="uploadEpisode" type="text" placeholder="Episode" />
+                    <textarea id="uploadDescription" rows="3" placeholder="Description"></textarea>
+                    <input id="uploadThumbnail" type="text" placeholder="Thumbnail link" />
+                    <div class="row">
+                      <button id="btnUpload" class="btn-emerald">Upload</button>
+                      <div style="flex:1"></div>
                     </div>
-                </div>
-                <div id="loginSection" style="text-align: center;">
-                    <div id="gsi-signin" style="display: inline-block;"></div>
-                </div>
-                <div id="logoutSection" class="hidden" style="text-align: center; margin-top: 15px;">
-                    <button class="btn-red" onclick="signOut()">Log out</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="more-options">
-          <div class="card" onclick="showFeatureAlert('Settings')">
-            <div class="card-body">Settings</div>
-          </div>
-          <div class="card" onclick="showComingSoonAlert('Upcoming')">
-            <div class="card-body">Upcoming</div>
-          </div>
-          <div class="card" onclick="showComingSoonAlert('Shuffle Play')">
-            <div class="card-body">Shuffle Play</div>
-          </div>
-          <div class="card" onclick="showFavorites()">
-            <div class="card-body">Favorites</div>
-          </div>
-          <div class="card" onclick="showDownloads()">
-            <div class="card-body">Downloads</div>
-          </div>
-          <div class="card" onclick="showFeatureAlert('Genre')">
-            <div class="card-body">Genre</div>
-          </div>
-          <div class="card" onclick="promptRequest()">
-            <div class="card-body">Request</div>
-          </div>
-          <div class="card" onclick="promptReport()">
-            <div class="card-body">Report</div>
-          </div>
-          <div class="card" onclick="openPage('terms')">
-            <div class="card-body">Terms & Conditions</div>
-          </div>
-          <div class="card" onclick="openPage('privacy')">
-            <div class="card-body">Privacy policy</div>
-          </div>
-          
-          <div id="adminBlock" class="card" style="display:none; margin-top: 20px;">
-              <div class="card-body">
-                <div style="font-weight:800;margin-bottom:8px">🛠️ Admin Dashboard</div>
-                
-                <div style="font-weight:700">Upload Video</div>
-                <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
-                  <input id="uploadId" type="text" placeholder="Series/Movie ID (e.g., Naruto_Shippuden)" />
-                  <input id="uploadTitle" type="text" placeholder="Title (e.g., Naruto Shippuden)" />
-                  <input id="uploadLink" type="text" placeholder="Video link" />
-                  <input id="uploadCategory" type="text" placeholder="Category" />
-                  <input id="uploadSeason" type="text" placeholder="Season" />
-                  <input id="uploadEpisode" type="text" placeholder="Episode" />
-                  <textarea id="uploadDescription" rows="3" placeholder="Description"></textarea>
-                  <input id="uploadThumbnail" type="text" placeholder="Thumbnail link" />
-                  <div class="row">
-                    <button id="btnUpload" class="btn-emerald">Upload</button>
-                    <div style="flex:1"></div>
+                    <div class="progress-wrap"><div id="uploadProgress" class="progress-bar"></div></div>
                   </div>
-                  <div class="progress-wrap"><div id="uploadProgress" class="progress-bar"></div></div>
+                  <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
+                  <div style="font-weight:700; display: flex; align-items: center; justify-content: space-between;">
+                      <span>Manage Videos</span>
+                      <button id="btnShowVideos" class="btn-primary" style="padding: 6px 10px;">Show</button>
+                  </div>
+                  <div id="manageVideosBlock" class="hidden" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
+                  
+                  <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
+                  <div style="font-weight:700; display: flex; align-items: center; justify-content: space-between;">
+                      <span>Manage Users</span>
+                      <button id="btnShowUsers" class="btn-primary" style="padding: 6px 10px;">Show</button>
+                  </div>
+                  <div id="manageUsersBlock" class="hidden" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
                 </div>
-                <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
-                <div style="font-weight:700">Manage Videos</div>
-                <div id="manageVideosBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
-                
-                <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
-                <div style="font-weight:700; display: flex; align-items: center; justify-content: space-between;">
-                    <span>Manage Users</span>
-                    <button id="btnShowUsers" class="btn-primary" style="padding: 6px 10px;">Show Users</button>
-                </div>
-                <div id="manageUsersBlock" class="hidden" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
               </div>
+          </div>
+        </div>
+      </main>
+      <nav id="bottomNav">
+        <button class="tab active" data-pane="home">
+          <span class="icon">🏠</span>
+          <span>Home</span>
+        </button>
+        <button class="tab" data-pane="search">
+          <span class="icon">🔍</span>
+          <span>Search</span>
+        </button>
+        <button class="tab" data-pane="movies">
+          <span class="icon">🎞️</span>
+          <span>Movies</span>
+        </button>
+        <button class="tab" data-pane="series">
+          <span class="icon">📺</span>
+          <span>Series</span>
+        </button>
+        <button class="tab" data-pane="more">
+          <span class="icon">☰</span>
+          <span>More</span>
+        </button>
+      </nav>
+    </div>
+
+    <div id="gatekeeperPage" class="gatekeeper-page">
+        <div style="max-width: 400px; padding: 20px;">
+            <div style="font-size: 60px; margin-bottom: 20px;">🎬</div>
+            <h1>Welcome to Video Hub!</h1>
+            <p>Please sign up to access our full library of movies and series.</p>
+            <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:20px;">
+                <input id="signupName" type="text" placeholder="Full Name" />
+                <input id="signupEmail" type="text" placeholder="Email Address" />
+                <button id="btnSignUp" class="btn-primary" style="padding: 12px;">Create Account</button>
             </div>
         </div>
-      </div>
-    </main>
+    </div>
+
     <div id="videoDetailsPage" class="details-page"></div>
-    
     <div id="termsPage" class="details-page hidden">
         <div class="body">
-            <div class="back-btn" onclick="hidePage('termsPage')">←</div>
+            <div class="back-btn" onclick="hidePage('terms')">←</div>
             <h1 style="margin-top: 50px;">Terms and Conditions</h1>
             <p>Welcome to our video streaming platform. By accessing or using our services, you agree to comply with and be bound by the following terms and conditions of use. Please review these terms carefully. If you do not agree to these terms, you should not use this website.</p>
             <p>The term 'Video Hub' or 'us' or 'we' refers to the owner of the website whose registered office is [Your Company Address]. The term 'you' refers to the user or viewer of our website. The use of this website is subject to the following terms of use:</p>
@@ -280,7 +310,7 @@
 
     <div id="privacyPage" class="details-page hidden">
         <div class="body">
-            <div class="back-btn" onclick="hidePage('privacyPage')">←</div>
+            <div class="back-btn" onclick="hidePage('privacy')">←</div>
             <h1 style="margin-top: 50px;">Privacy Policy</h1>
             <p>This privacy policy sets out how we use and protect any information that you give us when you use this website. We are committed to ensuring that your privacy is protected. Should we ask you to provide certain information by which you can be identified when using this website, then you can be assured that it will only be used in accordance with this privacy statement.</p>
             <p>We may change this policy from time to time by updating this page. You should check this page from time to time to ensure that you are happy with any changes.</p>
@@ -304,7 +334,7 @@
     
     <div id="favoritesPage" class="details-page hidden">
         <div class="body">
-            <div class="back-btn" onclick="hidePage('favoritesPage')">←</div>
+            <div class="back-btn" onclick="hidePage('favorites')">←</div>
             <h1 style="margin-top: 50px;">Your Favorites</h1>
             <div id="favoritesGrid" class="grid cols-2"></div>
         </div>
@@ -312,52 +342,26 @@
 
     <div id="downloadsPage" class="details-page hidden">
         <div class="body">
-            <div class="back-btn" onclick="hidePage('downloadsPage')">←</div>
+            <div class="back-btn" onclick="hidePage('downloads')">←</div>
             <h1 style="margin-top: 50px;">Your Downloads</h1>
             <div id="downloadsGrid" class="grid cols-2"></div>
         </div>
     </div>
-
-    <nav id="bottomNav">
-      <button class="tab active" data-pane="home">
-        <span class="icon">🏠</span>
-        <span>Home</span>
-      </button>
-      <button class="tab" data-pane="search">
-        <span class="icon">🔍</span>
-        <span>Search</span>
-      </button>
-      <button class="tab" data-pane="movies">
-        <span class="icon">🎞️</span>
-        <span>Movies</span>
-      </button>
-      <button class="tab" data-pane="series">
-        <span class="icon">📺</span>
-        <span>Series</span>
-      </button>
-      <button class="tab" data-pane="more">
-        <span class="icon">☰</span>
-        <span>More</span>
-      </button>
-    </nav>
   </div>
   <script>
     const CONFIG = {
-      ADMIN_EMAIL: "mymaruf94@gmail.com",
-      SHEETDB_API: "https://sheetdb.io/api/v1/8j681cv0tysp5",
-      GOOGLE_CLIENT_ID: "119036146469-73jdpok05fq99vfq8naat0airpdcn8f1.apps.googleusercontent.com"
+      ADMIN_PASSWORD: "112233445500",
+      SHEETDB_API: "https://sheetdb.io/api/v1/8j681cv0tysp5"
     };
 
     const OWNER_INFO = {
         name: "Video Hub",
-        about: "Your home for anime & series.",
-        contact: "Mymaruf94@gmail.com"
+        about: "Your home for anime & series."
     };
 
     const qs = sel => document.querySelector(sel);
     const qsa = sel => Array.from(document.querySelectorAll(sel));
     const api = CONFIG.SHEETDB_API;
-    const adminEmail = CONFIG.ADMIN_EMAIL;
 
     function toast(msg){
       console.log('TOAST:', msg);
@@ -381,7 +385,7 @@
       }).then(r=>r.json());
     }
     function apiDeleteBySeriesId(sheet, seriesId){
-      return fetch(`${api}/search?sheet=${encodeURIComponent(sheet)}&id=${encodeURIComponent(seriesId)}`, {
+      return fetch(`${api}/search?sheet=${encodeURIComponent(sheet)}&seriesId=${encodeURIComponent(seriesId)}`, {
         method: 'DELETE',
         headers: {'Content-Type':'application/json'}
       }).then(r=>r.json());
@@ -392,7 +396,7 @@
     let STATE = {
       videos: [],
       users: [], 
-      user: JSON.parse(localStorage.getItem('bv_user') || 'null'),
+      isAdmin: false,
       favorites: JSON.parse(localStorage.getItem('bv_favorites') || '[]'),
       downloads: JSON.parse(localStorage.getItem('bv_downloads') || '[]'),
       owner: OWNER_INFO,
@@ -423,7 +427,7 @@
 
     function getThumbnailLink(link) {
       const fileId = getFileIdFromLink(link);
-      return fileId ? `https://drive.google.com/thumbnail?id=${fileId}` : link;
+      return fileId ? `https://drive.google.com/thumbnail?id=${fileId}` : 'https://via.placeholder.com/150x225.png?text=No+Image';
     }
 
     async function loadInitial(){
@@ -444,13 +448,14 @@
           season: r.season || '1',
           episode: r.episode || '1',
           description: r.description || '',
-          thumbnail: getThumbnailLink(r.thumbnail) || 'https://via.placeholder.com/150x225.png?text=No+Image'
+          thumbnail: getThumbnailLink(r.thumbnail || r.link)
         })).sort((a, b) => a.seriesId.localeCompare(b.seriesId) || a.season - b.season || a.episode - b.episode) : []);
         
         STATE.users = (Array.isArray(usersRaw) ? usersRaw.map(r => ({
             id: r.id || r.ID,
             name: r.name || r.Name || 'Unknown',
             email: r.email || r.Email || 'No email',
+            googleId: r.googleId || 'N/A',
             createdAt: r.createdAt || ''
         })) : []);
         
@@ -534,7 +539,7 @@
         chip.className = 'chip';
         chip.textContent = cat;
         chip.onclick = () => {
-          const filtered = STATE.videos.filter(v => v.category === cat);
+          const filtered = getUniqueSeries().filter(v => v.category === cat);
           const grid = qs('#searchResults');
           grid.innerHTML = '';
           filtered.forEach(v => {
@@ -573,7 +578,7 @@
       page.innerHTML = `
           <div class="header">
               <iframe id="video-player" src="${getEmbedLink(firstEpisode.link)}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-              <div class="back-btn" onclick="hideVideoDetails()">←</div>
+              <div class="back-btn" onclick="hidePage('videoDetails')">←</div>
           </div>
           <div class="body">
               <h1>${escapeHtml(series.title)}</h1>
@@ -607,7 +612,7 @@
         const seasonEpisodes = episodes.filter(ep => ep.season === selectedSeason).sort((a,b) => a.episode - b.episode);
         episodesContainer.innerHTML = seasonEpisodes.map(ep => `
           <div class="episode-item" data-videoid="${ep.id}" data-link="${ep.link}">
-              <img src="${getThumbnailLink(ep.thumbnail)}" onerror="this.src='https://via.placeholder.com/80x50.png?text=No+Image'" alt="${ep.title}">
+              <img src="${getThumbnailLink(ep.thumbnail || ep.link)}" onerror="this.src='https://via.placeholder.com/80x50.png?text=No+Image'" alt="${ep.title}">
               <div class="info">
                   <div class="title">E${ep.episode}: ${ep.title}</div>
                   <div class="small-muted">...</div>
@@ -637,7 +642,6 @@
           iframe.src = getEmbedLink(firstEpisode.link);
       }
       
-      // Favorite Button Logic
       qs('#favoriteBtn').addEventListener('click', () => {
           const seriesId = series.seriesId;
           if (STATE.favorites.includes(seriesId)) {
@@ -648,14 +652,12 @@
               toast('Added to favorites!');
           }
           localStorage.setItem('bv_favorites', JSON.stringify(STATE.favorites));
-          // Update button state visually
           const favoriteBtn = qs('#favoriteBtn');
           const isFavorited = STATE.favorites.includes(seriesId);
           favoriteBtn.className = isFavorited ? 'btn-emerald' : 'btn-primary';
           favoriteBtn.textContent = isFavorited ? '⭐ Favorited' : '⭐ Favorite';
       });
 
-      // Download Button Logic
       qs('#downloadBtn').addEventListener('click', () => {
           const seriesId = series.seriesId;
           if (STATE.downloads.includes(seriesId)) {
@@ -664,18 +666,11 @@
               STATE.downloads.push(seriesId);
               localStorage.setItem('bv_downloads', JSON.stringify(STATE.downloads));
               toast('Series added to downloads!');
-              // Update button state visually
               const downloadBtn = qs('#downloadBtn');
               downloadBtn.className = 'btn-emerald';
               downloadBtn.textContent = '⬇️ Downloaded';
           }
       });
-    }
-
-    function hideVideoDetails(){
-      qs('#videoDetailsPage').style.display = 'none';
-      const player = qs('#video-player');
-      if(player) player.src = '';
     }
 
     function setPane(paneId){
@@ -726,32 +721,71 @@
     }
 
     function hidePage(pageId) {
-        const page = qs(`#${pageId}`);
+        const page = qs(`#${pageId}Page`);
         if (page) {
             page.classList.add('hidden');
             page.style.display = 'none';
         }
     }
 
-    function renderMorePage() {
-        if(STATE.user) {
-            qs('#profileSection .profile-info').classList.remove('hidden');
-            qs('#profileName').textContent = STATE.user.name;
-            qs('#profileEmail').textContent = STATE.user.email;
-            qs('#profilePicture').src = STATE.user.picture;
-            qs('#loginSection').classList.add('hidden');
-            qs('#logoutSection').classList.remove('hidden');
-            if(STATE.user.email === adminEmail) {
-                qs('#adminBlock').style.display = 'block';
-                renderManageVideos();
-            } else {
-                qs('#adminBlock').style.display = 'none';
+    qs('#btnSignUp').addEventListener('click', async () => {
+        const name = qs('#signupName').value.trim();
+        const email = qs('#signupEmail').value.trim();
+
+        if (!name || !email) {
+            toast('Name and Email are required.');
+            return;
+        }
+
+        try {
+            const existingUser = STATE.users.find(u => u.email === email);
+            if (existingUser) {
+                toast('This email is already registered.');
+                return;
             }
+
+            const newUser = {
+                id: rid('usr'),
+                name: name,
+                email: email,
+                googleId: rid('gid'),
+                createdAt: new Date().toISOString()
+            };
+            
+            await apiPost('users', newUser);
+            STATE.users.push(newUser);
+            localStorage.setItem('isUserSignedUp', 'true');
+            toast('Account created successfully! Redirecting...');
+            window.location.reload();
+        } catch (e) {
+            console.error(e);
+            toast('Failed to create account. Please try again.');
+        }
+    });
+
+    function logout() {
+        localStorage.removeItem('isUserSignedUp');
+        localStorage.removeItem('isAdminLoggedIn');
+        window.location.reload();
+    }
+
+    function openAdminLogin() {
+        const password = prompt("Enter Admin Password:");
+        if (password === CONFIG.ADMIN_PASSWORD) {
+            localStorage.setItem('isAdminLoggedIn', 'true');
+            STATE.isAdmin = true;
+            renderMorePage();
+            toast("Admin login successful!");
         } else {
-            qs('#profileSection .profile-info').classList.add('hidden');
-            qs('#loginSection').classList.remove('hidden');
-            qs('#logoutSection').classList.add('hidden');
-            qs('#adminBlock').style.display = 'none';
+            toast("Incorrect password.");
+        }
+    }
+    
+    function renderMorePage() {
+        if(STATE.isAdmin) {
+            qs('#adminBlock').classList.remove('hidden');
+        } else {
+            qs('#adminBlock').classList.add('hidden');
         }
     }
     
@@ -823,6 +857,14 @@
         }
     });
 
+    qs('#btnShowVideos').addEventListener('click', () => {
+        const videoBlock = qs('#manageVideosBlock');
+        videoBlock.classList.toggle('hidden');
+        if (!videoBlock.classList.contains('hidden')) {
+            renderManageVideos();
+        }
+    });
+
     function renderManageVideos(){
       const out = qs('#manageVideosBlock');
       out.innerHTML = '';
@@ -859,6 +901,14 @@
       });
     }
 
+    qs('#btnShowUsers').addEventListener('click', () => {
+        const userBlock = qs('#manageUsersBlock');
+        userBlock.classList.toggle('hidden');
+        if (!userBlock.classList.contains('hidden')) {
+            renderManageUsers();
+        }
+    });
+
     function renderManageUsers(){
         const out = qs('#manageUsersBlock');
         out.innerHTML = '';
@@ -874,13 +924,14 @@
             d.style.flexDirection = 'column';
             d.innerHTML = `<div><strong style="font-weight:700">${escapeHtml(u.name)}</strong></div>
                            <div class="small-muted tiny">${escapeHtml(u.email)}</div>
-                           <div class="small-muted tiny">ID: <code>${escapeHtml(u.id)}</code></div>`;
+                           <div class="small-muted tiny">ID: <code>${escapeHtml(u.id)}</code></div>
+                           <div class="small-muted tiny">GoogleId: <code>${escapeHtml(u.googleId)}</code></div>`;
             out.appendChild(d);
         });
     }
 
     qs('#btnUpload').addEventListener('click', async ()=>{
-      if(!STATE.user || STATE.user.email !== adminEmail){ toast('Only admin can upload (sign in with admin email).'); return; }
+      if(!STATE.isAdmin){ toast('Only admin can upload.'); return; }
       const seriesId = qs('#uploadId').value.trim();
       const title = qs('#uploadTitle').value.trim();
       const link = qs('#uploadLink').value.trim();
@@ -896,8 +947,8 @@
         const row = {
           seriesId: seriesId,
           id: rid('vid'),
-          title, link, category, season, episode, description, thumbnail,
-          uploadedBy: STATE.user.email,
+          title, link, category, season, episode, description, thumbnail: thumbnail || getThumbnailLink(link),
+          uploadedBy: "Admin",
           uploadDate: new Date().toISOString()
         };
         await apiPost('videos', row);
@@ -919,56 +970,33 @@
       qs('#siteAbout').textContent = OWNER_INFO.about;
     }
 
-    function handleCredentialResponse(response){
-      try{
-        const id_token = response.credential;
-        const payload = JSON.parse(atob(id_token.split('.')[1]));
-        const user = {
-          name: payload.name,
-          email: payload.email,
-          picture: payload.picture,
-          id_token,
-          localId: rid('usr')
-        };
+    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>'
+,'&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
+
+    function checkAuthStatus() {
+        const isUserSignedUp = localStorage.getItem('isUserSignedUp');
+        const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn');
         
-        STATE.user = user;
-        localStorage.setItem('bv_user', JSON.stringify(user));
-        
-        const existingUser = STATE.users.find(u => u.email === user.email);
-        if (!existingUser) {
-          apiPost('users', { id: user.localId, name: user.name, email: user.email, createdAt: new Date().toISOString() }).catch(e => console.error("Error saving user:", e));
+        if (isUserSignedUp || isAdminLoggedIn) {
+            qs('#gatekeeperPage').classList.add('hidden');
+            qs('#mainContent').classList.remove('hidden');
+            qs('#bottomNav').style.display = 'flex';
+            if (isAdminLoggedIn) {
+                STATE.isAdmin = true;
+                renderMorePage();
+            }
+            loadInitial();
+        } else {
+            qs('#gatekeeperPage').classList.remove('hidden');
+            qs('#mainContent').classList.add('hidden');
+            qs('#bottomNav').style.display = 'none';
         }
-        
-        renderMorePage();
-      }catch(e){ console.error('GSI parse error', e); }
     }
-
-    function signOut(){
-      STATE.user = null;
-      localStorage.removeItem('bv_user');
-      renderMorePage();
-      toast('Signed out');
-    }
-
-    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
-
-    qs('#btnShowUsers').addEventListener('click', () => {
-        const userBlock = qs('#manageUsersBlock');
-        userBlock.classList.toggle('hidden');
-        if (!userBlock.classList.contains('hidden')) {
-            renderManageUsers();
-        }
-    });
 
     (function init(){
       renderSiteHeader();
-      loadInitial();
+      checkAuthStatus();
       setPane('home');
-      window.google.accounts.id.initialize({
-        client_id: CONFIG.GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse
-      });
-      window.google.accounts.id.renderButton(document.getElementById('gsi-signin'), { theme:'filled_blue', size:'large', text:'signin_with' });
     })();
   </script>
 </body>
