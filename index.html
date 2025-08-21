@@ -516,10 +516,6 @@
       ADMIN_EMAIL: "mymaruf94@gmail.com",
       ADMIN_PASS: "123450",
       
-      // These are not needed on the client side anymore as the server will handle the API calls
-      // GOOGLE_SHEETS_API_KEY: "AIzaSyAnEdtjQtTBIF2dHODA4g_3ysvfEY4GTdM",
-      // GOOGLE_SHEET_ID: "1bWojlxKNd-A0R5lWzuplLEgYwDiK9NXzZMfkhwwzQig",
-      
       APK_DOWNLOAD_LINK: "https://drive.google.com/file/d/1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw/view?usp=drivesdk"
     };
 
@@ -536,7 +532,7 @@
       alert(msg);
     }
     
-    // Updated API Fetching function to call the Render server
+    // API Fetching function to call the Render server
     async function apiGet(sheetName){
       const url = `/api/data/${sheetName}`; // Calls the server's API route
       try {
