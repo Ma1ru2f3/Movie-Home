@@ -516,10 +516,9 @@
       ADMIN_EMAIL: "mymaruf94@gmail.com",
       ADMIN_PASS: "123450",
       
-      // *** START GOOGLE SHEETS API CONFIG ***
-      GOOGLE_SHEETS_API_KEY: "AIzaSyAnEdtjQtTBIF2dHODA4g_3ysvfEY4GTdM",
-      GOOGLE_SHEET_ID: "1bWojlxKNd-A0R5lWzuplLEgYwDiK9NXzZMfkhwwzQig",
-      // *** END GOOGLE SHEETS API CONFIG ***
+      // These are not needed on the client side anymore as the server will handle the API calls
+      // GOOGLE_SHEETS_API_KEY: "AIzaSyAnEdtjQtTBIF2dHODA4g_3ysvfEY4GTdM",
+      // GOOGLE_SHEET_ID: "1bWojlxKNd-A0R5lWzuplLEgYwDiK9NXzZMfkhwwzQig",
       
       APK_DOWNLOAD_LINK: "https://drive.google.com/file/d/1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw/view?usp=drivesdk"
     };
@@ -537,54 +536,37 @@
       alert(msg);
     }
     
-    // Updated API Fetching function for Google Sheets API
+    // Updated API Fetching function to call the Render server
     async function apiGet(sheetName){
-        const range = `${sheetName}!A:Z`;
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.GOOGLE_SHEET_ID}/values/${range}?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
-
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
-            
-            if (!data.values) {
-                console.error("No data found in the sheet.");
-                return [];
-            }
-            
-            // Data processing
-            const rows = data.values;
-            const headers = rows[0].map(h => h.toLowerCase()); // Headers to lowercase
-            const results = rows.slice(1).map(row => {
-                const rowObject = {};
-                row.forEach((value, index) => {
-                    if (headers[index]) {
-                        rowObject[headers[index]] = value;
-                    }
-                });
-                return rowObject;
-            });
-    
-            return results;
-        } catch (error) {
-            console.error(`Error fetching data from sheet:`, error);
-            return [];
+      const url = `/api/data/${sheetName}`; // Calls the server's API route
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.success) {
+          return data.data; // Server returns data in a 'data' property
+        } else {
+          console.error("API Error:", data.message);
+          return [];
         }
+      } catch (error) {
+        console.error(`Error fetching data from server:`, error);
+        return [];
+      }
     }
 
-    // This function will NOT work with Google Sheets API directly
-    // A more advanced server-side solution would be needed to use this feature.
-    // For now, these features are disabled.
-    async function apiPost(sheet, rowObj){
-        console.error("apiPost is not supported in this client-side implementation of Google Sheets API.");
-        toast("Feature disabled. Admin features require a server-side solution.");
-        return null;
-    }
-
-    // This function will also NOT work with Google Sheets API directly.
-    async function apiUpdateUserStatus(id, status){
-        console.error("apiUpdateUserStatus is not supported in this client-side implementation of Google Sheets API.");
-        toast("Feature disabled. Admin features require a server-side solution.");
-        return null;
+    // Now using the server-side API for all POST/PUT requests
+    async function apiPost(endpoint, data){
+      try {
+        const response = await fetch(`/api/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error(`API POST error:`, error);
+        return { success: false, message: 'Network error or server unavailable.' };
+      }
     }
     
     function rid(prefix='id'){ return `${prefix}_${Math.random().toString(36).slice(2,9)}${Date.now().toString().slice(-4)}` }
@@ -631,13 +613,12 @@
 
     async function loadInitial(){
       try{
-        // Now using the new apiGet function
         const [videosRaw, usersRaw, reportsRaw, requestsRaw, upcomingRaw] = await Promise.all([
-          apiGet('videos').catch(()=>[]),
-          apiGet('users').catch(()=>[]),
-          apiGet('reports').catch(()=>[]),
-          apiGet('requests').catch(()=>[]),
-          apiGet('upcoming_videos').catch(()=>[])
+          apiGet('videos'),
+          apiGet('users'),
+          apiGet('reports'),
+          apiGet('requests'),
+          apiGet('upcoming_videos')
         ]);
         
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
@@ -697,7 +678,6 @@
       const popular = allSeries.filter(v => v.category && v.category.toLowerCase().includes('popular'));
       const categories = [...new Set(STATE.videos.map(v => v.category).filter(c => c))];
       
-      // If no trending videos found, show all videos as a fallback
       if(trending.length === 0 && allSeries.length > 0) {
         renderVideoSection(qs('#trendingVideos'), allSeries, true);
       } else {
@@ -932,14 +912,34 @@
     async function promptRequest() {
         const request = prompt("What movie or series would you like to request?");
         if (request) {
-            toast("Request feature requires a server-side solution and is currently disabled.");
+            const response = await apiPost('requests', {
+                name: "User", // This should come from a logged-in user
+                email: "user@example.com", // This should be a user's email
+                request: request,
+                createdAt: new Date().toISOString()
+            });
+            if (response.success) {
+                toast("Request submitted successfully!");
+            } else {
+                toast("Failed to submit request.");
+            }
         }
     }
 
     async function promptReport() {
         const report = prompt("Please describe the issue you would like to report:");
         if (report) {
-            toast("Report feature requires a server-side solution and is currently disabled.");
+            const response = await apiPost('reports', {
+                name: "User", // This should come from a logged-in user
+                email: "user@example.com", // This should be a user's email
+                report: report,
+                createdAt: new Date().toISOString()
+            });
+            if (response.success) {
+                toast("Report submitted successfully!");
+            } else {
+                toast("Failed to submit report.");
+            }
         }
     }
 
@@ -1018,22 +1018,40 @@
     }
 
     qs('#btnSignUp').addEventListener('click', async () => {
-        toast("Sign up disabled. User management requires a server-side solution.");
+        const name = qs('#signupName').value.trim();
+        const email = qs('#signupEmail').value.trim();
+        const password = qs('#signupPassword').value.trim();
+
+        if (!name || !email || !password) {
+            toast("All fields are required.");
+            return;
+        }
+
+        const response = await apiPost('signup', { name, email, password });
+        if (response.success) {
+            toast("Account created successfully!");
+            toggleAuthForm('login');
+        } else {
+            toast(`Signup failed: ${response.message}`);
+        }
     });
 
     qs('#btnLogin').addEventListener('click', async () => {
         const email = qs('#loginEmail').value.trim();
         const password = qs('#loginPassword').value.trim();
         
-        // Admin login check
-        if (email === CONFIG.ADMIN_EMAIL && password === CONFIG.ADMIN_PASS) {
-            localStorage.setItem('isAdminLoggedIn', 'true');
-            toast("Admin login successful!");
+        const response = await apiPost('login', { email, password });
+        
+        if (response.success) {
+            localStorage.setItem('isUserLoggedIn', 'true');
+            if(response.user.status === 'admin'){
+                localStorage.setItem('isAdminLoggedIn', 'true');
+            }
+            toast("Login successful!");
             window.location.reload();
-            return;
+        } else {
+            toast(`Login failed: ${response.message}`);
         }
-
-        toast("Login disabled. User management requires a server-side solution.");
     });
 
     function logout() {
@@ -1074,19 +1092,84 @@
     }
 
     async function addUpcomingVideo() {
-        toast("This feature requires a server-side solution and is currently disabled.");
+        const upcomingData = {
+            id: rid('upc'),
+            title: qs('#upcomingTitle').value,
+            release_date: qs('#upcomingReleaseDate').value,
+            description: qs('#upcomingDescription').value
+        };
+
+        const response = await apiPost('upcoming', upcomingData);
+        if (response.success) {
+            toast("Upcoming video added successfully!");
+        } else {
+            toast("Failed to add upcoming video.");
+        }
     }
     
     async function renderUserList() {
-        qs('#userList').innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">User management requires a server-side solution.</div>';
+        const userList = qs('#userList');
+        userList.innerHTML = '';
+        if (STATE.users.length === 0) {
+            userList.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No users found.</div>';
+        } else {
+            STATE.users.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'item';
+                userItem.innerHTML = `
+                    <div style="flex:1">${escapeHtml(user.name)}</div>
+                    <div style="flex:1; color: var(--text-secondary)">${escapeHtml(user.email)}</div>
+                    <button class="btn-primary" onclick="changeUserStatus('${user.id}', '${user.status === 'active' ? 'banned' : 'active'}')">${user.status === 'active' ? 'Ban' : 'Unban'}</button>
+                `;
+                userList.appendChild(userItem);
+            });
+        }
+    }
+
+    async function changeUserStatus(userId, newStatus) {
+        const response = await apiPost('update_user_status', { id: userId, status: newStatus });
+        if (response.success) {
+            toast(`User status changed to ${newStatus}.`);
+            // You might need to reload the user list here
+        } else {
+            toast("Failed to change user status.");
+        }
     }
 
     async function renderReportsList() {
-        qs('#reportList').innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">Reporting feature requires a server-side solution.</div>';
+        const reportList = qs('#reportList');
+        reportList.innerHTML = '';
+        if (STATE.reports.length === 0) {
+            reportList.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No reports found.</div>';
+        } else {
+            STATE.reports.forEach(report => {
+                const reportItem = document.createElement('div');
+                reportItem.className = 'item';
+                reportItem.innerHTML = `
+                    <div style="flex:1">${escapeHtml(report.name)} (${escapeHtml(report.email)})</div>
+                    <div style="flex:2; color: var(--text-secondary)">${escapeHtml(report.report)}</div>
+                `;
+                reportList.appendChild(reportItem);
+            });
+        }
     }
 
     async function renderRequestsList() {
-        qs('#requestList').innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">Request feature requires a server-side solution.</div>';
+        const requestList = qs('#requestList');
+        requestList.innerHTML = '';
+        if (STATE.requests.length === 0) {
+            requestList.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No requests found.</div>';
+        } else {
+            STATE.requests.forEach(request => {
+                const requestItem = document.createElement('div');
+                requestItem.className = 'item';
+                requestItem.innerHTML = `
+                    <div style="flex:1">${escapeHtml(request.name)} (${escapeHtml(request.email)})</div>
+                    <div style="flex:2; color: var(--text-secondary)">${escapeHtml(request.request)}</div>
+                `;
+                requestList.appendChild(requestItem);
+            });
+        }
     }
     
     function showFavorites() {
@@ -1158,7 +1241,24 @@
     });
 
     qs('#btnUpload').addEventListener('click', async ()=>{
-      toast("Upload is disabled. This feature requires a server-side solution.");
+      const uploadData = {
+          id: qs('#uploadId').value,
+          title: qs('#uploadTitle').value,
+          link: qs('#uploadLink').value,
+          category: qs('#uploadCategory').value,
+          uploadedBy: "Admin",
+          uploadDate: new Date().toISOString().split('T')[0],
+          season: qs('#uploadSeason').value,
+          episode: qs('#uploadEpisode').value,
+          description: qs('#uploadDescription').value,
+          thumbnail: qs('#uploadThumbnail').value
+      };
+      const response = await apiPost('upload', uploadData);
+      if (response.success) {
+          toast("Video uploaded successfully!");
+      } else {
+          toast(`Upload failed: ${response.message}`);
+      }
     });
     
     function renderSiteHeader(){
@@ -1177,24 +1277,17 @@
             qs('#authPage').classList.add('hidden');
             qs('#mainContent').classList.remove('hidden');
             qs('#bottomNav').style.display = 'flex';
-            adminDashboardTab.classList.add('hidden');
-            loadInitial();
-        } else if (isAdminLoggedIn) {
-            STATE.isAdmin = true;
-            qs('#authPage').classList.add('hidden');
-            qs('#mainContent').classList.remove('hidden');
-            qs('#bottomNav').style.display = 'flex';
-            qs('#mainContent').classList.add('hidden'); // Hide main content
-            openPage('adminDashboard');
-            adminDashboardTab.classList.remove('hidden');
-            renderAdminDashboard();
+            if (isAdminLoggedIn) {
+                adminDashboardTab.classList.remove('hidden');
+            } else {
+                adminDashboardTab.classList.add('hidden');
+            }
             loadInitial();
         } else {
             qs('#authPage').classList.remove('hidden');
             qs('#mainContent').classList.add('hidden');
             qs('#bottomNav').style.display = 'none';
             adminDashboardTab.classList.add('hidden');
-            loadInitial();
         }
     }
 
