@@ -6,66 +6,63 @@
   <title>Video Hub</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    /* CSS Code */
-    :root{--bg-dark:#121212;--card-bg:#1e1e1e;--text-primary:#ffffff;--text-secondary:#b3b3b3;--accent:#ef233c;--border-color:#333333;--rounded:10px;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
-    html,body{height:100%;margin:0;background:var(--bg-dark);color:var(--text-primary)}
-    .container{max-width:1100px;margin:0 auto;padding:18px}
-    header{position:sticky;top:0;background:var(--bg-dark);border-bottom:1px solid var(--border-color);z-index:100;padding:18px 0;}
-    .hdr{display:flex;align-items:center;gap:12px;padding:14px 0}
-    .logo{font-size:26px}
-    .site-title{font-weight:800;font-size:18px}
-    .site-sub{font-size:12px;color:var(--text-secondary)}
-    nav{display:flex;gap:8px;}
-    .tab{padding:8px 14px;border-radius:999px;background:var(--card-bg);font-weight:600;cursor:pointer;color:var(--text-primary);border:1px solid var(--border-color)}
-    .tab.active{background:var(--accent);color:white;box-shadow:0 4px 12px rgba(2,6,23,0.06)}
-    main{padding:18px 0;padding-bottom:100px}
-    .grid{display:grid;gap:14px}
-    .grid.cols-2{grid-template-columns:repeat(2,1fr)}
-    .card{background:var(--card-bg);border-radius:var(--rounded);overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.2)}
-    .aspect-video{background:#000;color:white;position:relative;padding-top:56.25%}
-    .aspect-video iframe,.aspect-video video{position:absolute;left:0;top:0;width:100%;height:100%;border:0}
-    .card-body{padding:12px}
-    .meta{display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px}
-    input[type="text"],textarea,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--border-color);outline:none;background:var(--card-bg);color:var(--text-primary)}
-    button{cursor:pointer;border:0;padding:8px 12px;border-radius:10px;font-weight:700}
-    .btn-primary{background:linear-gradient(90deg,#60a5fa,#7c3aed);color:white}
-    .btn-emerald{background:linear-gradient(90deg,#34d399,#10b981);color:white}
-    .btn-red{background:linear-gradient(90deg,#ef4444,#dc2626);color:white}
-    .muted{color:var(--text-secondary)}
-    .tiny{font-size:12px}
-    .row{display:flex;gap:12px;align-items:center}
-    .col{display:flex;flex-direction:column;gap:8px}
-    .progress-wrap{height:10px;background:var(--border-color);border-radius:999px;overflow:hidden}
-    .progress-bar{height:100%;background:linear-gradient(90deg,#34d399,#f59e0b);width:0%}
-    .owner-block{padding:12px;border-radius:10px;background:var(--card-bg);border:1px dashed rgba(255,255,255,0.1)}
-    .searchbar{display:flex;gap:8px}
-    .chip{display:inline-block;padding:6px 10px;border-radius:999px;background:var(--card-bg);border:1px solid var(--border-color);font-weight:600;cursor:pointer}
-    .small-muted{font-size:12px;color:var(--text-secondary)}
-    .scroll-x{overflow-x:auto;display:flex;gap:12px;padding:8px 0;scrollbar-width:none}
-    .scroll-x::-webkit-scrollbar{display:none}
-    .section-title{font-weight:800;font-size:18px;margin-top:20px;margin-bottom:12px}
-    .content-card{width:120px;flex-shrink:0;cursor:pointer}
-    .content-card img{width:100%;height:180px;object-fit:cover;border-radius:8px}
-    .content-card-title{font-size:14px;font-weight:600;margin-top:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-    .logo-container img{width:60px;height:60px;object-fit:contain;border-radius:10px}
-    .logo-container{flex-shrink:0}
-    .details-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
-    .details-page .header{position:relative;height:300px;overflow:hidden;background:var(--card-bg)}
-    .details-page .header iframe{width:100%;height:100%;}
-    .details-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
-    .details-page .body{padding:20px}
-    .details-page h1{font-size:24px;margin:0;font-weight:800}
-    .details-page .meta-info{display:flex;gap:10px;margin-top:8px;color:var(--text-secondary);font-size:14px}
-    .details-page .btn-group{margin-top:15px;display:flex;gap:10px;justify-content:center}
-    .details-page .overview{margin-top:20px;line-height:1.6}
-    .episode-list{margin-top:20px}
-    .episode-item{display:flex;gap:15px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-color);cursor:pointer}
-    .episode-item img{width:80px;height:50px;object-fit:cover;border-radius:6px}
-    .episode-item .info{flex:1}
-    .episode-item .title{font-weight:600}
-    @media (max-width:800px){.grid.cols-2{grid-template-columns:1fr}.row{flex-direction:column;align-items:stretch}nav{overflow:auto}.details-page .header{height:200px}}
-    .hidden{display:none}
-    .manage-item{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--border-color);}
+    /* CSS কোড: আপনার দেওয়া ছবির মতো UI ডিজাইন */
+    :root {
+      --bg-dark: #0a0a0a;
+      --card-bg: #1e1e1e;
+      --text-primary: #ffffff;
+      --text-secondary: #b3b3b3;
+      --accent-red: #ef233c;
+      --accent-blue: #007bff;
+      --border-color: #333333;
+      --rounded: 10px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    html, body { height: 100%; margin: 0; background: var(--bg-dark); color: var(--text-primary); }
+    .container { max-width: 1100px; margin: 0 auto; padding: 18px; }
+    header { position: sticky; top: 0; background: var(--bg-dark); z-index: 100; padding: 18px 0; }
+    .hdr { display: flex; align-items: center; gap: 12px; padding: 14px 0; }
+    .logo { font-size: 26px; }
+    .site-title { font-weight: 800; font-size: 18px; }
+    .site-sub { font-size: 12px; color: var(--text-secondary); }
+    nav { display: flex; gap: 8px; justify-content: space-between; }
+    .tab { padding: 8px 14px; border-radius: 999px; background: var(--card-bg); font-weight: 600; cursor: pointer; color: var(--text-primary); border: 1px solid var(--border-color); }
+    .tab.active { background: var(--accent-red); color: white; box-shadow: 0 4px 12px rgba(2, 6, 23, 0.06); }
+    main { padding: 18px 0; padding-bottom: 100px; }
+    .grid { display: grid; gap: 14px; }
+    .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .card { background: var(--card-bg); border-radius: var(--rounded); overflow: hidden; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2); }
+    .card-body { padding: 12px; }
+    input[type="text"], textarea, select { width: 100%; padding: 10px; border-radius: 12px; border: 1px solid var(--border-color); outline: none; background: var(--card-bg); color: var(--text-primary); }
+    button { cursor: pointer; border: 0; padding: 8px 12px; border-radius: 10px; font-weight: 700; }
+    .btn-primary { background: linear-gradient(90deg, #007bff, #0056b3); color: white; }
+    .btn-emerald { background: linear-gradient(90deg, #34d399, #10b981); color: white; }
+    .btn-red { background: linear-gradient(90deg, #ef4444, #dc2626); color: white; }
+    .small-muted { font-size: 12px; color: var(--text-secondary); }
+    .scroll-x { overflow-x: auto; display: flex; gap: 12px; padding: 8px 0; scrollbar-width: none; }
+    .scroll-x::-webkit-scrollbar { display: none; }
+    .section-title { font-weight: 800; font-size: 18px; margin-top: 20px; margin-bottom: 12px; }
+    .content-card { width: 120px; flex-shrink: 0; cursor: pointer; }
+    .content-card img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; }
+    .content-card-title { font-size: 14px; font-weight: 600; margin-top: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .logo-container img { width: 50px; height: 50px; object-fit: contain; border-radius: 10px; }
+    .logo-container { flex-shrink: 0; }
+    .details-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 200; overflow-y: auto; display: none; padding-bottom: 80px; }
+    .details-page .header { position: relative; height: 300px; overflow: hidden; background: var(--card-bg); }
+    .details-page .header iframe { width: 100%; height: 100%; }
+    .details-page .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.5); color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .details-page .body { padding: 20px; }
+    .details-page h1 { font-size: 24px; margin: 0; font-weight: 800; }
+    .details-page .meta-info { display: flex; gap: 10px; margin-top: 8px; color: var(--text-secondary); font-size: 14px; }
+    .details-page .btn-group { margin-top: 15px; display: flex; gap: 10px; justify-content: center; }
+    .details-page .overview { margin-top: 20px; line-height: 1.6; }
+    .episode-list { margin-top: 20px; }
+    .episode-item { display: flex; gap: 15px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+    .episode-item img { width: 80px; height: 50px; object-fit: cover; border-radius: 6px; }
+    .episode-item .info { flex: 1; }
+    .episode-item .title { font-weight: 600; }
+    .hidden { display: none; }
+    .manage-item { display: flex; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--border-color); }
   </style>
 </head>
 <body>
@@ -73,7 +70,7 @@
     <header class="container">
       <div class="hdr">
         <div class="logo-container">
-          <img src="https://i.ibb.co/6P0D6V4/Untitled-1.png" alt="logo" style="width: 50px; height: 50px; object-fit: contain;">
+          <img src="https://i.ibb.co/6P0D6V4/Untitled-1.png" alt="logo">
         </div>
         <div>
           <div class="site-title" id="siteName">Video Hub</div>
@@ -92,6 +89,7 @@
         <button class="tab" data-pane="profile">👤 Profile</button>
       </nav>
     </header>
+
     <main class="container">
       <div id="paneHome" class="pane">
         <div class="section-title">Trending</div>
@@ -101,6 +99,7 @@
         <div class="section-title">Categories</div>
         <div class="scroll-x" id="categoryChips"></div>
       </div>
+
       <div id="paneSearch" class="pane" style="display:none">
         <div class="col" style="margin-bottom:12px">
           <div style="font-weight:800;font-size:24px">Search</div>
@@ -108,14 +107,17 @@
         </div>
         <div id="searchResults" class="grid cols-2"></div>
       </div>
+
       <div id="paneMovies" class="pane" style="display:none">
         <div style="font-weight:800;font-size:24px">Movies</div>
         <div id="moviesGrid" class="grid cols-2"></div>
       </div>
+
       <div id="paneSeries" class="pane" style="display:none">
         <div style="font-weight:800;font-size:24px">Series</div>
         <div id="seriesGrid" class="grid cols-2"></div>
       </div>
+
       <div id="paneProfile" class="pane" style="display:none">
         <div class="grid" style="grid-template-columns:1fr 360px;gap:14px">
           <div class="col">
@@ -167,14 +169,15 @@
         </div>
       </div>
     </main>
+
     <div id="videoDetailsPage" class="details-page"></div>
+
   </div>
+
   <script>
     const CONFIG = {
       ADMIN_EMAIL: "mymaruf94@gmail.com",
-      // SheetDB.io API ID
       SHEETDB_API: "https://sheetdb.io/api/v1/119036146469-73jdpok05fq99vfq8naat0airpdcn8f1.apps.googleusercontent.com", 
-      // Google Client ID
       GOOGLE_CLIENT_ID: "119036146469-73jdpok05fq99vfq8naat0airpdcn8f1.apps.googleusercontent.com"
     };
 
@@ -658,7 +661,7 @@
         const u = STATE.user;
         area.innerHTML = `
           <div style="display:flex;flex-direction:column;gap:12px;align-items:center;padding:12px;text-align:center">
-            ${u.picture?`<img src="${u.picture}" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)">`:`<div style="width:96px;height:96px;border-radius:50%;background:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:3rem">🙂</div>`}
+            ${u.picture?`<img src="${u.picture}" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--accent-red)">`:`<div style="width:96px;height:96px;border-radius:50%;background:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:3rem">🙂</div>`}
             <div>
               <div style="font-weight:800;font-size:1.2rem">${escapeHtml(u.name)}</div>
               <div class="small-muted">${escapeHtml(u.email)}</div>
@@ -666,10 +669,6 @@
             </div>
           </div>
           <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:12px 0"/>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div style="font-weight:700">My Favorites</div>
-            <button class="btn-primary" style="width:100%">View Favorite Videos</button>
-          </div>
           <div style="margin-top:12px;text-align:center">
             <button id="btnSignOut" class="btn-red" style="padding: 8px 24px;">Sign out</button>
           </div>
