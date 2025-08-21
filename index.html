@@ -638,7 +638,7 @@
         ]);
         
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
-          seriesId: r.seriesid || r.SeriesID || r.seriesId || rid('ser'),
+          seriesId: r.seriesId || r.SeriesID || r.seriesid || rid('ser'),
           id: r.id || r.ID || r.id || rid('vid'),
           title: r.title || r.Title || r.name || 'Untitled',
           link: r.link || r.Link || r.url || '',
@@ -689,15 +689,22 @@
     }
 
     function renderHomeContent(){
-      const trending = getUniqueSeries().filter(v => v.category.toLowerCase().includes('trending'));
-      const popular = getUniqueSeries().filter(v => v.category.toLowerCase().includes('popular'));
+      const allSeries = getUniqueSeries();
+      const trending = allSeries.filter(v => v.category.toLowerCase().includes('trending'));
+      const popular = allSeries.filter(v => v.category.toLowerCase().includes('popular'));
       const categories = [...new Set(STATE.videos.map(v => v.category))];
       
-      renderVideoSection(qs('#trendingVideos'), trending, true);
+      // If no trending videos found, show all videos as a fallback
+      if(trending.length === 0 && allSeries.length > 0) {
+        renderVideoSection(qs('#trendingVideos'), allSeries, true);
+      } else {
+        renderVideoSection(qs('#trendingVideos'), trending, true);
+      }
+
       renderVideoSection(qs('#popularVideos'), popular, true);
       renderCategories(qs('#categoryChips'), categories);
-      renderPaneMovies(getUniqueSeries().filter(v => v.category.toLowerCase().includes('movie')));
-      renderPaneSeries(getUniqueSeries().filter(v => v.category.toLowerCase().includes('series')));
+      renderPaneMovies(allSeries.filter(v => v.category.toLowerCase().includes('movie')));
+      renderPaneSeries(allSeries.filter(v => v.category.toLowerCase().includes('series')));
     }
     
     function renderVideoSection(container, videos, isHorizontal = false){
@@ -719,6 +726,10 @@
     function renderPaneMovies(videos){
       const container = qs('#moviesGrid');
       container.innerHTML = '';
+      if(!videos.length){
+        container.innerHTML = '<div style="color:var(--text-secondary); text-align: center;">No movies found.</div>';
+        return;
+      }
       videos.forEach(v => {
         const card = document.createElement('div');
         card.className = 'content-card';
@@ -733,6 +744,10 @@
     function renderPaneSeries(videos){
       const container = qs('#seriesGrid');
       container.innerHTML = '';
+      if(!videos.length){
+        container.innerHTML = '<div style="color:var(--text-secondary); text-align: center;">No series found.</div>';
+        return;
+      }
       videos.forEach(v => {
         const card = document.createElement('div');
         card.className = 'content-card';
@@ -746,6 +761,10 @@
     
     function renderCategories(container, categories){
       container.innerHTML = '';
+      if(!categories.length){
+        container.innerHTML = '<div style="color:var(--text-secondary)">No categories found.</div>';
+        return;
+      }
       categories.forEach(cat => {
         const chip = document.createElement('div');
         chip.className = 'chip';
