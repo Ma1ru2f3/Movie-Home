@@ -29,7 +29,7 @@
     .card{background:var(--card-bg);border-radius:var(--rounded);overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.2)}
     .card-body{padding:12px}
     .meta{display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px}
-    input[type="text"],textarea,select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--border-color);outline:none;background:var(--card-bg);color:var(--text-primary)}
+    input[type="text"], input[type="password"], textarea, select{width:100%;padding:10px;border-radius:12px;border:1px solid var(--border-color);outline:none;background:var(--card-bg);color:var(--text-primary)}
     button{cursor:pointer;border:0;padding:8px 12px;border-radius:10px;font-weight:700}
     .btn-primary{background:linear-gradient(90deg,#60a5fa,#7c3aed);color:white}
     .btn-emerald{background:linear-gradient(90deg,#34d399,#10b981);color:white}
@@ -52,9 +52,9 @@
     .content-card-title{font-size:14px;font-weight:600;margin-top:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
     .logo-container img{width:60px;height:60px;object-fit:contain;border-radius:10px}
     .logo-container{flex-shrink:0}
-    .details-page, .signup-page, .gatekeeper-page, .admin-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
+    .details-page, .auth-page, .admin-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
     
-    .gatekeeper-page {
+    .auth-page {
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -62,7 +62,7 @@
         text-align: center;
         padding: 20px;
     }
-    .gatekeeper-card {
+    .auth-card {
         background: var(--card-bg);
         border-radius: var(--rounded);
         padding: 30px;
@@ -70,14 +70,14 @@
         max-width: 400px;
         width: 90%;
     }
-    .gatekeeper-card h1{font-size: 28px; margin-bottom: 12px;}
-    .gatekeeper-card p {color: var(--text-secondary); margin-bottom: 24px;}
+    .auth-card h1{font-size: 28px; margin-bottom: 12px;}
+    .auth-card p {color: var(--text-secondary); margin-bottom: 24px;}
     
     .details-page .header{position:relative;height:300px;overflow:hidden;background:var(--card-bg)}
     .details-page .header iframe{width:100%;height:100%;}
-    .details-page .back-btn, .signup-page .back-btn, .admin-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
-    .details-page .body, .signup-page .body, .admin-page .body{padding:20px}
-    .details-page h1, .signup-page h1, .admin-page h1{font-size:24px;margin:0;font-weight:800}
+    .details-page .back-btn, .auth-page .back-btn, .admin-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
+    .details-page .body, .auth-page .body, .admin-page .body{padding:20px}
+    .details-page h1, .auth-page h1, .admin-page h1{font-size:24px;margin:0;font-weight:800}
     .details-page .meta-info{display:flex;gap:10px;margin-top:8px;color:var(--text-secondary);font-size:14px}
     .details-page .btn-group{margin-top:15px;display:flex;gap:10px;justify-content:center}
     .details-page .overview{margin-top:20px;line-height:1.6}
@@ -90,7 +90,7 @@
     .more-options .card-body{padding: 18px;}
     .more-options h2{margin-top:0;font-size:20px;font-weight:700;}
     @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} .details-page .header{height:200px} }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
     nav{
         position: fixed;
         bottom: 0;
@@ -161,6 +161,14 @@
     }
     .admin-option-list .item:last-child{
         border-bottom: none;
+    }
+    .toggle-link {
+        font-size: 14px;
+        color: var(--accent);
+        text-decoration: underline;
+        cursor: pointer;
+        margin-top: 15px;
+        display: block;
     }
   </style>
 </head>
@@ -276,15 +284,25 @@
       </nav>
     </div>
 
-    <div id="gatekeeperPage" class="gatekeeper-page">
-        <div class="gatekeeper-card">
-            <div style="font-size: 60px; margin-bottom: 20px;">🎬</div>
-            <h1>Welcome to Video Hub!</h1>
-            <p>Please sign up to access our full library of movies and series.</p>
-            <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:20px;">
+    <div id="authPage" class="auth-page">
+        <div class="auth-card">
+            <div id="authLogo" style="font-size: 60px; margin-bottom: 20px;">🎬</div>
+            <h1 id="authTitle">Welcome to Video Hub!</h1>
+            <p id="authSubtitle">Please sign up or log in to continue.</p>
+            
+            <div id="signupForm" style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:20px;">
                 <input id="signupName" type="text" placeholder="Full Name" />
                 <input id="signupEmail" type="text" placeholder="Email Address" />
+                <input id="signupPassword" type="password" placeholder="Password" />
                 <button id="btnSignUp" class="btn-primary" style="padding: 12px;">Create Account</button>
+                <a class="toggle-link" onclick="toggleAuthForm('login')">Already have an account? Log In</a>
+            </div>
+
+            <div id="loginForm" class="hidden" style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:20px;">
+                <input id="loginEmail" type="text" placeholder="Email Address" />
+                <input id="loginPassword" type="password" placeholder="Password" />
+                <button id="btnLogin" class="btn-emerald" style="padding: 12px;">Log In</button>
+                <a class="toggle-link" onclick="toggleAuthForm('signup')">Don't have an account? Create one!</a>
             </div>
         </div>
     </div>
@@ -526,7 +544,7 @@
             id: r.id || r.ID,
             name: r.name || r.Name || 'Unknown',
             email: r.email || r.Email || 'No email',
-            googleId: r.googleId || 'N/A',
+            password: r.password || '',
             status: r.status || 'active',
             createdAt: r.createdAt || ''
         })) : []);
@@ -757,9 +775,6 @@
         qs(`#pane${paneId.charAt(0).toUpperCase() + paneId.slice(1)}`).style.display = 'block';
         qsa('#bottomNav .tab').forEach(t => t.classList.remove('active'));
         qs(`#bottomNav [data-pane="${paneId}"]`).classList.add('active');
-        if(paneId === 'more') {
-            renderMorePage();
-        }
     }
     
     qsa('#bottomNav .tab').forEach(btn => {
@@ -780,7 +795,7 @@
     async function promptRequest() {
         const request = prompt("What movie or series would you like to request?");
         if (request) {
-            const userId = localStorage.getItem('isUserSignedUp'); // Use a proper user id later
+            const userId = localStorage.getItem('isUserLoggedIn');
             const user = STATE.users.find(u => u.id === userId);
             const reqData = {
                 id: rid('req'),
@@ -797,7 +812,7 @@
     async function promptReport() {
         const report = prompt("Please describe the issue you would like to report:");
         if (report) {
-            const userId = localStorage.getItem('isUserSignedUp');
+            const userId = localStorage.getItem('isUserLoggedIn');
             const user = STATE.users.find(u => u.id === userId);
             const reportData = {
                 id: rid('rep'),
@@ -827,16 +842,32 @@
         }
     }
 
+    function toggleAuthForm(form) {
+        if (form === 'login') {
+            qs('#signupForm').classList.add('hidden');
+            qs('#loginForm').classList.remove('hidden');
+            qs('#authTitle').textContent = 'Welcome Back!';
+            qs('#authSubtitle').textContent = 'Please log in to your account.';
+        } else {
+            qs('#loginForm').classList.add('hidden');
+            qs('#signupForm').classList.remove('hidden');
+            qs('#authTitle').textContent = 'Welcome to Video Hub!';
+            qs('#authSubtitle').textContent = 'Please sign up or log in to continue.';
+        }
+    }
+
     qs('#btnSignUp').addEventListener('click', async () => {
         const name = qs('#signupName').value.trim();
         const email = qs('#signupEmail').value.trim();
+        const password = qs('#signupPassword').value.trim();
 
-        if (!name || !email) {
-            toast('Name and Email are required.');
+        if (!name || !email || !password) {
+            toast('Name, Email and Password are required.');
             return;
         }
 
         try {
+            await loadInitial();
             const existingUser = STATE.users.find(u => u.email === email);
             if (existingUser) {
                 toast('This email is already registered. Please log in.');
@@ -847,14 +878,14 @@
                 id: rid('usr'),
                 name: name,
                 email: email,
-                googleId: rid('gid'),
+                password: password,
                 status: 'active',
                 createdAt: new Date().toISOString()
             };
             
             await apiPost('users', newUser);
             STATE.users.push(newUser);
-            localStorage.setItem('isUserSignedUp', newUser.id);
+            localStorage.setItem('isUserLoggedIn', newUser.id);
             toast('Account created successfully! Redirecting...');
             window.location.reload();
         } catch (e) {
@@ -863,8 +894,45 @@
         }
     });
 
+    qs('#btnLogin').addEventListener('click', async () => {
+        const email = qs('#loginEmail').value.trim();
+        const password = qs('#loginPassword').value.trim();
+        
+        if (!email || !password) {
+            toast('Email and Password are required.');
+            return;
+        }
+
+        try {
+            await loadInitial();
+            const user = STATE.users.find(u => u.email === email);
+            
+            if (!user) {
+                toast('User not found. Please sign up.');
+                return;
+            }
+
+            if (user.password !== password) {
+                toast('Incorrect password.');
+                return;
+            }
+            
+            if (user.status === 'blocked') {
+                toast('Your account has been blocked by the admin.');
+                return;
+            }
+
+            localStorage.setItem('isUserLoggedIn', user.id);
+            toast('Login successful! Redirecting...');
+            window.location.reload();
+        } catch (e) {
+            console.error(e);
+            toast('Login failed. Please try again.');
+        }
+    });
+
     function logout() {
-        localStorage.removeItem('isUserSignedUp');
+        localStorage.removeItem('isUserLoggedIn');
         localStorage.removeItem('isAdminLoggedIn');
         window.location.reload();
     }
@@ -879,8 +947,8 @@
         if (password === CONFIG.ADMIN_PASSWORD) {
             localStorage.setItem('isAdminLoggedIn', 'true');
             STATE.isAdmin = true;
-            hidePage('mainContent');
-            hidePage('gatekeeper');
+            qs('#authPage').classList.add('hidden');
+            qs('#mainContent').classList.add('hidden');
             openPage('adminDashboard');
             renderAdminDashboard();
             toast("Admin login successful!");
@@ -1104,23 +1172,23 @@
 ,'&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
 
     function checkAuthStatus() {
-        const isUserSignedUp = localStorage.getItem('isUserSignedUp');
+        const isUserLoggedIn = localStorage.getItem('isUserLoggedIn');
         const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn');
         
-        if (isUserSignedUp) {
-            qs('#gatekeeperPage').classList.add('hidden');
+        if (isUserLoggedIn) {
+            qs('#authPage').classList.add('hidden');
             qs('#mainContent').classList.remove('hidden');
             qs('#bottomNav').style.display = 'flex';
             loadInitial();
         } else if (isAdminLoggedIn) {
             STATE.isAdmin = true;
-            qs('#gatekeeperPage').classList.add('hidden');
+            qs('#authPage').classList.add('hidden');
             qs('#mainContent').classList.add('hidden');
             openPage('adminDashboard');
             renderAdminDashboard();
             loadInitial();
         } else {
-            qs('#gatekeeperPage').classList.remove('hidden');
+            qs('#authPage').classList.remove('hidden');
             qs('#mainContent').classList.add('hidden');
             qs('#bottomNav').style.display = 'none';
             loadInitial();
