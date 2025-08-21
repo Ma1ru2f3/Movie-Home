@@ -23,9 +23,7 @@
     .logo{font-size:26px}
     .site-title{font-weight:800;font-size:18px}
     .site-sub{font-size:12px;color:var(--text-secondary)}
-    nav{display:flex;gap:8px;}
-    .tab{padding:8px 14px;border-radius:999px;background:var(--card-bg);font-weight:600;cursor:pointer;color:var(--text-primary);border:1px solid var(--border-color)}
-    .tab.active{background:var(--accent);color:white;box-shadow:0 4px 12px rgba(2,6,23,0.06)}
+    
     main{padding:18px 0;padding-bottom:100px}
     .grid{display:grid;gap:14px}
     .grid.cols-2{grid-template-columns:repeat(2,1fr)}
@@ -72,8 +70,54 @@
     .more-options .card{margin-bottom: 12px; cursor: pointer;}
     .more-options .card-body{padding: 18px;}
     .more-options h2{margin-top:0;font-size:20px;font-weight:700;}
-    @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} nav{overflow:auto} .details-page .header{height:200px} }
+    @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} .details-page .header{height:200px} }
     .hidden { display: none; }
+
+    /* Bottom Navigation Styles */
+    nav{
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: var(--bg-dark);
+        border-top: 1px solid var(--border-color);
+        z-index: 100;
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+    }
+    .tab{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: none;
+        font-weight: 600;
+        cursor: pointer;
+        color: var(--text-secondary);
+        border: none;
+        font-size: 12px;
+    }
+    .tab span.icon { font-size: 24px; }
+    .tab.active{ color: var(--text-primary); }
+    .tab.active .icon { color: var(--accent); }
+    
+    .profile-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .profile-info img {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+    }
+    .profile-info .name {
+        font-weight: bold;
+        font-size: 18px;
+    }
   </style>
 </head>
 <body>
@@ -98,15 +142,7 @@
         " download>
           Download App
         </a>
-        <div id="gsi-signin"></div>
       </div>
-      <nav id="topNav">
-        <button class="tab active" data-pane="home">🏠 Home</button>
-        <button class="tab" data-pane="search">🔍 Search</button>
-        <button class="tab" data-pane="movies">🎞️ Movies</button>
-        <button class="tab" data-pane="series">📺 Series</button>
-        <button class="tab" data-pane="more">More</button>
-      </nav>
     </header>
     <main class="container">
       <div id="paneHome" class="pane">
@@ -133,21 +169,40 @@
         <div id="seriesGrid" class="grid cols-2"></div>
       </div>
       <div id="paneMore" class="pane" style="display:none">
-        <div style="font-weight:800;font-size:24px">More</div>
+        <div style="font-weight:800;font-size:24px; margin-bottom: 20px;">More</div>
+
+        <div id="profileSection" class="card" style="margin-bottom: 20px;">
+            <div class="card-body">
+                <div class="profile-info hidden">
+                    <img id="profilePicture" src="" alt="Profile Picture">
+                    <div>
+                        <div id="profileName" class="name"></div>
+                        <div id="profileEmail" class="small-muted"></div>
+                    </div>
+                </div>
+                <div id="loginSection">
+                    <div id="gsi-signin" style="display: flex; justify-content: center;"></div>
+                </div>
+                <div id="logoutSection" class="hidden" style="text-align: center; margin-top: 15px;">
+                    <button class="btn-red" onclick="signOut()">Log out</button>
+                </div>
+            </div>
+        </div>
+
         <div class="more-options">
           <div class="card" onclick="showFeatureAlert('Settings')">
             <div class="card-body">Settings</div>
           </div>
-          <div class="card" onclick="showFeatureAlert('Upcoming')">
+          <div class="card" onclick="showComingSoonAlert('Upcoming')">
             <div class="card-body">Upcoming</div>
           </div>
-          <div class="card" onclick="showFeatureAlert('Shuffle Play')">
+          <div class="card" onclick="showComingSoonAlert('Shuffle Play')">
             <div class="card-body">Shuffle Play</div>
           </div>
-          <div class="card" onclick="showFeatureAlert('Favorites')">
+          <div class="card" onclick="showComingSoonAlert('Favorites')">
             <div class="card-body">Favorites</div>
           </div>
-          <div class="card" onclick="showFeatureAlert('Downloads')">
+          <div class="card" onclick="showComingSoonAlert('Downloads')">
             <div class="card-body">Downloads</div>
           </div>
           <div class="card" onclick="showFeatureAlert('Genre')">
@@ -159,10 +214,10 @@
           <div class="card" onclick="showFeatureAlert('Report')">
             <div class="card-body">Report</div>
           </div>
-          <div class="card" onclick="showFeatureAlert('Terms & Conditions')">
+          <div class="card" onclick="openPage('terms')">
             <div class="card-body">Terms & Conditions</div>
           </div>
-          <div class="card" onclick="showFeatureAlert('Privacy policy')">
+          <div class="card" onclick="openPage('privacy')">
             <div class="card-body">Privacy policy</div>
           </div>
           
@@ -197,19 +252,49 @@
                 <div id="manageUsersBlock" class="hidden" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
               </div>
             </div>
-            <div style="height:12px"></div>
-            <div class="card">
-              <div class="card-body">
-                <div style="font-weight:800;margin-bottom:8px">🔒 Login Info</div>
-                <div class="small-muted">Sign in with Google to view profile & (if admin) the Admin Dashboard.</div>
-                <div style="height:8px"></div>
-                <div id="gsi-small"></div>
-              </div>
-            </div>
         </div>
       </div>
     </main>
     <div id="videoDetailsPage" class="details-page"></div>
+    
+    <div id="termsPage" class="details-page hidden">
+        <div class="body">
+            <div class="back-btn" onclick="hidePage('termsPage')">←</div>
+            <h1 style="margin-top: 50px;">Terms & Conditions</h1>
+            <p>আপনার ব্যবহারের শর্তাবলী এখানে লিখুন। এটি একটি ডেমো পৃষ্ঠা।</p>
+        </div>
+    </div>
+
+    <div id="privacyPage" class="details-page hidden">
+        <div class="body">
+            <div class="back-btn" onclick="hidePage('privacyPage')">←</div>
+            <h1 style="margin-top: 50px;">Privacy Policy</h1>
+            <p>আপনার গোপনীয়তা নীতি এখানে লিখুন। এটি একটি ডেমো পৃষ্ঠা।</p>
+        </div>
+    </div>
+
+    <nav id="bottomNav">
+      <button class="tab active" data-pane="home">
+        <span class="icon">🏠</span>
+        <span>Home</span>
+      </button>
+      <button class="tab" data-pane="search">
+        <span class="icon">🔍</span>
+        <span>Search</span>
+      </button>
+      <button class="tab" data-pane="movies">
+        <span class="icon">🎞️</span>
+        <span>Movies</span>
+      </button>
+      <button class="tab" data-pane="series">
+        <span class="icon">📺</span>
+        <span>Series</span>
+      </button>
+      <button class="tab" data-pane="more">
+        <span class="icon">☰</span>
+        <span>More</span>
+      </button>
+    </nav>
   </div>
   <script>
     const CONFIG = {
@@ -317,9 +402,7 @@
         })) : []);
         
         renderHomeContent();
-        if(STATE.user && STATE.user.email === adminEmail){
-            renderManageVideos();
-        }
+        renderMorePage();
       }catch(e){
         console.error(e);
       }
@@ -526,31 +609,64 @@
     function setPane(paneId){
         qsa('.pane').forEach(p => p.style.display = 'none');
         qs(`#pane${paneId.charAt(0).toUpperCase() + paneId.slice(1)}`).style.display = 'block';
-        qsa('#topNav .tab').forEach(t => t.classList.remove('active'));
-        qs(`#topNav [data-pane="${paneId}"]`).classList.add('active');
+        qsa('#bottomNav .tab').forEach(t => t.classList.remove('active'));
+        qs(`#bottomNav [data-pane="${paneId}"]`).classList.add('active');
         if(paneId === 'more') {
             renderMorePage();
         }
     }
     
-    qsa('#topNav .tab').forEach(btn => {
+    qsa('#bottomNav .tab').forEach(btn => {
         btn.addEventListener('click', () => {
             const paneId = btn.dataset.pane;
             setPane(paneId);
         });
     });
 
-    function renderMorePage() {
-        if(STATE.user && STATE.user.email === adminEmail) {
-            qs('#adminBlock').style.display = 'block';
-            renderManageVideos();
-        } else {
-            qs('#adminBlock').style.display = 'none';
-        }
+    function showComingSoonAlert(featureName) {
+        alert(`${featureName} feature is under development. Coming soon!`);
     }
 
     function showFeatureAlert(featureName) {
         alert(`${featureName} feature is under development.`);
+    }
+
+    function openPage(pageId) {
+        const page = qs(`#${pageId}Page`);
+        if (page) {
+            page.classList.remove('hidden');
+            page.style.display = 'block';
+        }
+    }
+
+    function hidePage(pageId) {
+        const page = qs(`#${pageId}`);
+        if (page) {
+            page.classList.add('hidden');
+            page.style.display = 'none';
+        }
+    }
+
+    function renderMorePage() {
+        if(STATE.user) {
+            qs('#profileSection .profile-info').classList.remove('hidden');
+            qs('#profileName').textContent = STATE.user.name;
+            qs('#profileEmail').textContent = STATE.user.email;
+            qs('#profilePicture').src = STATE.user.picture;
+            qs('#loginSection').classList.add('hidden');
+            qs('#logoutSection').classList.remove('hidden');
+            if(STATE.user.email === adminEmail) {
+                qs('#adminBlock').style.display = 'block';
+                renderManageVideos();
+            } else {
+                qs('#adminBlock').style.display = 'none';
+            }
+        } else {
+            qs('#profileSection .profile-info').classList.add('hidden');
+            qs('#loginSection').classList.remove('hidden');
+            qs('#logoutSection').classList.add('hidden');
+            qs('#adminBlock').style.display = 'none';
+        }
     }
     
     qs('#searchInput').addEventListener('input', (e) => {
@@ -670,9 +786,6 @@
     function renderSiteHeader(){
       qs('#siteName').textContent = OWNER_INFO.name;
       qs('#siteAbout').textContent = OWNER_INFO.about;
-      qs('#ownerName').textContent = OWNER_INFO.name;
-      qs('#ownerAbout').textContent = OWNER_INFO.about;
-      qs('#ownerContact').textContent = OWNER_INFO.contact;
     }
 
     function handleCredentialResponse(response){
@@ -724,9 +837,7 @@
         client_id: CONFIG.GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse
       });
-      if (!STATE.user) {
-          window.google.accounts.id.renderButton(document.getElementById('gsi-signin'), { theme:'filled_blue', size:'large', text:'signin_with' });
-      }
+      window.google.accounts.id.renderButton(document.getElementById('gsi-signin'), { theme:'filled_blue', size:'large', text:'signin_with' });
     })();
   </script>
 </body>
