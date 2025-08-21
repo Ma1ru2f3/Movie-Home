@@ -52,7 +52,8 @@
     .content-card-title{font-size:14px;font-weight:600;margin-top:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
     .logo-container img{width:60px;height:60px;object-fit:contain;border-radius:10px}
     .logo-container{flex-shrink:0}
-    .details-page, .signup-page, .gatekeeper-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
+    .details-page, .signup-page, .gatekeeper-page, .admin-page{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg-dark);z-index:200;overflow-y:auto;display:none;padding-bottom:80px}
+    
     .gatekeeper-page {
         display: flex;
         flex-direction: column;
@@ -61,13 +62,22 @@
         text-align: center;
         padding: 20px;
     }
-    .gatekeeper-page h1{font-size: 28px; margin-bottom: 12px;}
-    .gatekeeper-page p {color: var(--text-secondary); margin-bottom: 24px;}
+    .gatekeeper-card {
+        background: var(--card-bg);
+        border-radius: var(--rounded);
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        max-width: 400px;
+        width: 90%;
+    }
+    .gatekeeper-card h1{font-size: 28px; margin-bottom: 12px;}
+    .gatekeeper-card p {color: var(--text-secondary); margin-bottom: 24px;}
+    
     .details-page .header{position:relative;height:300px;overflow:hidden;background:var(--card-bg)}
     .details-page .header iframe{width:100%;height:100%;}
-    .details-page .back-btn, .signup-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
-    .details-page .body, .signup-page .body{padding:20px}
-    .details-page h1, .signup-page h1{font-size:24px;margin:0;font-weight:800}
+    .details-page .back-btn, .signup-page .back-btn, .admin-page .back-btn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.5);color:white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:24px}
+    .details-page .body, .signup-page .body, .admin-page .body{padding:20px}
+    .details-page h1, .signup-page h1, .admin-page h1{font-size:24px;margin:0;font-weight:800}
     .details-page .meta-info{display:flex;gap:10px;margin-top:8px;color:var(--text-secondary);font-size:14px}
     .details-page .btn-group{margin-top:15px;display:flex;gap:10px;justify-content:center}
     .details-page .overview{margin-top:20px;line-height:1.6}
@@ -123,6 +133,34 @@
     .profile-info .name {
         font-weight: bold;
         font-size: 18px;
+    }
+
+    .admin-nav{
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .admin-nav .btn{
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        color: var(--text-secondary);
+        cursor: pointer;
+    }
+    .admin-nav .btn.active{
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+    .admin-option-list .item{
+        padding: 12px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+    }
+    .admin-option-list .item:last-child{
+        border-bottom: none;
     }
   </style>
 </head>
@@ -211,42 +249,6 @@
             <div class="card" onclick="openPage('privacy')">
               <div class="card-body">Privacy policy</div>
             </div>
-            
-            <div id="adminBlock" class="card hidden" style="margin-top: 20px;">
-                <div class="card-body">
-                  <div style="font-weight:800;margin-bottom:8px">🛠️ Admin Dashboard</div>
-                  
-                  <div style="font-weight:700">Upload Video</div>
-                  <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
-                    <input id="uploadId" type="text" placeholder="Series/Movie ID (e.g., Naruto_Shippuden)" />
-                    <input id="uploadTitle" type="text" placeholder="Title (e.g., Naruto Shippuden)" />
-                    <input id="uploadLink" type="text" placeholder="Video link" />
-                    <input id="uploadCategory" type="text" placeholder="Category" />
-                    <input id="uploadSeason" type="text" placeholder="Season" />
-                    <input id="uploadEpisode" type="text" placeholder="Episode" />
-                    <textarea id="uploadDescription" rows="3" placeholder="Description"></textarea>
-                    <input id="uploadThumbnail" type="text" placeholder="Thumbnail link" />
-                    <div class="row">
-                      <button id="btnUpload" class="btn-emerald">Upload</button>
-                      <div style="flex:1"></div>
-                    </div>
-                    <div class="progress-wrap"><div id="uploadProgress" class="progress-bar"></div></div>
-                  </div>
-                  <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
-                  <div style="font-weight:700; display: flex; align-items: center; justify-content: space-between;">
-                      <span>Manage Videos</span>
-                      <button id="btnShowVideos" class="btn-primary" style="padding: 6px 10px;">Show</button>
-                  </div>
-                  <div id="manageVideosBlock" class="hidden" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
-                  
-                  <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
-                  <div style="font-weight:700; display: flex; align-items: center; justify-content: space-between;">
-                      <span>Manage Users</span>
-                      <button id="btnShowUsers" class="btn-primary" style="padding: 6px 10px;">Show</button>
-                  </div>
-                  <div id="manageUsersBlock" class="hidden" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
-                </div>
-              </div>
           </div>
         </div>
       </main>
@@ -275,7 +277,7 @@
     </div>
 
     <div id="gatekeeperPage" class="gatekeeper-page">
-        <div style="max-width: 400px; padding: 20px;">
+        <div class="gatekeeper-card">
             <div style="font-size: 60px; margin-bottom: 20px;">🎬</div>
             <h1>Welcome to Video Hub!</h1>
             <p>Please sign up to access our full library of movies and series.</p>
@@ -283,6 +285,64 @@
                 <input id="signupName" type="text" placeholder="Full Name" />
                 <input id="signupEmail" type="text" placeholder="Email Address" />
                 <button id="btnSignUp" class="btn-primary" style="padding: 12px;">Create Account</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="adminDashboardPage" class="admin-page hidden">
+        <div class="container">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1 style="margin: 0;">Admin Dashboard</h1>
+                <button onclick="adminLogout()" class="btn-red">Logout</button>
+            </div>
+            <div class="admin-nav">
+                <button class="btn active" data-admin-pane="upload">Upload</button>
+                <button class="btn" data-admin-pane="users">Users</button>
+                <button class="btn" data-admin-pane="reports">Reports</button>
+                <button class="btn" data-admin-pane="requests">Requests</button>
+            </div>
+            <div id="admin-upload-pane" class="admin-pane">
+                <div class="card">
+                    <div class="card-body">
+                        <div style="font-weight:700">Upload Video</div>
+                        <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
+                            <input id="uploadId" type="text" placeholder="Series/Movie ID (e.g., Naruto_Shippuden)" />
+                            <input id="uploadTitle" type="text" placeholder="Title (e.g., Naruto Shippuden)" />
+                            <input id="uploadLink" type="text" placeholder="Video link" />
+                            <input id="uploadCategory" type="text" placeholder="Category" />
+                            <input id="uploadSeason" type="text" placeholder="Season" />
+                            <input id="uploadEpisode" type="text" placeholder="Episode" />
+                            <textarea id="uploadDescription" rows="3" placeholder="Description"></textarea>
+                            <input id="uploadThumbnail" type="text" placeholder="Thumbnail link" />
+                            <button id="btnUpload" class="btn-emerald">Upload</button>
+                            <div class="progress-wrap"><div id="uploadProgress" class="progress-bar"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="admin-users-pane" class="admin-pane hidden">
+                <div class="card">
+                    <div class="card-body">
+                        <div style="font-weight:700;margin-bottom:8px">Registered Users</div>
+                        <div id="userList" class="admin-option-list"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="admin-reports-pane" class="admin-pane hidden">
+                <div class="card">
+                    <div class="card-body">
+                        <div style="font-weight:700;margin-bottom:8px">User Reports</div>
+                        <div id="reportList" class="admin-option-list"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="admin-requests-pane" class="admin-pane hidden">
+                <div class="card">
+                    <div class="card-body">
+                        <div style="font-weight:700;margin-bottom:8px">User Requests</div>
+                        <div id="requestList" class="admin-option-list"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -390,12 +450,21 @@
         headers: {'Content-Type':'application/json'}
       }).then(r=>r.json());
     }
+    function apiUpdateUserStatus(id, status){
+      return fetch(`${api}/id/${encodeURIComponent(id)}?sheet=users`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ data: { status: status } })
+      }).then(r => r.json());
+    }
 
     function rid(prefix='id'){ return `${prefix}_${Math.random().toString(36).slice(2,9)}${Date.now().toString().slice(-4)}` }
 
     let STATE = {
       videos: [],
       users: [], 
+      reports: [],
+      requests: [],
       isAdmin: false,
       favorites: JSON.parse(localStorage.getItem('bv_favorites') || '[]'),
       downloads: JSON.parse(localStorage.getItem('bv_downloads') || '[]'),
@@ -432,9 +501,11 @@
 
     async function loadInitial(){
       try{
-        const [videosRaw, usersRaw] = await Promise.all([
+        const [videosRaw, usersRaw, reportsRaw, requestsRaw] = await Promise.all([
           apiGet('videos').catch(()=>[]),
-          apiGet('users').catch(()=>[])
+          apiGet('users').catch(()=>[]),
+          apiGet('reports').catch(()=>[]),
+          apiGet('requests').catch(()=>[])
         ]);
         
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
@@ -456,11 +527,19 @@
             name: r.name || r.Name || 'Unknown',
             email: r.email || r.Email || 'No email',
             googleId: r.googleId || 'N/A',
+            status: r.status || 'active',
             createdAt: r.createdAt || ''
         })) : []);
         
+        STATE.reports = Array.isArray(reportsRaw) ? reportsRaw.map(r => ({
+            id: r.id, name: r.name, email: r.email, report: r.report, createdAt: r.createdAt
+        })) : [];
+
+        STATE.requests = Array.isArray(requestsRaw) ? requestsRaw.map(r => ({
+            id: r.id, name: r.name, email: r.email, request: r.request, createdAt: r.createdAt
+        })) : [];
+        
         renderHomeContent();
-        renderMorePage();
       }catch(e){
         console.error(e);
       }
@@ -698,16 +777,36 @@
         alert(`${featureName} feature is under development.`);
     }
 
-    function promptRequest() {
+    async function promptRequest() {
         const request = prompt("What movie or series would you like to request?");
         if (request) {
+            const userId = localStorage.getItem('isUserSignedUp'); // Use a proper user id later
+            const user = STATE.users.find(u => u.id === userId);
+            const reqData = {
+                id: rid('req'),
+                name: user ? user.name : 'Unknown User',
+                email: user ? user.email : 'Unknown Email',
+                request: request,
+                createdAt: new Date().toISOString()
+            };
+            await apiPost('requests', reqData);
             toast(`Thank you for your request for "${request}". We will review it.`);
         }
     }
 
-    function promptReport() {
+    async function promptReport() {
         const report = prompt("Please describe the issue you would like to report:");
         if (report) {
+            const userId = localStorage.getItem('isUserSignedUp');
+            const user = STATE.users.find(u => u.id === userId);
+            const reportData = {
+                id: rid('rep'),
+                name: user ? user.name : 'Unknown User',
+                email: user ? user.email : 'Unknown Email',
+                report: report,
+                createdAt: new Date().toISOString()
+            };
+            await apiPost('reports', reportData);
             toast("Thank you for your report. We will look into it shortly.");
         }
     }
@@ -740,7 +839,7 @@
         try {
             const existingUser = STATE.users.find(u => u.email === email);
             if (existingUser) {
-                toast('This email is already registered.');
+                toast('This email is already registered. Please log in.');
                 return;
             }
 
@@ -749,12 +848,13 @@
                 name: name,
                 email: email,
                 googleId: rid('gid'),
+                status: 'active',
                 createdAt: new Date().toISOString()
             };
             
             await apiPost('users', newUser);
             STATE.users.push(newUser);
-            localStorage.setItem('isUserSignedUp', 'true');
+            localStorage.setItem('isUserSignedUp', newUser.id);
             toast('Account created successfully! Redirecting...');
             window.location.reload();
         } catch (e) {
@@ -769,24 +869,127 @@
         window.location.reload();
     }
 
+    function adminLogout() {
+        localStorage.removeItem('isAdminLoggedIn');
+        window.location.reload();
+    }
+
     function openAdminLogin() {
         const password = prompt("Enter Admin Password:");
         if (password === CONFIG.ADMIN_PASSWORD) {
             localStorage.setItem('isAdminLoggedIn', 'true');
             STATE.isAdmin = true;
-            renderMorePage();
+            hidePage('mainContent');
+            hidePage('gatekeeper');
+            openPage('adminDashboard');
+            renderAdminDashboard();
             toast("Admin login successful!");
         } else {
             toast("Incorrect password.");
         }
     }
     
-    function renderMorePage() {
-        if(STATE.isAdmin) {
-            qs('#adminBlock').classList.remove('hidden');
-        } else {
-            qs('#adminBlock').classList.add('hidden');
+    function renderAdminDashboard() {
+        qsa('.admin-nav .btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                qsa('.admin-nav .btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                qsa('.admin-pane').forEach(p => p.classList.add('hidden'));
+                qs(`#admin-${btn.dataset.adminPane}-pane`).classList.remove('hidden');
+                
+                // Render specific pane content on click
+                if (btn.dataset.adminPane === 'users') {
+                    renderUserList();
+                } else if (btn.dataset.adminPane === 'reports') {
+                    renderReportsList();
+                } else if (btn.dataset.adminPane === 'requests') {
+                    renderRequestsList();
+                }
+            });
+        });
+        // Initial render of upload pane
+        qs('#admin-upload-pane').classList.remove('hidden');
+    }
+    
+    async function renderUserList() {
+        const userListContainer = qs('#userList');
+        userListContainer.innerHTML = '';
+        await loadInitial(); // Re-fetch users to get the latest status
+        if (STATE.users.length === 0) {
+            userListContainer.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No users registered yet.</div>';
+            return;
         }
+        STATE.users.forEach(user => {
+            const statusText = user.status === 'blocked' ? 'Unblock' : 'Block';
+            const statusClass = user.status === 'blocked' ? 'btn-emerald' : 'btn-red';
+            const userItem = document.createElement('div');
+            userItem.className = 'item';
+            userItem.innerHTML = `
+                <div style="flex:1;">
+                    <div style="font-weight:700">${escapeHtml(user.name)}</div>
+                    <div class="small-muted">${escapeHtml(user.email)}</div>
+                    <div class="tiny muted">ID: ${escapeHtml(user.id)}</div>
+                </div>
+                <button data-id="${user.id}" data-status="${user.status}" class="btn ${statusClass}">${statusText}</button>
+            `;
+            userListContainer.appendChild(userItem);
+            userItem.querySelector('button').addEventListener('click', async (e) => {
+                const userId = e.target.dataset.id;
+                const currentStatus = e.target.dataset.status;
+                const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
+                try {
+                    await apiUpdateUserStatus(userId, newStatus);
+                    toast(`User ${user.name} has been ${newStatus}d.`);
+                    renderUserList(); // Re-render to show updated status
+                } catch (err) {
+                    toast('Failed to update user status.');
+                }
+            });
+        });
+    }
+
+    async function renderReportsList() {
+        const reportListContainer = qs('#reportList');
+        reportListContainer.innerHTML = '';
+        await loadInitial();
+        if (STATE.reports.length === 0) {
+            reportListContainer.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No new reports.</div>';
+            return;
+        }
+        STATE.reports.forEach(report => {
+            const item = document.createElement('div');
+            item.className = 'item';
+            item.innerHTML = `
+                <div style="flex:1;">
+                    <div style="font-weight:700">Report from: ${escapeHtml(report.name)}</div>
+                    <div class="small-muted">${escapeHtml(report.email)}</div>
+                    <div class="tiny muted" style="margin-top: 5px;">Report: ${escapeHtml(report.report)}</div>
+                </div>
+            `;
+            reportListContainer.appendChild(item);
+        });
+    }
+
+    async function renderRequestsList() {
+        const requestListContainer = qs('#requestList');
+        requestListContainer.innerHTML = '';
+        await loadInitial();
+        if (STATE.requests.length === 0) {
+            requestListContainer.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No new requests.</div>';
+            return;
+        }
+        STATE.requests.forEach(request => {
+            const item = document.createElement('div');
+            item.className = 'item';
+            item.innerHTML = `
+                <div style="flex:1;">
+                    <div style="font-weight:700">Request from: ${escapeHtml(request.name)}</div>
+                    <div class="small-muted">${escapeHtml(request.email)}</div>
+                    <div class="tiny muted" style="margin-top: 5px;">Request: ${escapeHtml(request.request)}</div>
+                </div>
+            `;
+            requestListContainer.appendChild(item);
+        });
     }
     
     function showFavorites() {
@@ -857,79 +1060,6 @@
         }
     });
 
-    qs('#btnShowVideos').addEventListener('click', () => {
-        const videoBlock = qs('#manageVideosBlock');
-        videoBlock.classList.toggle('hidden');
-        if (!videoBlock.classList.contains('hidden')) {
-            renderManageVideos();
-        }
-    });
-
-    function renderManageVideos(){
-      const out = qs('#manageVideosBlock');
-      out.innerHTML = '';
-      if(!STATE.videos.length){
-        out.innerHTML = '<div class="small-muted">No videos to manage.</div>';
-        return;
-      }
-      const uniqueSeries = getUniqueSeries();
-      uniqueSeries.forEach(v => {
-        const d = document.createElement('div');
-        d.style.padding = '8px';
-        d.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-        d.style.display = 'flex';
-        d.style.alignItems = 'center';
-        d.innerHTML = `<div style="flex:1;">
-            <div style="font-weight:700">${escapeHtml(v.title)}</div>
-            <div class="small-muted tiny">Series ID: <code>${escapeHtml(v.seriesId)}</code></div>
-          </div>
-          <button class="btn-red" data-id="${v.seriesId}">Delete Series</button>`;
-        out.appendChild(d);
-        d.querySelector('.btn-red').addEventListener('click', async () => {
-          if (confirm(`Are you sure you want to delete the entire series "${v.title}"? This will delete all episodes.`)) {
-            try {
-              toast(`Deleting series...`);
-              await apiDeleteBySeriesId('videos', v.seriesId);
-              toast('Series deleted successfully!');
-              await loadInitial();
-            } catch (e) {
-              console.error(e);
-              toast('Failed to delete series.');
-            }
-          }
-        });
-      });
-    }
-
-    qs('#btnShowUsers').addEventListener('click', () => {
-        const userBlock = qs('#manageUsersBlock');
-        userBlock.classList.toggle('hidden');
-        if (!userBlock.classList.contains('hidden')) {
-            renderManageUsers();
-        }
-    });
-
-    function renderManageUsers(){
-        const out = qs('#manageUsersBlock');
-        out.innerHTML = '';
-        if(!STATE.users.length){
-            out.innerHTML = '<div class="small-muted">No users found.</div>';
-            return;
-        }
-        STATE.users.forEach(u => {
-            const d = document.createElement('div');
-            d.style.padding = '8px';
-            d.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-            d.style.display = 'flex';
-            d.style.flexDirection = 'column';
-            d.innerHTML = `<div><strong style="font-weight:700">${escapeHtml(u.name)}</strong></div>
-                           <div class="small-muted tiny">${escapeHtml(u.email)}</div>
-                           <div class="small-muted tiny">ID: <code>${escapeHtml(u.id)}</code></div>
-                           <div class="small-muted tiny">GoogleId: <code>${escapeHtml(u.googleId)}</code></div>`;
-            out.appendChild(d);
-        });
-    }
-
     qs('#btnUpload').addEventListener('click', async ()=>{
       if(!STATE.isAdmin){ toast('Only admin can upload.'); return; }
       const seriesId = qs('#uploadId').value.trim();
@@ -977,19 +1107,23 @@
         const isUserSignedUp = localStorage.getItem('isUserSignedUp');
         const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn');
         
-        if (isUserSignedUp || isAdminLoggedIn) {
+        if (isUserSignedUp) {
             qs('#gatekeeperPage').classList.add('hidden');
             qs('#mainContent').classList.remove('hidden');
             qs('#bottomNav').style.display = 'flex';
-            if (isAdminLoggedIn) {
-                STATE.isAdmin = true;
-                renderMorePage();
-            }
+            loadInitial();
+        } else if (isAdminLoggedIn) {
+            STATE.isAdmin = true;
+            qs('#gatekeeperPage').classList.add('hidden');
+            qs('#mainContent').classList.add('hidden');
+            openPage('adminDashboard');
+            renderAdminDashboard();
             loadInitial();
         } else {
             qs('#gatekeeperPage').classList.remove('hidden');
             qs('#mainContent').classList.add('hidden');
             qs('#bottomNav').style.display = 'none';
+            loadInitial();
         }
     }
 
