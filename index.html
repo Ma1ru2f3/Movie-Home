@@ -515,8 +515,12 @@
       ADMIN_PASSWORD: "112233445500",
       ADMIN_EMAIL: "mymaruf94@gmail.com",
       ADMIN_PASS: "123450",
-      SHEETSON_API_KEY: "Et_ZFCObrkph-2abzyjfn7D02Ms-bfEWSef3YKoQc12_UX72ChypV-5iH_U",
-      SHEETSON_API_BASE: "https://api.sheetson.com/v2/sheets/",
+      
+      // *** START GOOGLE SHEETS API CONFIG ***
+      GOOGLE_SHEETS_API_KEY: "AIzaSyAnEdtjQtTBIF2dHODA4g_3ysvfEY4GTdM",
+      GOOGLE_SHEET_ID: "1bWojlxKNd-A0R5lWzuplLEgYwDiK9NXzZMfkhwwzQig",
+      // *** END GOOGLE SHEETS API CONFIG ***
+      
       APK_DOWNLOAD_LINK: "https://drive.google.com/file/d/1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw/view?usp=drivesdk"
     };
 
@@ -533,56 +537,54 @@
       alert(msg);
     }
     
-    // Sheetson API functions
-    async function apiGet(sheet){
+    // Updated API Fetching function for Google Sheets API
+    async function apiGet(sheetName){
+        const range = `${sheetName}!A:Z`;
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.GOOGLE_SHEET_ID}/values/${range}?key=${CONFIG.GOOGLE_SHEETS_API_KEY}`;
+
         try {
-            const response = await fetch(`${CONFIG.SHEETSON_API_BASE}${sheet}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${CONFIG.SHEETSON_API_KEY}`,
-                    'X-Sheetson-Headers': 'All'
-                }
-            });
+            const response = await fetch(url);
             const data = await response.json();
-            return data.results;
+            
+            if (!data.values) {
+                console.error("No data found in the sheet.");
+                return [];
+            }
+            
+            // Data processing
+            const rows = data.values;
+            const headers = rows[0].map(h => h.toLowerCase()); // Headers to lowercase
+            const results = rows.slice(1).map(row => {
+                const rowObject = {};
+                row.forEach((value, index) => {
+                    if (headers[index]) {
+                        rowObject[headers[index]] = value;
+                    }
+                });
+                return rowObject;
+            });
+    
+            return results;
         } catch (error) {
-            console.error(`Error fetching data from ${sheet}:`, error);
+            console.error(`Error fetching data from sheet:`, error);
             return [];
         }
     }
 
+    // This function will NOT work with Google Sheets API directly
+    // A more advanced server-side solution would be needed to use this feature.
+    // For now, these features are disabled.
     async function apiPost(sheet, rowObj){
-        try {
-            const response = await fetch(`${CONFIG.SHEETSON_API_BASE}${sheet}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${CONFIG.SHEETSON_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(rowObj)
-            });
-            return await response.json();
-        } catch (error) {
-            console.error(`Error posting data to ${sheet}:`, error);
-            return null;
-        }
+        console.error("apiPost is not supported in this client-side implementation of Google Sheets API.");
+        toast("Feature disabled. Admin features require a server-side solution.");
+        return null;
     }
 
+    // This function will also NOT work with Google Sheets API directly.
     async function apiUpdateUserStatus(id, status){
-        try {
-            const response = await fetch(`${CONFIG.SHEETSON_API_BASE}users/${id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${CONFIG.SHEETSON_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ status: status })
-            });
-            return await response.json();
-        } catch (error) {
-            console.error('Error updating user status:', error);
-            return null;
-        }
+        console.error("apiUpdateUserStatus is not supported in this client-side implementation of Google Sheets API.");
+        toast("Feature disabled. Admin features require a server-side solution.");
+        return null;
     }
     
     function rid(prefix='id'){ return `${prefix}_${Math.random().toString(36).slice(2,9)}${Date.now().toString().slice(-4)}` }
@@ -629,6 +631,7 @@
 
     async function loadInitial(){
       try{
+        // Now using the new apiGet function
         const [videosRaw, usersRaw, reportsRaw, requestsRaw, upcomingRaw] = await Promise.all([
           apiGet('videos').catch(()=>[]),
           apiGet('users').catch(()=>[]),
@@ -638,13 +641,13 @@
         ]);
         
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
-          seriesId: r.seriesId || r.SeriesID || r.seriesid || rid('ser'),
-          id: r.id || r.ID || r.id || rid('vid'),
-          title: r.title || r.Title || r.name || 'Untitled',
-          link: r.link || r.Link || r.url || '',
-          category: r.category || r.Category || r.cat || '',
-          uploadedBy: r.uploadedby || r.UploadedBy || '',
-          uploadDate: r.uploaddate || r.UploadDate || '',
+          seriesId: r.seriesid || rid('ser'),
+          id: r.id || rid('vid'),
+          title: r.title || 'Untitled',
+          link: r.link || '',
+          category: r.category || '',
+          uploadedBy: r.uploadedby || '',
+          uploadDate: r.uploaddate || '',
           season: r.season || '1',
           episode: r.episode || '1',
           description: r.description || '',
@@ -652,9 +655,9 @@
         })).sort((a, b) => a.seriesId.localeCompare(b.seriesId) || a.season - b.season || a.episode - b.episode) : []);
         
         STATE.users = (Array.isArray(usersRaw) ? usersRaw.map(r => ({
-            id: r.id || r.ID,
-            name: r.name || r.Name || 'Unknown',
-            email: r.email || r.Email || 'No email',
+            id: r.id,
+            name: r.name || 'Unknown',
+            email: r.email || 'No email',
             password: r.password || '',
             status: r.status || 'active',
             createdAt: r.createdat || ''
@@ -690,9 +693,9 @@
 
     function renderHomeContent(){
       const allSeries = getUniqueSeries();
-      const trending = allSeries.filter(v => v.category.toLowerCase().includes('trending'));
-      const popular = allSeries.filter(v => v.category.toLowerCase().includes('popular'));
-      const categories = [...new Set(STATE.videos.map(v => v.category))];
+      const trending = allSeries.filter(v => v.category && v.category.toLowerCase().includes('trending'));
+      const popular = allSeries.filter(v => v.category && v.category.toLowerCase().includes('popular'));
+      const categories = [...new Set(STATE.videos.map(v => v.category).filter(c => c))];
       
       // If no trending videos found, show all videos as a fallback
       if(trending.length === 0 && allSeries.length > 0) {
@@ -703,8 +706,8 @@
 
       renderVideoSection(qs('#popularVideos'), popular, true);
       renderCategories(qs('#categoryChips'), categories);
-      renderPaneMovies(allSeries.filter(v => v.category.toLowerCase().includes('movie')));
-      renderPaneSeries(allSeries.filter(v => v.category.toLowerCase().includes('series')));
+      renderPaneMovies(allSeries.filter(v => v.category && v.category.toLowerCase().includes('movie')));
+      renderPaneSeries(allSeries.filter(v => v.category && v.category.toLowerCase().includes('series')));
     }
     
     function renderVideoSection(container, videos, isHorizontal = false){
@@ -929,34 +932,14 @@
     async function promptRequest() {
         const request = prompt("What movie or series would you like to request?");
         if (request) {
-            const userId = localStorage.getItem('isUserLoggedIn');
-            const user = STATE.users.find(u => u.id === userId);
-            const reqData = {
-                id: rid('req'),
-                name: user ? user.name : 'Unknown User',
-                email: user ? user.email : 'Unknown Email',
-                request: request,
-                createdAt: new Date().toISOString()
-            };
-            await apiPost('requests', reqData);
-            toast(`Thank you for your request for "${request}". We will review it.`);
+            toast("Request feature requires a server-side solution and is currently disabled.");
         }
     }
 
     async function promptReport() {
         const report = prompt("Please describe the issue you would like to report:");
         if (report) {
-            const userId = localStorage.getItem('isUserLoggedIn');
-            const user = STATE.users.find(u => u.id === userId);
-            const reportData = {
-                id: rid('rep'),
-                name: user ? user.name : 'Unknown User',
-                email: user ? user.email : 'Unknown Email',
-                report: report,
-                createdAt: new Date().toISOString()
-            };
-            await apiPost('reports', reportData);
-            toast("Thank you for your report. We will look into it shortly.");
+            toast("Report feature requires a server-side solution and is currently disabled.");
         }
     }
 
@@ -1035,87 +1018,22 @@
     }
 
     qs('#btnSignUp').addEventListener('click', async () => {
-        const name = qs('#signupName').value.trim();
-        const email = qs('#signupEmail').value.trim();
-        const password = qs('#signupPassword').value.trim();
-
-        if (!name || !email || !password) {
-            toast('Name, Email and Password are required.');
-            return;
-        }
-
-        try {
-            await loadInitial();
-            const existingUser = STATE.users.find(u => u.email === email);
-            if (existingUser) {
-                toast('This email is already registered. Please log in.');
-                return;
-            }
-
-            const newUser = {
-                id: rid('usr'),
-                name: name,
-                email: email,
-                password: password,
-                status: 'active',
-                createdAt: new Date().toISOString()
-            };
-            
-            await apiPost('users', newUser);
-            STATE.users.push(newUser);
-            localStorage.setItem('isUserLoggedIn', newUser.id);
-            toast('Account created successfully! Redirecting...');
-            window.location.reload();
-        } catch (e) {
-            console.error(e);
-            toast('Failed to create account. Please try again.');
-        }
+        toast("Sign up disabled. User management requires a server-side solution.");
     });
 
     qs('#btnLogin').addEventListener('click', async () => {
         const email = qs('#loginEmail').value.trim();
         const password = qs('#loginPassword').value.trim();
         
-        if (!email || !password) {
-            toast('Email and Password are required.');
+        // Admin login check
+        if (email === CONFIG.ADMIN_EMAIL && password === CONFIG.ADMIN_PASS) {
+            localStorage.setItem('isAdminLoggedIn', 'true');
+            toast("Admin login successful!");
+            window.location.reload();
             return;
         }
 
-        try {
-            await loadInitial();
-            
-            // Check for hardcoded admin login
-            if (email === CONFIG.ADMIN_EMAIL && password === CONFIG.ADMIN_PASS) {
-                localStorage.setItem('isAdminLoggedIn', 'true');
-                toast("Admin login successful!");
-                window.location.reload();
-                return;
-            }
-
-            const user = STATE.users.find(u => u.email === email);
-            
-            if (!user) {
-                toast('User not found. Please sign up.');
-                return;
-            }
-
-            if (user.password !== password) {
-                toast('Incorrect password.');
-                return;
-            }
-            
-            if (user.status === 'blocked') {
-                toast('Your account has been blocked by the admin.');
-                return;
-            }
-
-            localStorage.setItem('isUserLoggedIn', user.id);
-            toast('Login successful! Redirecting...');
-            window.location.reload();
-        } catch (e) {
-            console.error(e);
-            toast('Login failed. Please try again.');
-        }
+        toast("Login disabled. User management requires a server-side solution.");
     });
 
     function logout() {
@@ -1156,112 +1074,19 @@
     }
 
     async function addUpcomingVideo() {
-        const title = qs('#upcomingTitle').value.trim();
-        const release_date = qs('#upcomingReleaseDate').value.trim();
-        const description = qs('#upcomingDescription').value.trim();
-
-        if (!title || !release_date) {
-            toast('Title and Release Date are required.');
-            return;
-        }
-
-        try {
-            const newUpcoming = {
-                id: rid('upc'),
-                title: title,
-                release_date: release_date,
-                description: description
-            };
-            await apiPost('upcoming_videos', newUpcoming);
-            toast('Upcoming video added successfully!');
-            qs('#upcomingTitle').value = '';
-            qs('#upcomingReleaseDate').value = '';
-            qs('#upcomingDescription').value = '';
-        } catch (e) {
-            console.error(e);
-            toast('Failed to add upcoming video.');
-        }
+        toast("This feature requires a server-side solution and is currently disabled.");
     }
     
     async function renderUserList() {
-        const userListContainer = qs('#userList');
-        userListContainer.innerHTML = '';
-        await loadInitial(); // Re-fetch users to get the latest status
-        if (STATE.users.length === 0) {
-            userListContainer.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No users registered yet.</div>';
-            return;
-        }
-        STATE.users.forEach(user => {
-            const statusText = user.status === 'blocked' ? 'Unblock' : 'Block';
-            const statusClass = user.status === 'blocked' ? 'btn-emerald' : 'btn-red';
-            const userItem = document.createElement('div');
-            userItem.className = 'item';
-            userItem.innerHTML = `
-                <div style="flex:1;">
-                    <div style="font-weight:700">${escapeHtml(user.name)}</div>
-                    <div class="small-muted">${escapeHtml(user.email)}</div>
-                    <div class="tiny muted">ID: ${escapeHtml(user.id)}</div>
-                </div>
-                <button data-id="${user.id}" data-status="${user.status}" class="btn ${statusClass}">${statusText}</button>
-            `;
-            userListContainer.appendChild(userItem);
-            userItem.querySelector('button').addEventListener('click', async (e) => {
-                const userId = e.target.dataset.id;
-                const currentStatus = e.target.dataset.status;
-                const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
-                try {
-                    await apiUpdateUserStatus(userId, newStatus);
-                    toast(`User ${user.name} has been ${newStatus}d.`);
-                    renderUserList(); // Re-render to show updated status
-                } catch (err) {
-                    toast('Failed to update user status.');
-                }
-            });
-        });
+        qs('#userList').innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">User management requires a server-side solution.</div>';
     }
 
     async function renderReportsList() {
-        const reportListContainer = qs('#reportList');
-        reportListContainer.innerHTML = '';
-        await loadInitial();
-        if (STATE.reports.length === 0) {
-            reportListContainer.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No new reports.</div>';
-            return;
-        }
-        STATE.reports.forEach(report => {
-            const item = document.createElement('div');
-            item.className = 'item';
-            item.innerHTML = `
-                <div style="flex:1;">
-                    <div style="font-weight:700">Report from: ${escapeHtml(report.name)}</div>
-                    <div class="small-muted">${escapeHtml(report.email)}</div>
-                    <div class="tiny muted" style="margin-top: 5px;">Report: ${escapeHtml(report.report)}</div>
-                </div>
-            `;
-            reportListContainer.appendChild(item);
-        });
+        qs('#reportList').innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">Reporting feature requires a server-side solution.</div>';
     }
 
     async function renderRequestsList() {
-        const requestListContainer = qs('#requestList');
-        requestListContainer.innerHTML = '';
-        await loadInitial();
-        if (STATE.requests.length === 0) {
-            requestListContainer.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No new requests.</div>';
-            return;
-        }
-        STATE.requests.forEach(request => {
-            const item = document.createElement('div');
-            item.className = 'item';
-            item.innerHTML = `
-                <div style="flex:1;">
-                    <div style="font-weight:700">Request from: ${escapeHtml(request.name)}</div>
-                    <div class="small-muted">${escapeHtml(request.email)}</div>
-                    <div class="tiny muted" style="margin-top: 5px;">Request: ${escapeHtml(request.request)}</div>
-                </div>
-            `;
-            requestListContainer.appendChild(item);
-        });
+        qs('#requestList').innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">Request feature requires a server-side solution.</div>';
     }
     
     function showFavorites() {
@@ -1333,38 +1158,7 @@
     });
 
     qs('#btnUpload').addEventListener('click', async ()=>{
-      if(!STATE.isAdmin){ toast('Only admin can upload.'); return; }
-      const seriesId = qs('#uploadId').value.trim();
-      const title = qs('#uploadTitle').value.trim();
-      const link = qs('#uploadLink').value.trim();
-      const category = qs('#uploadCategory').value.trim();
-      const season = qs('#uploadSeason').value.trim();
-      const episode = qs('#uploadEpisode').value.trim();
-      const description = qs('#uploadDescription').value.trim();
-      const thumbnail = qs('#uploadThumbnail').value.trim();
-      if(!seriesId || !title || !link){ toast('Series ID, Title and Link are required'); return; }
-      const pb = qs('#uploadProgress'); pb.style.width = '5%';
-      let p = 5; const iv = setInterval(()=>{ p = Math.min(95, p+8); pb.style.width = p+'%'; }, 180);
-      try{
-        const row = {
-          seriesId: seriesId,
-          id: rid('vid'),
-          title, link, category, season, episode, description, thumbnail: thumbnail || getThumbnailLink(link),
-          uploadedBy: "Admin",
-          uploadDate: new Date().toISOString()
-        };
-        await apiPost('videos', row);
-        clearInterval(iv); pb.style.width = '100%';
-        setTimeout(()=> pb.style.width = '0%', 500);
-        qs('#uploadId').value=''; qs('#uploadTitle').value=''; qs('#uploadLink').value='';
-        qs('#uploadCategory').value=''; qs('#uploadSeason').value=''; qs('#uploadEpisode').value='';
-        qs('#uploadDescription').value=''; qs('#uploadThumbnail').value='';
-        toast('Upload successful!');
-        await loadInitial();
-      }catch(e){
-        clearInterval(iv); pb.style.width = '0%';
-        console.error(e); toast('Upload failed');
-      }
+      toast("Upload is disabled. This feature requires a server-side solution.");
     });
     
     function renderSiteHeader(){
