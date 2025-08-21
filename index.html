@@ -207,9 +207,22 @@
             color: white;
             text-decoration: none;
             font-weight: 600;
-            margin-right: 12px;
+            margin-right: 8px;
+            font-size: 12px;
           ">
             Logout
+          </a>
+          <a href="https://drive.google.com/file/d/1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw/view?usp=drivesdk" style="
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #34d399, #10b981);
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 12px;
+          ">
+            Download APK
           </a>
         </div>
       </header>
@@ -240,9 +253,6 @@
         <div id="paneMore" class="pane" style="display:none">
           <div style="font-weight:800;font-size:24px; margin-bottom: 20px;">More</div>
           <div class="more-options">
-            <div class="card" onclick="openAdminLogin()">
-              <div class="card-body">Admin Login</div>
-            </div>
             <div class="card" onclick="openPage('settings')">
               <div class="card-body">Settings</div>
             </div>
@@ -296,6 +306,10 @@
         <button class="tab" data-pane="more">
           <span class="icon">☰</span>
           <span>More</span>
+        </button>
+        <button id="adminDashboardTab" class="tab hidden" onclick="openPage('adminDashboard')">
+          <span class="icon">⚙️</span>
+          <span>Admin</span>
         </button>
       </nav>
     </div>
@@ -499,7 +513,10 @@
   <script>
     const CONFIG = {
       ADMIN_PASSWORD: "112233445500",
-      SHEETDB_API: "https://sheetdb.io/api/v1/8j681cv0tysp5"
+      ADMIN_EMAIL: "mymaruf94@gmail.com",
+      ADMIN_PASS: "123450",
+      SHEETDB_API: "https://sheetdb.io/api/v1/8j681cv0tysp5",
+      APK_DOWNLOAD_LINK: "https://drive.google.com/file/d/1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw/view?usp=drivesdk"
     };
 
     const OWNER_INFO = {
@@ -1025,6 +1042,15 @@
 
         try {
             await loadInitial();
+            
+            // Check for hardcoded admin login
+            if (email === CONFIG.ADMIN_EMAIL && password === CONFIG.ADMIN_PASS) {
+                localStorage.setItem('isAdminLoggedIn', 'true');
+                toast("Admin login successful!");
+                window.location.reload();
+                return;
+            }
+
             const user = STATE.users.find(u => u.email === email);
             
             if (!user) {
@@ -1062,20 +1088,6 @@
         window.location.reload();
     }
 
-    function openAdminLogin() {
-        const password = prompt("Enter Admin Password:");
-        if (password === CONFIG.ADMIN_PASSWORD) {
-            localStorage.setItem('isAdminLoggedIn', 'true');
-            STATE.isAdmin = true;
-            qs('#authPage').classList.add('hidden');
-            qs('#mainContent').classList.add('hidden');
-            openPage('adminDashboard');
-            renderAdminDashboard();
-            toast("Admin login successful!");
-        } else {
-            toast("Incorrect password.");
-        }
-    }
     
     function renderAdminDashboard() {
         qsa('.admin-nav .btn').forEach(btn => {
@@ -1319,29 +1331,34 @@
       qs('#siteAbout').textContent = OWNER_INFO.about;
     }
 
-    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>'
-,'&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
+    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
 
     function checkAuthStatus() {
         const isUserLoggedIn = localStorage.getItem('isUserLoggedIn');
         const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn');
+        const adminDashboardTab = qs('#adminDashboardTab');
         
         if (isUserLoggedIn) {
             qs('#authPage').classList.add('hidden');
             qs('#mainContent').classList.remove('hidden');
             qs('#bottomNav').style.display = 'flex';
+            adminDashboardTab.classList.add('hidden');
             loadInitial();
         } else if (isAdminLoggedIn) {
             STATE.isAdmin = true;
             qs('#authPage').classList.add('hidden');
-            qs('#mainContent').classList.add('hidden');
+            qs('#mainContent').classList.remove('hidden');
+            qs('#bottomNav').style.display = 'flex';
+            qs('#mainContent').classList.add('hidden'); // Hide main content
             openPage('adminDashboard');
+            adminDashboardTab.classList.remove('hidden');
             renderAdminDashboard();
             loadInitial();
         } else {
             qs('#authPage').classList.remove('hidden');
             qs('#mainContent').classList.add('hidden');
             qs('#bottomNav').style.display = 'none';
+            adminDashboardTab.classList.add('hidden');
             loadInitial();
         }
     }
