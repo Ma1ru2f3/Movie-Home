@@ -180,8 +180,8 @@
                         <div id="profileEmail" class="small-muted"></div>
                     </div>
                 </div>
-                <div id="loginSection">
-                    <div id="gsi-signin" style="display: flex; justify-content: center;"></div>
+                <div id="loginSection" style="text-align: center;">
+                    <div id="gsi-signin" style="display: inline-block;"></div>
                 </div>
                 <div id="logoutSection" class="hidden" style="text-align: center; margin-top: 15px;">
                     <button class="btn-red" onclick="signOut()">Log out</button>
@@ -199,19 +199,19 @@
           <div class="card" onclick="showComingSoonAlert('Shuffle Play')">
             <div class="card-body">Shuffle Play</div>
           </div>
-          <div class="card" onclick="showComingSoonAlert('Favorites')">
+          <div class="card" onclick="showFavorites()">
             <div class="card-body">Favorites</div>
           </div>
-          <div class="card" onclick="showComingSoonAlert('Downloads')">
+          <div class="card" onclick="showDownloads()">
             <div class="card-body">Downloads</div>
           </div>
           <div class="card" onclick="showFeatureAlert('Genre')">
             <div class="card-body">Genre</div>
           </div>
-          <div class="card" onclick="showFeatureAlert('Request')">
+          <div class="card" onclick="promptRequest()">
             <div class="card-body">Request</div>
           </div>
-          <div class="card" onclick="showFeatureAlert('Report')">
+          <div class="card" onclick="promptReport()">
             <div class="card-body">Report</div>
           </div>
           <div class="card" onclick="openPage('terms')">
@@ -260,8 +260,20 @@
     <div id="termsPage" class="details-page hidden">
         <div class="body">
             <div class="back-btn" onclick="hidePage('termsPage')">←</div>
-            <h1 style="margin-top: 50px;">Terms & Conditions</h1>
-            <p>আপনার ব্যবহারের শর্তাবলী এখানে লিখুন। এটি একটি ডেমো পৃষ্ঠা।</p>
+            <h1 style="margin-top: 50px;">Terms and Conditions</h1>
+            <p>Welcome to our video streaming platform. By accessing or using our services, you agree to comply with and be bound by the following terms and conditions of use. Please review these terms carefully. If you do not agree to these terms, you should not use this website.</p>
+            <p>The term 'Video Hub' or 'us' or 'we' refers to the owner of the website whose registered office is [Your Company Address]. The term 'you' refers to the user or viewer of our website. The use of this website is subject to the following terms of use:</p>
+            <ol>
+                <li>The content of the pages of this website is for your general information and use only. It is subject to change without notice.</li>
+                <li>This website uses cookies to monitor browsing preferences. If you do allow cookies to be used, the following personal information may be stored by us for use by third parties.</li>
+                <li>Neither we nor any third parties provide any warranty or guarantee as to the accuracy, timeliness, performance, completeness or suitability of the information and materials found or offered on this website for any particular purpose. You acknowledge that such information and materials may contain inaccuracies or errors and we expressly exclude liability for any such inaccuracies or errors to the fullest extent permitted by law.</li>
+                <li>Your use of any information or materials on this website is entirely at your own risk, for which we shall not be liable. It shall be your own responsibility to ensure that any products, services or information available through this website meet your specific requirements.</li>
+                <li>This website contains material which is owned by or licensed to us. This material includes, but is not limited to, the design, layout, look, appearance and graphics. Reproduction is prohibited other than in accordance with the copyright notice, which forms part of these terms and conditions.</li>
+                <li>All trademarks reproduced in this website which are not the property of, or licensed to, the operator are acknowledged on the website.</li>
+                <li>Unauthorized use of this website may give rise to a claim for damages and/or be a criminal offense.</li>
+                <li>From time to time this website may also include links to other websites. These links are provided for your convenience to provide further information. They do not signify that we endorse the website(s). We have no responsibility for the content of the linked website(s).</li>
+                <li>Your use of this website and any dispute arising out of such use of the website is subject to the laws of [Your Country].</li>
+            </ol>
         </div>
     </div>
 
@@ -269,7 +281,39 @@
         <div class="body">
             <div class="back-btn" onclick="hidePage('privacyPage')">←</div>
             <h1 style="margin-top: 50px;">Privacy Policy</h1>
-            <p>আপনার গোপনীয়তা নীতি এখানে লিখুন। এটি একটি ডেমো পৃষ্ঠা।</p>
+            <p>This privacy policy sets out how we use and protect any information that you give us when you use this website. We are committed to ensuring that your privacy is protected. Should we ask you to provide certain information by which you can be identified when using this website, then you can be assured that it will only be used in accordance with this privacy statement.</p>
+            <p>We may change this policy from time to time by updating this page. You should check this page from time to time to ensure that you are happy with any changes.</p>
+            <h3>What we collect</h3>
+            <p>We may collect the following information:</p>
+            <ul>
+                <li>name and contact information including email address</li>
+                <li>demographic information such as postcode, preferences and interests</li>
+                <li>other information relevant to customer surveys and/or offers</li>
+            </ul>
+            <h3>What we do with the information we gather</h3>
+            <p>We require this information to understand your needs and provide you with a better service, and in particular for the following reasons:</p>
+            <ul>
+                <li>Internal record keeping.</li>
+                <li>We may use the information to improve our products and services.</li>
+                <li>We may periodically send promotional emails about new products, special offers or other information which we think you may find interesting using the email address which you have provided.</li>
+                <li>From time to time, we may also use your information to contact you for market research purposes. We may contact you by email, phone, fax or mail. We may use the information to customize the website according to your interests.</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div id="favoritesPage" class="details-page hidden">
+        <div class="body">
+            <div class="back-btn" onclick="hidePage('favoritesPage')">←</div>
+            <h1 style="margin-top: 50px;">Your Favorites</h1>
+            <div id="favoritesGrid" class="grid cols-2"></div>
+        </div>
+    </div>
+
+    <div id="downloadsPage" class="details-page hidden">
+        <div class="body">
+            <div class="back-btn" onclick="hidePage('downloadsPage')">←</div>
+            <h1 style="margin-top: 50px;">Your Downloads</h1>
+            <div id="downloadsGrid" class="grid cols-2"></div>
         </div>
     </div>
 
@@ -342,7 +386,8 @@
       videos: [],
       users: [], 
       user: JSON.parse(localStorage.getItem('bv_user') || 'null'),
-      history: JSON.parse(localStorage.getItem('bv_history') || '[]'),
+      favorites: JSON.parse(localStorage.getItem('bv_favorites') || '[]'),
+      downloads: JSON.parse(localStorage.getItem('bv_downloads') || '[]'),
       owner: OWNER_INFO,
     };
     
@@ -524,6 +569,15 @@
       `).join('');
       
       const seasonOptions = seasons.map(s => `<option value="${s}">Season ${s}</option>`).join('');
+      
+      const isFavorite = STATE.favorites.includes(video.id);
+      const isDownloaded = STATE.downloads.includes(video.id);
+      
+      const favoriteBtnClass = isFavorite ? 'btn-emerald' : 'btn-primary';
+      const downloadBtnClass = isDownloaded ? 'btn-emerald' : 'btn-primary';
+      
+      const downloadBtnText = isDownloaded ? '⬇️ Downloaded' : '⬇️ Download';
+      const favoriteBtnText = isFavorite ? '⭐ Favorited' : '⭐ Favorite';
 
       page.innerHTML = `
           <div class="header">
@@ -541,8 +595,8 @@
               </div>
               <div class="btn-group">
                   <button class="btn-primary">▶️ Watch Now</button>
-                  <button class="btn-emerald">⭐ Favourite</button>
-                  <button class="btn-red">🔗 Share</button>
+                  <button id="favoriteBtn" class="${favoriteBtnClass}" data-id="${video.id}">${favoriteBtnText}</button>
+                  <button id="downloadBtn" class="${downloadBtnClass}" data-id="${video.id}">${downloadBtnText}</button>
               </div>
               <div class="overview">${escapeHtml(video.description)}</div>
               <div class="episode-list">
@@ -598,6 +652,40 @@
           const iframe = qs('#video-player');
           iframe.src = getEmbedLink(video.link);
       });
+      
+      // Favorite Button Logic
+      qs('#favoriteBtn').addEventListener('click', () => {
+          const videoId = video.id;
+          if (STATE.favorites.includes(videoId)) {
+              STATE.favorites = STATE.favorites.filter(id => id !== videoId);
+              toast('Removed from favorites.');
+          } else {
+              STATE.favorites.push(videoId);
+              toast('Added to favorites!');
+          }
+          localStorage.setItem('bv_favorites', JSON.stringify(STATE.favorites));
+          // Update button state visually
+          const favoriteBtn = qs('#favoriteBtn');
+          const isFavorited = STATE.favorites.includes(videoId);
+          favoriteBtn.className = isFavorited ? 'btn-emerald' : 'btn-primary';
+          favoriteBtn.textContent = isFavorited ? '⭐ Favorited' : '⭐ Favorite';
+      });
+
+      // Download Button Logic
+      qs('#downloadBtn').addEventListener('click', () => {
+          const videoId = video.id;
+          if (STATE.downloads.includes(videoId)) {
+              toast('Already added to downloads.');
+          } else {
+              STATE.downloads.push(videoId);
+              localStorage.setItem('bv_downloads', JSON.stringify(STATE.downloads));
+              toast('Video added to downloads!');
+              // Update button state visually
+              const downloadBtn = qs('#downloadBtn');
+              downloadBtn.className = 'btn-emerald';
+              downloadBtn.textContent = '⬇️ Downloaded';
+          }
+      });
     }
 
     function hideVideoDetails(){
@@ -629,6 +717,20 @@
 
     function showFeatureAlert(featureName) {
         alert(`${featureName} feature is under development.`);
+    }
+
+    function promptRequest() {
+        const request = prompt("What movie or series would you like to request?");
+        if (request) {
+            toast(`Thank you for your request for "${request}". We will review it.`);
+        }
+    }
+
+    function promptReport() {
+        const report = prompt("Please describe the issue you would like to report:");
+        if (report) {
+            toast("Thank you for your report. We will look into it shortly.");
+        }
     }
 
     function openPage(pageId) {
@@ -669,6 +771,48 @@
         }
     }
     
+    function showFavorites() {
+        const favoritesContainer = qs('#favoritesGrid');
+        favoritesContainer.innerHTML = '';
+        const favoritedVideos = STATE.videos.filter(v => STATE.favorites.includes(v.id));
+
+        if (favoritedVideos.length === 0) {
+            favoritesContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary)">You have no favorites yet.</div>';
+        } else {
+            favoritedVideos.forEach(v => {
+                const card = document.createElement('div');
+                card.className = 'content-card';
+                card.style.width = '100%';
+                card.innerHTML = `<img src="${v.thumbnail}" onerror="this.src='https://via.placeholder.com/150x225.png?text=No+Image'" alt="${v.title}">
+                                  <div class="content-card-title">${escapeHtml(v.title)}</div>`;
+                card.onclick = () => showVideoDetails(v);
+                favoritesContainer.appendChild(card);
+            });
+        }
+        openPage('favorites');
+    }
+    
+    function showDownloads() {
+        const downloadsContainer = qs('#downloadsGrid');
+        downloadsContainer.innerHTML = '';
+        const downloadedVideos = STATE.videos.filter(v => STATE.downloads.includes(v.id));
+        
+        if (downloadedVideos.length === 0) {
+            downloadsContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary)">You have not downloaded any videos.</div>';
+        } else {
+            downloadedVideos.forEach(v => {
+                const card = document.createElement('div');
+                card.className = 'content-card';
+                card.style.width = '100%';
+                card.innerHTML = `<img src="${v.thumbnail}" onerror="this.src='https://via.placeholder.com/150x225.png?text=No+Image'" alt="${v.title}">
+                                  <div class="content-card-title">${escapeHtml(v.title)}</div>`;
+                card.onclick = () => showVideoDetails(v);
+                downloadsContainer.appendChild(card);
+            });
+        }
+        openPage('downloads');
+    }
+
     qs('#searchInput').addEventListener('input', (e) => {
         const query = e.target.value.trim().toLowerCase();
         const resultsContainer = qs('#searchResults');
