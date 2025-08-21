@@ -6,16 +6,8 @@
   <title>Video Hub</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    :root{
-      --bg-dark: #121212;
-      --card-bg: #1e1e1e;
-      --text-primary: #ffffff;
-      --text-secondary: #b3b3b3;
-      --accent: #ef233c;
-      --border-color: #333333;
-      --rounded: 10px;
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
+    /* CSS Code */
+    :root{--bg-dark:#121212;--card-bg:#1e1e1e;--text-primary:#ffffff;--text-secondary:#b3b3b3;--accent:#ef233c;--border-color:#333333;--rounded:10px;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
     html,body{height:100%;margin:0;background:var(--bg-dark);color:var(--text-primary)}
     .container{max-width:1100px;margin:0 auto;padding:18px}
     header{position:sticky;top:0;background:var(--bg-dark);border-bottom:1px solid var(--border-color);z-index:100;padding:18px 0;}
@@ -71,37 +63,24 @@
     .episode-item img{width:80px;height:50px;object-fit:cover;border-radius:6px}
     .episode-item .info{flex:1}
     .episode-item .title{font-weight:600}
-    @media (max-width:800px){ .grid.cols-2{grid-template-columns:1fr} .row{flex-direction:column;align-items:stretch} nav{overflow:auto} .details-page .header{height:200px} }
-    .hidden { display: none; }
-    .manage-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px;
-        border-bottom: 1px solid var(--border-color);
-    }
+    @media (max-width:800px){.grid.cols-2{grid-template-columns:1fr}.row{flex-direction:column;align-items:stretch}nav{overflow:auto}.details-page .header{height:200px}}
+    .hidden{display:none}
+    .manage-item{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--border-color);}
   </style>
 </head>
 <body>
   <div id="app">
     <header class="container">
       <div class="hdr">
-        <div class="logo">🎬</div>
+        <div class="logo-container">
+          <img src="https://i.ibb.co/6P0D6V4/Untitled-1.png" alt="logo" style="width: 50px; height: 50px; object-fit: contain;">
+        </div>
         <div>
           <div class="site-title" id="siteName">Video Hub</div>
           <div class="site-sub" id="siteAbout">Movie & Series Library</div>
         </div>
         <div style="flex:1"></div>
-        <a href="https://drive.google.com/uc?export=download&id=1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw" style="
-          display: inline-block;
-          padding: 8px 14px;
-          border-radius: 999px;
-          background: linear-gradient(90deg, #ef4444, #dc2626);
-          color: white;
-          text-decoration: none;
-          font-weight: 600;
-          margin-right: 12px;
-        " download>
+        <a href="https://drive.google.com/uc?export=download&id=1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw" style="display:inline-block;padding:8px 14px;border-radius:999px;background:linear-gradient(90deg,#ef4444,#dc2626);color:white;text-decoration:none;font-weight:600;margin-right:12px;" download>
           Download App
         </a>
       </div>
@@ -142,19 +121,8 @@
           <div class="col">
             <div class="card">
               <div class="card-body">
-                <div style="font-weight:800;margin-bottom:8px">👤 Profile</div>
+                <div style="font-weight:800;margin-bottom:8px">👤 My Profile</div>
                 <div id="profileArea"></div>
-              </div>
-            </div>
-            <div style="height:14px"></div>
-            <div class="card">
-              <div class="card-body">
-                <div style="font-weight:800;margin-bottom:8px">📣 Owner Info</div>
-                <div class="owner-block" id="ownerInfoBlock">
-                  <div><strong id="ownerName"></strong></div>
-                  <div class="small-muted" id="ownerAbout"></div>
-                  <div class="small-muted">Contact: <span id="ownerContact"></span></div>
-                </div>
               </div>
             </div>
           </div>
@@ -162,7 +130,6 @@
             <div id="adminBlock" class="card" style="display:none">
               <div class="card-body">
                 <div style="font-weight:800;margin-bottom:8px">🛠️ Admin Dashboard</div>
-
                 <div style="font-weight:700">Upload Video</div>
                 <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px">
                   <input id="uploadTitle" type="text" placeholder="Title" />
@@ -181,7 +148,6 @@
                 <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
                 <div style="font-weight:700">Manage Videos</div>
                 <div id="manageVideosBlock" style="max-height:220px;overflow:auto;margin-top:8px;border-radius:10px;background:var(--card-bg);padding:8px"></div>
-
                 <hr style="margin:12px 0;border:none;border-top:1px dashed rgba(255,255,255,0.1)" />
                 <div style="font-weight:700; display: flex; align-items: center; justify-content: space-between;">
                     <span>Manage Users</span>
@@ -642,9 +608,6 @@
     function renderSiteHeader(){
       qs('#siteName').textContent = OWNER_INFO.name;
       qs('#siteAbout').textContent = OWNER_INFO.about;
-      qs('#ownerName').textContent = OWNER_INFO.name;
-      qs('#ownerAbout').textContent = OWNER_INFO.about;
-      qs('#ownerContact').textContent = OWNER_INFO.contact;
     }
 
     function handleCredentialResponse(response){
