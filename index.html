@@ -515,7 +515,8 @@
       ADMIN_PASSWORD: "112233445500",
       ADMIN_EMAIL: "mymaruf94@gmail.com",
       ADMIN_PASS: "123450",
-      SHEETDB_API: "https://sheetdb.io/api/v1/8j681cv0tysp5",
+      SHEETSON_API_KEY: "Et_ZFCObrkph-2abzyjfn7D02Ms-bfEWSef3YKoQc12_UX72ChypV-5iH_U",
+      SHEETSON_API_BASE: "https://api.sheetson.com/v2/sheets/",
       APK_DOWNLOAD_LINK: "https://drive.google.com/file/d/1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw/view?usp=drivesdk"
     };
 
@@ -526,43 +527,64 @@
 
     const qs = sel => document.querySelector(sel);
     const qsa = sel => Array.from(document.querySelectorAll(sel));
-    const api = CONFIG.SHEETDB_API;
-
+    
     function toast(msg){
       console.log('TOAST:', msg);
       alert(msg);
     }
-
-    function apiGet(sheet){
-      return fetch(`${api}?sheet=${encodeURIComponent(sheet)}`).then(r=>r.json());
-    }
-    function apiPost(sheet, rowObj){
-      return fetch(`${api}?sheet=${encodeURIComponent(sheet)}`, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ data: rowObj })
-      }).then(r=>r.json());
-    }
-    function apiDelete(sheet, id){
-      return fetch(`${api}/id/${encodeURIComponent(id)}?sheet=${encodeURIComponent(sheet)}`, {
-        method: 'DELETE',
-        headers: {'Content-Type':'application/json'}
-      }).then(r=>r.json());
-    }
-    function apiDeleteBySeriesId(sheet, seriesId){
-      return fetch(`${api}/search?sheet=${encodeURIComponent(sheet)}&seriesId=${encodeURIComponent(seriesId)}`, {
-        method: 'DELETE',
-        headers: {'Content-Type':'application/json'}
-      }).then(r=>r.json());
-    }
-    function apiUpdateUserStatus(id, status){
-      return fetch(`${api}/id/${encodeURIComponent(id)}?sheet=users`, {
-        method: 'PATCH',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ data: { status: status } })
-      }).then(r => r.json());
+    
+    // Sheetson API functions
+    async function apiGet(sheet){
+        try {
+            const response = await fetch(`${CONFIG.SHEETSON_API_BASE}${sheet}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${CONFIG.SHEETSON_API_KEY}`,
+                    'X-Sheetson-Headers': 'All'
+                }
+            });
+            const data = await response.json();
+            return data.results;
+        } catch (error) {
+            console.error(`Error fetching data from ${sheet}:`, error);
+            return [];
+        }
     }
 
+    async function apiPost(sheet, rowObj){
+        try {
+            const response = await fetch(`${CONFIG.SHEETSON_API_BASE}${sheet}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${CONFIG.SHEETSON_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(rowObj)
+            });
+            return await response.json();
+        } catch (error) {
+            console.error(`Error posting data to ${sheet}:`, error);
+            return null;
+        }
+    }
+
+    async function apiUpdateUserStatus(id, status){
+        try {
+            const response = await fetch(`${CONFIG.SHEETSON_API_BASE}users/${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${CONFIG.SHEETSON_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: status })
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Error updating user status:', error);
+            return null;
+        }
+    }
+    
     function rid(prefix='id'){ return `${prefix}_${Math.random().toString(36).slice(2,9)}${Date.now().toString().slice(-4)}` }
 
     let STATE = {
@@ -616,13 +638,13 @@
         ]);
         
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
-          seriesId: r.seriesId || r.SeriesID || rid('ser'),
-          id: r.id || r.ID || rid('vid'),
+          seriesId: r.seriesid || r.SeriesID || r.seriesId || rid('ser'),
+          id: r.id || r.ID || r.id || rid('vid'),
           title: r.title || r.Title || r.name || 'Untitled',
           link: r.link || r.Link || r.url || '',
           category: r.category || r.Category || r.cat || '',
-          uploadedBy: r.uploadedBy || r.UploadedBy || '',
-          uploadDate: r.uploadDate || r.UploadDate || '',
+          uploadedBy: r.uploadedby || r.UploadedBy || '',
+          uploadDate: r.uploaddate || r.UploadDate || '',
           season: r.season || '1',
           episode: r.episode || '1',
           description: r.description || '',
@@ -635,15 +657,15 @@
             email: r.email || r.Email || 'No email',
             password: r.password || '',
             status: r.status || 'active',
-            createdAt: r.createdAt || ''
+            createdAt: r.createdat || ''
         })) : []);
         
         STATE.reports = Array.isArray(reportsRaw) ? reportsRaw.map(r => ({
-            id: r.id, name: r.name, email: r.email, report: r.report, createdAt: r.createdAt
+            id: r.id, name: r.name, email: r.email, report: r.report, createdAt: r.createdat
         })) : [];
 
         STATE.requests = Array.isArray(requestsRaw) ? requestsRaw.map(r => ({
-            id: r.id, name: r.name, email: r.email, request: r.request, createdAt: r.createdAt
+            id: r.id, name: r.name, email: r.email, request: r.request, createdAt: r.createdat
         })) : [];
 
         STATE.upcoming = Array.isArray(upcomingRaw) ? upcomingRaw.map(r => ({
