@@ -515,7 +515,7 @@
       ADMIN_PASSWORD: "112233445500",
       ADMIN_EMAIL: "mymaruf94@gmail.com",
       ADMIN_PASS: "123450",
-      
+      SHEETDB_API: "https://sheetdb.io/api/v1/vitcn9bcwl84i", // <-- এখানে নতুন API বসানো হয়েছে
       APK_DOWNLOAD_LINK: "https://drive.google.com/file/d/1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw/view?usp=drivesdk"
     };
 
@@ -526,45 +526,43 @@
 
     const qs = sel => document.querySelector(sel);
     const qsa = sel => Array.from(document.querySelectorAll(sel));
-    
+    const api = CONFIG.SHEETDB_API;
+
     function toast(msg){
       console.log('TOAST:', msg);
       alert(msg);
     }
-    
-    // API Fetching function to call the Render server
-    async function apiGet(sheetName){
-      const url = `/api/data/${sheetName}`; // Calls the server's API route
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data.success) {
-          return data.data; // Server returns data in a 'data' property
-        } else {
-          console.error("API Error:", data.message);
-          return [];
-        }
-      } catch (error) {
-        console.error(`Error fetching data from server:`, error);
-        return [];
-      }
+
+    function apiGet(sheet){
+      return fetch(`${api}?sheet=${encodeURIComponent(sheet)}`).then(r=>r.json());
+    }
+    function apiPost(sheet, rowObj){
+      return fetch(`${api}?sheet=${encodeURIComponent(sheet)}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ data: rowObj })
+      }).then(r=>r.json());
+    }
+    function apiDelete(sheet, id){
+      return fetch(`${api}/id/${encodeURIComponent(id)}?sheet=${encodeURIComponent(sheet)}`, {
+        method: 'DELETE',
+        headers: {'Content-Type':'application/json'}
+      }).then(r=>r.json());
+    }
+    function apiDeleteBySeriesId(sheet, seriesId){
+      return fetch(`${api}/search?sheet=${encodeURIComponent(sheet)}&seriesId=${encodeURIComponent(seriesId)}`, {
+        method: 'DELETE',
+        headers: {'Content-Type':'application/json'}
+      }).then(r=>r.json());
+    }
+    function apiUpdateUserStatus(id, status){
+      return fetch(`${api}/id/${encodeURIComponent(id)}?sheet=users`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ data: { status: status } })
+      }).then(r => r.json());
     }
 
-    // Now using the server-side API for all POST/PUT requests
-    async function apiPost(endpoint, data){
-      try {
-        const response = await fetch(`/api/${endpoint}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
-        return await response.json();
-      } catch (error) {
-        console.error(`API POST error:`, error);
-        return { success: false, message: 'Network error or server unavailable.' };
-      }
-    }
-    
     function rid(prefix='id'){ return `${prefix}_${Math.random().toString(36).slice(2,9)}${Date.now().toString().slice(-4)}` }
 
     let STATE = {
@@ -610,21 +608,21 @@
     async function loadInitial(){
       try{
         const [videosRaw, usersRaw, reportsRaw, requestsRaw, upcomingRaw] = await Promise.all([
-          apiGet('videos'),
-          apiGet('users'),
-          apiGet('reports'),
-          apiGet('requests'),
-          apiGet('upcoming_videos')
+          apiGet('videos').catch(()=>[]),
+          apiGet('users').catch(()=>[]),
+          apiGet('reports').catch(()=>[]),
+          apiGet('requests').catch(()=>[]),
+          apiGet('upcoming_videos').catch(()=>[])
         ]);
         
         STATE.videos = (Array.isArray(videosRaw) ? videosRaw.map(r => ({
-          seriesId: r.seriesid || rid('ser'),
-          id: r.id || rid('vid'),
-          title: r.title || 'Untitled',
-          link: r.link || '',
-          category: r.category || '',
-          uploadedBy: r.uploadedby || '',
-          uploadDate: r.uploaddate || '',
+          seriesId: r.seriesId || r.SeriesID || rid('ser'),
+          id: r.id || r.ID || rid('vid'),
+          title: r.title || r.Title || r.name || 'Untitled',
+          link: r.link || r.Link || r.url || '',
+          category: r.category || r.Category || r.cat || '',
+          uploadedBy: r.uploadedBy || r.UploadedBy || '',
+          uploadDate: r.uploadDate || r.UploadDate || '',
           season: r.season || '1',
           episode: r.episode || '1',
           description: r.description || '',
@@ -632,20 +630,20 @@
         })).sort((a, b) => a.seriesId.localeCompare(b.seriesId) || a.season - b.season || a.episode - b.episode) : []);
         
         STATE.users = (Array.isArray(usersRaw) ? usersRaw.map(r => ({
-            id: r.id,
-            name: r.name || 'Unknown',
-            email: r.email || 'No email',
+            id: r.id || r.ID,
+            name: r.name || r.Name || 'Unknown',
+            email: r.email || r.Email || 'No email',
             password: r.password || '',
             status: r.status || 'active',
-            createdAt: r.createdat || ''
+            createdAt: r.createdAt || ''
         })) : []);
         
         STATE.reports = Array.isArray(reportsRaw) ? reportsRaw.map(r => ({
-            id: r.id, name: r.name, email: r.email, report: r.report, createdAt: r.createdat
+            id: r.id, name: r.name, email: r.email, report: r.report, createdAt: r.createdAt
         })) : [];
 
         STATE.requests = Array.isArray(requestsRaw) ? requestsRaw.map(r => ({
-            id: r.id, name: r.name, email: r.email, request: r.request, createdAt: r.createdat
+            id: r.id, name: r.name, email: r.email, request: r.request, createdAt: r.createdAt
         })) : [];
 
         STATE.upcoming = Array.isArray(upcomingRaw) ? upcomingRaw.map(r => ({
@@ -669,21 +667,15 @@
     }
 
     function renderHomeContent(){
-      const allSeries = getUniqueSeries();
-      const trending = allSeries.filter(v => v.category && v.category.toLowerCase().includes('trending'));
-      const popular = allSeries.filter(v => v.category && v.category.toLowerCase().includes('popular'));
-      const categories = [...new Set(STATE.videos.map(v => v.category).filter(c => c))];
+      const trending = getUniqueSeries().filter(v => v.category.toLowerCase().includes('trending'));
+      const popular = getUniqueSeries().filter(v => v.category.toLowerCase().includes('popular'));
+      const categories = [...new Set(STATE.videos.map(v => v.category))];
       
-      if(trending.length === 0 && allSeries.length > 0) {
-        renderVideoSection(qs('#trendingVideos'), allSeries, true);
-      } else {
-        renderVideoSection(qs('#trendingVideos'), trending, true);
-      }
-
+      renderVideoSection(qs('#trendingVideos'), trending, true);
       renderVideoSection(qs('#popularVideos'), popular, true);
       renderCategories(qs('#categoryChips'), categories);
-      renderPaneMovies(allSeries.filter(v => v.category && v.category.toLowerCase().includes('movie')));
-      renderPaneSeries(allSeries.filter(v => v.category && v.category.toLowerCase().includes('series')));
+      renderPaneMovies(getUniqueSeries().filter(v => v.category.toLowerCase().includes('movie')));
+      renderPaneSeries(getUniqueSeries().filter(v => v.category.toLowerCase().includes('series')));
     }
     
     function renderVideoSection(container, videos, isHorizontal = false){
@@ -705,10 +697,6 @@
     function renderPaneMovies(videos){
       const container = qs('#moviesGrid');
       container.innerHTML = '';
-      if(!videos.length){
-        container.innerHTML = '<div style="color:var(--text-secondary); text-align: center;">No movies found.</div>';
-        return;
-      }
       videos.forEach(v => {
         const card = document.createElement('div');
         card.className = 'content-card';
@@ -723,10 +711,6 @@
     function renderPaneSeries(videos){
       const container = qs('#seriesGrid');
       container.innerHTML = '';
-      if(!videos.length){
-        container.innerHTML = '<div style="color:var(--text-secondary); text-align: center;">No series found.</div>';
-        return;
-      }
       videos.forEach(v => {
         const card = document.createElement('div');
         card.className = 'content-card';
@@ -740,10 +724,6 @@
     
     function renderCategories(container, categories){
       container.innerHTML = '';
-      if(!categories.length){
-        container.innerHTML = '<div style="color:var(--text-secondary)">No categories found.</div>';
-        return;
-      }
       categories.forEach(cat => {
         const chip = document.createElement('div');
         chip.className = 'chip';
@@ -908,34 +888,34 @@
     async function promptRequest() {
         const request = prompt("What movie or series would you like to request?");
         if (request) {
-            const response = await apiPost('requests', {
-                name: "User", // This should come from a logged-in user
-                email: "user@example.com", // This should be a user's email
+            const userId = localStorage.getItem('isUserLoggedIn');
+            const user = STATE.users.find(u => u.id === userId);
+            const reqData = {
+                id: rid('req'),
+                name: user ? user.name : 'Unknown User',
+                email: user ? user.email : 'Unknown Email',
                 request: request,
                 createdAt: new Date().toISOString()
-            });
-            if (response.success) {
-                toast("Request submitted successfully!");
-            } else {
-                toast("Failed to submit request.");
-            }
+            };
+            await apiPost('requests', reqData);
+            toast(`Thank you for your request for "${request}". We will review it.`);
         }
     }
 
     async function promptReport() {
         const report = prompt("Please describe the issue you would like to report:");
         if (report) {
-            const response = await apiPost('reports', {
-                name: "User", // This should come from a logged-in user
-                email: "user@example.com", // This should be a user's email
+            const userId = localStorage.getItem('isUserLoggedIn');
+            const user = STATE.users.find(u => u.id === userId);
+            const reportData = {
+                id: rid('rep'),
+                name: user ? user.name : 'Unknown User',
+                email: user ? user.email : 'Unknown Email',
                 report: report,
                 createdAt: new Date().toISOString()
-            });
-            if (response.success) {
-                toast("Report submitted successfully!");
-            } else {
-                toast("Failed to submit report.");
-            }
+            };
+            await apiPost('reports', reportData);
+            toast("Thank you for your report. We will look into it shortly.");
         }
     }
 
@@ -1019,16 +999,35 @@
         const password = qs('#signupPassword').value.trim();
 
         if (!name || !email || !password) {
-            toast("All fields are required.");
+            toast('Name, Email and Password are required.');
             return;
         }
 
-        const response = await apiPost('signup', { name, email, password });
-        if (response.success) {
-            toast("Account created successfully!");
-            toggleAuthForm('login');
-        } else {
-            toast(`Signup failed: ${response.message}`);
+        try {
+            await loadInitial();
+            const existingUser = STATE.users.find(u => u.email === email);
+            if (existingUser) {
+                toast('This email is already registered. Please log in.');
+                return;
+            }
+
+            const newUser = {
+                id: rid('usr'),
+                name: name,
+                email: email,
+                password: password,
+                status: 'active',
+                createdAt: new Date().toISOString()
+            };
+            
+            await apiPost('users', newUser);
+            STATE.users.push(newUser);
+            localStorage.setItem('isUserLoggedIn', newUser.id);
+            toast('Account created successfully! Redirecting...');
+            window.location.reload();
+        } catch (e) {
+            console.error(e);
+            toast('Failed to create account. Please try again.');
         }
     });
 
@@ -1036,17 +1035,45 @@
         const email = qs('#loginEmail').value.trim();
         const password = qs('#loginPassword').value.trim();
         
-        const response = await apiPost('login', { email, password });
-        
-        if (response.success) {
-            localStorage.setItem('isUserLoggedIn', 'true');
-            if(response.user.status === 'admin'){
+        if (!email || !password) {
+            toast('Email and Password are required.');
+            return;
+        }
+
+        try {
+            await loadInitial();
+            
+            // Check for hardcoded admin login
+            if (email === CONFIG.ADMIN_EMAIL && password === CONFIG.ADMIN_PASS) {
                 localStorage.setItem('isAdminLoggedIn', 'true');
+                toast("Admin login successful!");
+                window.location.reload();
+                return;
             }
-            toast("Login successful!");
+
+            const user = STATE.users.find(u => u.email === email);
+            
+            if (!user) {
+                toast('User not found. Please sign up.');
+                return;
+            }
+
+            if (user.password !== password) {
+                toast('Incorrect password.');
+                return;
+            }
+            
+            if (user.status === 'blocked') {
+                toast('Your account has been blocked by the admin.');
+                return;
+            }
+
+            localStorage.setItem('isUserLoggedIn', user.id);
+            toast('Login successful! Redirecting...');
             window.location.reload();
-        } else {
-            toast(`Login failed: ${response.message}`);
+        } catch (e) {
+            console.error(e);
+            toast('Login failed. Please try again.');
         }
     });
 
@@ -1088,84 +1115,112 @@
     }
 
     async function addUpcomingVideo() {
-        const upcomingData = {
-            id: rid('upc'),
-            title: qs('#upcomingTitle').value,
-            release_date: qs('#upcomingReleaseDate').value,
-            description: qs('#upcomingDescription').value
-        };
+        const title = qs('#upcomingTitle').value.trim();
+        const release_date = qs('#upcomingReleaseDate').value.trim();
+        const description = qs('#upcomingDescription').value.trim();
 
-        const response = await apiPost('upcoming', upcomingData);
-        if (response.success) {
-            toast("Upcoming video added successfully!");
-        } else {
-            toast("Failed to add upcoming video.");
+        if (!title || !release_date) {
+            toast('Title and Release Date are required.');
+            return;
+        }
+
+        try {
+            const newUpcoming = {
+                id: rid('upc'),
+                title: title,
+                release_date: release_date,
+                description: description
+            };
+            await apiPost('upcoming_videos', newUpcoming);
+            toast('Upcoming video added successfully!');
+            qs('#upcomingTitle').value = '';
+            qs('#upcomingReleaseDate').value = '';
+            qs('#upcomingDescription').value = '';
+        } catch (e) {
+            console.error(e);
+            toast('Failed to add upcoming video.');
         }
     }
     
     async function renderUserList() {
-        const userList = qs('#userList');
-        userList.innerHTML = '';
+        const userListContainer = qs('#userList');
+        userListContainer.innerHTML = '';
+        await loadInitial(); // Re-fetch users to get the latest status
         if (STATE.users.length === 0) {
-            userList.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No users found.</div>';
-        } else {
-            STATE.users.forEach(user => {
-                const userItem = document.createElement('div');
-                userItem.className = 'item';
-                userItem.innerHTML = `
-                    <div style="flex:1">${escapeHtml(user.name)}</div>
-                    <div style="flex:1; color: var(--text-secondary)">${escapeHtml(user.email)}</div>
-                    <button class="btn-primary" onclick="changeUserStatus('${user.id}', '${user.status === 'active' ? 'banned' : 'active'}')">${user.status === 'active' ? 'Ban' : 'Unban'}</button>
-                `;
-                userList.appendChild(userItem);
+            userListContainer.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No users registered yet.</div>';
+            return;
+        }
+        STATE.users.forEach(user => {
+            const statusText = user.status === 'blocked' ? 'Unblock' : 'Block';
+            const statusClass = user.status === 'blocked' ? 'btn-emerald' : 'btn-red';
+            const userItem = document.createElement('div');
+            userItem.className = 'item';
+            userItem.innerHTML = `
+                <div style="flex:1;">
+                    <div style="font-weight:700">${escapeHtml(user.name)}</div>
+                    <div class="small-muted">${escapeHtml(user.email)}</div>
+                    <div class="tiny muted">ID: ${escapeHtml(user.id)}</div>
+                </div>
+                <button data-id="${user.id}" data-status="${user.status}" class="btn ${statusClass}">${statusText}</button>
+            `;
+            userListContainer.appendChild(userItem);
+            userItem.querySelector('button').addEventListener('click', async (e) => {
+                const userId = e.target.dataset.id;
+                const currentStatus = e.target.dataset.status;
+                const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
+                try {
+                    await apiUpdateUserStatus(userId, newStatus);
+                    toast(`User ${user.name} has been ${newStatus}d.`);
+                    renderUserList(); // Re-render to show updated status
+                } catch (err) {
+                    toast('Failed to update user status.');
+                }
             });
-        }
-    }
-
-    async function changeUserStatus(userId, newStatus) {
-        const response = await apiPost('update_user_status', { id: userId, status: newStatus });
-        if (response.success) {
-            toast(`User status changed to ${newStatus}.`);
-            // You might need to reload the user list here
-        } else {
-            toast("Failed to change user status.");
-        }
+        });
     }
 
     async function renderReportsList() {
-        const reportList = qs('#reportList');
-        reportList.innerHTML = '';
+        const reportListContainer = qs('#reportList');
+        reportListContainer.innerHTML = '';
+        await loadInitial();
         if (STATE.reports.length === 0) {
-            reportList.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No reports found.</div>';
-        } else {
-            STATE.reports.forEach(report => {
-                const reportItem = document.createElement('div');
-                reportItem.className = 'item';
-                reportItem.innerHTML = `
-                    <div style="flex:1">${escapeHtml(report.name)} (${escapeHtml(report.email)})</div>
-                    <div style="flex:2; color: var(--text-secondary)">${escapeHtml(report.report)}</div>
-                `;
-                reportList.appendChild(reportItem);
-            });
+            reportListContainer.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No new reports.</div>';
+            return;
         }
+        STATE.reports.forEach(report => {
+            const item = document.createElement('div');
+            item.className = 'item';
+            item.innerHTML = `
+                <div style="flex:1;">
+                    <div style="font-weight:700">Report from: ${escapeHtml(report.name)}</div>
+                    <div class="small-muted">${escapeHtml(report.email)}</div>
+                    <div class="tiny muted" style="margin-top: 5px;">Report: ${escapeHtml(report.report)}</div>
+                </div>
+            `;
+            reportListContainer.appendChild(item);
+        });
     }
 
     async function renderRequestsList() {
-        const requestList = qs('#requestList');
-        requestList.innerHTML = '';
+        const requestListContainer = qs('#requestList');
+        requestListContainer.innerHTML = '';
+        await loadInitial();
         if (STATE.requests.length === 0) {
-            requestList.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No requests found.</div>';
-        } else {
-            STATE.requests.forEach(request => {
-                const requestItem = document.createElement('div');
-                requestItem.className = 'item';
-                requestItem.innerHTML = `
-                    <div style="flex:1">${escapeHtml(request.name)} (${escapeHtml(request.email)})</div>
-                    <div style="flex:2; color: var(--text-secondary)">${escapeHtml(request.request)}</div>
-                `;
-                requestList.appendChild(requestItem);
-            });
+            requestListContainer.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-secondary)">No new requests.</div>';
+            return;
         }
+        STATE.requests.forEach(request => {
+            const item = document.createElement('div');
+            item.className = 'item';
+            item.innerHTML = `
+                <div style="flex:1;">
+                    <div style="font-weight:700">Request from: ${escapeHtml(request.name)}</div>
+                    <div class="small-muted">${escapeHtml(request.email)}</div>
+                    <div class="tiny muted" style="margin-top: 5px;">Request: ${escapeHtml(request.request)}</div>
+                </div>
+            `;
+            requestListContainer.appendChild(item);
+        });
     }
     
     function showFavorites() {
@@ -1237,23 +1292,37 @@
     });
 
     qs('#btnUpload').addEventListener('click', async ()=>{
-      const uploadData = {
-          id: qs('#uploadId').value,
-          title: qs('#uploadTitle').value,
-          link: qs('#uploadLink').value,
-          category: qs('#uploadCategory').value,
+      if(!STATE.isAdmin){ toast('Only admin can upload.'); return; }
+      const seriesId = qs('#uploadId').value.trim();
+      const title = qs('#uploadTitle').value.trim();
+      const link = qs('#uploadLink').value.trim();
+      const category = qs('#uploadCategory').value.trim();
+      const season = qs('#uploadSeason').value.trim();
+      const episode = qs('#uploadEpisode').value.trim();
+      const description = qs('#uploadDescription').value.trim();
+      const thumbnail = qs('#uploadThumbnail').value.trim();
+      if(!seriesId || !title || !link){ toast('Series ID, Title and Link are required'); return; }
+      const pb = qs('#uploadProgress'); pb.style.width = '5%';
+      let p = 5; const iv = setInterval(()=>{ p = Math.min(95, p+8); pb.style.width = p+'%'; }, 180);
+      try{
+        const row = {
+          seriesId: seriesId,
+          id: rid('vid'),
+          title, link, category, season, episode, description, thumbnail: thumbnail || getThumbnailLink(link),
           uploadedBy: "Admin",
-          uploadDate: new Date().toISOString().split('T')[0],
-          season: qs('#uploadSeason').value,
-          episode: qs('#uploadEpisode').value,
-          description: qs('#uploadDescription').value,
-          thumbnail: qs('#uploadThumbnail').value
-      };
-      const response = await apiPost('upload', uploadData);
-      if (response.success) {
-          toast("Video uploaded successfully!");
-      } else {
-          toast(`Upload failed: ${response.message}`);
+          uploadDate: new Date().toISOString()
+        };
+        await apiPost('videos', row);
+        clearInterval(iv); pb.style.width = '100%';
+        setTimeout(()=> pb.style.width = '0%', 500);
+        qs('#uploadId').value=''; qs('#uploadTitle').value=''; qs('#uploadLink').value='';
+        qs('#uploadCategory').value=''; qs('#uploadSeason').value=''; qs('#uploadEpisode').value='';
+        qs('#uploadDescription').value=''; qs('#uploadThumbnail').value='';
+        toast('Upload successful!');
+        await loadInitial();
+      }catch(e){
+        clearInterval(iv); pb.style.width = '0%';
+        console.error(e); toast('Upload failed');
       }
     });
     
@@ -1273,17 +1342,24 @@
             qs('#authPage').classList.add('hidden');
             qs('#mainContent').classList.remove('hidden');
             qs('#bottomNav').style.display = 'flex';
-            if (isAdminLoggedIn) {
-                adminDashboardTab.classList.remove('hidden');
-            } else {
-                adminDashboardTab.classList.add('hidden');
-            }
+            adminDashboardTab.classList.add('hidden');
+            loadInitial();
+        } else if (isAdminLoggedIn) {
+            STATE.isAdmin = true;
+            qs('#authPage').classList.add('hidden');
+            qs('#mainContent').classList.remove('hidden');
+            qs('#bottomNav').style.display = 'flex';
+            qs('#mainContent').classList.add('hidden'); // Hide main content
+            openPage('adminDashboard');
+            adminDashboardTab.classList.remove('hidden');
+            renderAdminDashboard();
             loadInitial();
         } else {
             qs('#authPage').classList.remove('hidden');
             qs('#mainContent').classList.add('hidden');
             qs('#bottomNav').style.display = 'none';
             adminDashboardTab.classList.add('hidden');
+            loadInitial();
         }
     }
 
