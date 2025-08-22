@@ -638,10 +638,10 @@
       APK_DOWNLOAD_LINK: "https://drive.google.com/file/d/1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw/view?usp=drivesdk"
     };
     
-    // New Music APIs from your provided code
+    // আপনার নতুন Render সার্ভারের API এন্ডপয়েন্ট
     const MUSIC_API = {
-        SEARCH: "https://www.x-noobs-apis.42web.io/mostakim/ytSearch",
-        DOWNLOAD: "https://www.x-noobs-apis.42web.io/m/sing"
+        SEARCH: "https://video-hub-9ysg.onrender.com/search",
+        DOWNLOAD: "https://video-hub-9ysg.onrender.com/play"
     };
 
     const OWNER_INFO = {
@@ -1469,7 +1469,7 @@
             searchResultsContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Searching...</div>';
             
             try {
-                const searchResponse = await fetch(`${MUSIC_API.SEARCH}?search=${encodeURIComponent(query)}`);
+                const searchResponse = await fetch(`${MUSIC_API.SEARCH}?q=${encodeURIComponent(query)}`);
                 const searchData = await searchResponse.json();
                 
                 if (searchData && Array.isArray(searchData)) {
@@ -1609,7 +1609,13 @@
                 const index = STATE.songs.findIndex(s => s.url === song.url);
                 STATE.currentSongIndex = index;
             } else {
-                throw new Error('No audio URL found in response');
+                // If the API doesn't return a JSON, assume it's a direct stream
+                audioPlayer.src = `${MUSIC_API.DOWNLOAD}?url=${encodeURIComponent(song.url)}`;
+                await audioPlayer.play();
+                musicPlayerTitle.textContent = song.title;
+                musicPlayerArtist.textContent = song.channelTitle || 'Unknown Artist';
+                musicPlayerArt.src = song.thumbnail || 'https://via.placeholder.com/45.png';
+                playPauseBtn.textContent = '⏸️';
             }
         } catch (error) {
             console.error('Play API error:', error);
