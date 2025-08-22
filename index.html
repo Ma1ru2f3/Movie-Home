@@ -515,7 +515,7 @@
       ADMIN_PASSWORD: "112233445500",
       ADMIN_EMAIL: "mymaruf94@gmail.com",
       ADMIN_PASS: "123450",
-      SHEETDB_API: "https://sheetdb.io/api/v1/vitcn9bcwl84i", // <-- এখানে নতুন API বসানো হয়েছে
+      SHEETDB_API: "https://sheetdb.io/api/v1/vitcn9bcwl84i", 
       APK_DOWNLOAD_LINK: "https://drive.google.com/file/d/1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw/view?usp=drivesdk"
     };
 
@@ -600,9 +600,13 @@
       return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : link;
     }
 
+    // UPDATED FUNCTION: This function now directly generates a shareable image link
     function getThumbnailLink(link) {
       const fileId = getFileIdFromLink(link);
-      return fileId ? `https://drive.google.com/thumbnail?id=${fileId}` : 'https://via.placeholder.com/150x225.png?text=No+Image';
+      if (fileId) {
+        return `https://drive.google.com/uc?export=view&id=${fileId}`;
+      }
+      return link || 'https://via.placeholder.com/150x225.png?text=No+Image';
     }
 
     async function loadInitial(){
