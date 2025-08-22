@@ -253,6 +253,9 @@
         cursor: pointer;
         border-bottom: 1px solid var(--border-color);
     }
+    .song-list .song-item:last-child {
+        border-bottom: none;
+    }
     .song-list .song-item img {
         width: 60px;
         height: 60px;
@@ -341,8 +344,12 @@
           <div id="seriesGrid" class="grid cols-2"></div>
         </div>
         <div id="paneSongs" class="pane" style="display:none">
-          <div style="font-weight:800;font-size:24px">Songs</div>
-          <div id="songsList" class="song-list"></div>
+          <div class="col" style="margin-bottom:12px">
+            <div style="font-weight:800;font-size:24px">Songs</div>
+            <input id="songSearchInput" type="text" placeholder="🔎 Search songs..." />
+          </div>
+          <div id="songSearchResults" class="song-list" style="display:none"></div>
+          <div id="fullSongsList" class="song-list"></div>
         </div>
         <div id="paneMore" class="pane" style="display:none">
           <div style="font-weight:800;font-size:24px; margin-bottom: 20px;">More</div>
@@ -771,7 +778,7 @@
         })) : [];
 
         renderHomeContent();
-        renderSongsPage();
+        renderSongsPage(STATE.songs);
       }catch(e){
         console.error(e);
       }
@@ -843,14 +850,18 @@
       });
     }
 
-    function renderSongsPage() {
-        const container = qs('#songsList');
+    function renderSongsPage(songsToRender) {
+        const container = qs('#fullSongsList');
+        const searchResultsContainer = qs('#songSearchResults');
+        
         container.innerHTML = '';
-        if (STATE.songs.length === 0) {
+        searchResultsContainer.innerHTML = '';
+
+        if (songsToRender.length === 0) {
             container.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">No songs found.</div>';
             return;
         }
-        STATE.songs.forEach(song => {
+        songsToRender.forEach(song => {
             const songItem = document.createElement('div');
             songItem.className = 'song-item';
             songItem.innerHTML = `
@@ -863,6 +874,27 @@
             songItem.onclick = () => playSong(song);
             container.appendChild(songItem);
         });
+    }
+
+    function renderFilteredSongs(songsToRender, container) {
+        container.innerHTML = '';
+        if (songsToRender.length === 0) {
+            container.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">No matching songs found.</div>';
+        } else {
+            songsToRender.forEach(song => {
+                const songItem = document.createElement('div');
+                songItem.className = 'song-item';
+                songItem.innerHTML = `
+                    <img src="${song.album_art}" onerror="this.src='https://via.placeholder.com/60.png?text=No+Art'" alt="${song.title}">
+                    <div class="song-info">
+                        <div class="song-title">${escapeHtml(song.title)}</div>
+                        <div class="song-artist">${escapeHtml(song.artist)}</div>
+                    </div>
+                `;
+                songItem.onclick = () => playSong(song);
+                container.appendChild(songItem);
+            });
+        }
     }
     
     function renderCategories(container, categories){
@@ -1247,11 +1279,11 @@
                 qsa('.admin-pane').forEach(p => p.classList.add('hidden'));
                 qs(`#admin-${btn.dataset.adminPane}-pane`).classList.remove('hidden');
                 
-                if (btn.dataset.adminPane === 'users') {
+                if (btn.dataset.admin-pane === 'users') {
                     renderUserList();
-                } else if (btn.dataset.adminPane === 'reports') {
+                } else if (btn.dataset.admin-pane === 'reports') {
                     renderReportsList();
-                } else if (btn.dataset.adminPane === 'requests') {
+                } else if (btn.dataset.admin-pane === 'requests') {
                     renderRequestsList();
                 }
             });
@@ -1458,6 +1490,28 @@
             }
         }
     });
+    
+    // Dedicated song search logic
+    qs('#songSearchInput').addEventListener('input', (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        const searchResultsContainer = qs('#songSearchResults');
+        const fullSongsListContainer = qs('#fullSongsList');
+
+        if (query.length > 0) {
+            fullSongsListContainer.style.display = 'none';
+            searchResultsContainer.style.display = 'block';
+
+            const filteredSongs = STATE.songs.filter(s => 
+                (s.title && s.title.toLowerCase().includes(query)) ||
+                (s.artist && s.artist.toLowerCase().includes(query))
+            );
+            renderFilteredSongs(filteredSongs, searchResultsContainer);
+        } else {
+            searchResultsContainer.style.display = 'none';
+            fullSongsListContainer.style.display = 'block';
+            renderSongsPage(STATE.songs);
+        }
+    });
 
     qs('#btnUpload').addEventListener('click', async ()=>{
       if(!STATE.isAdmin){ toast('Only admin can upload.'); return; }
@@ -1565,7 +1619,7 @@
     playPauseBtn.addEventListener('click', () => {
         if (audioPlayer.paused) {
             audioPlayer.play();
-            playPauseBtn.textContent = '⏸️';
+            playPauseBtn.textContent = '▶️';
         } else {
             audioPlayer.pause();
             playPauseBtn.textContent = '▶️';
