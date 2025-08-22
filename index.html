@@ -348,8 +348,9 @@
             <div style="font-weight:800;font-size:24px">Songs</div>
             <input id="songSearchInput" type="text" placeholder="🔎 Search songs..." />
           </div>
-          <div id="songSearchResults" class="song-list" style="display:none"></div>
-          <div id="fullSongsList" class="song-list"></div>
+          <div id="songSearchResults" class="song-list">
+             <div style="text-align:center;color:var(--text-secondary);padding:20px;">Search for a song to get started.</div>
+          </div>
         </div>
         <div id="paneMore" class="pane" style="display:none">
           <div style="font-weight:800;font-size:24px; margin-bottom: 20px;">More</div>
@@ -636,6 +637,12 @@
       SHEETDB_API: "https://sheetdb.io/api/v1/vitcn9bcwl84i", 
       APK_DOWNLOAD_LINK: "https://drive.google.com/file/d/1HKWsccAM0YIlUF5tw6YJHeBsQ-bqI0Nw/view?usp=drivesdk"
     };
+    
+    // New Music APIs from your provided code
+    const MUSIC_API = {
+        SEARCH: "https://www.x-noobs-apis.42web.io/mostakim/ytSearch",
+        DOWNLOAD: "https://www.x-noobs-apis.42web.io/m/sing"
+    };
 
     const OWNER_INFO = {
         name: "Video Hub",
@@ -685,7 +692,6 @@
 
     let STATE = {
       videos: [],
-      songs: [],
       users: [], 
       reports: [],
       requests: [],
@@ -694,6 +700,7 @@
       favorites: JSON.parse(localStorage.getItem('bv_favorites') || '[]'),
       downloads: JSON.parse(localStorage.getItem('bv_downloads') || '[]'),
       owner: OWNER_INFO,
+      songs: [], // New property to store search results
       currentSong: null,
       currentSongIndex: 0,
     };
@@ -722,12 +729,24 @@
         }
         return 'https://via.placeholder.com/150x225.png?text=No+Image';
     }
+    
+    const parseDuration = (timestamp) => {
+        const parts = timestamp.split(':').map(part => parseInt(part));
+        let seconds = 0;
+
+        if (parts.length === 3) {
+          seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+        } else if (parts.length === 2) {
+          seconds = parts[0] * 60 + parts[1];
+        }
+
+        return seconds;
+    };
 
     async function loadInitial(){
       try{
-        const [videosRaw, songsRaw, usersRaw, reportsRaw, requestsRaw, upcomingRaw] = await Promise.all([
+        const [videosRaw, usersRaw, reportsRaw, requestsRaw, upcomingRaw] = await Promise.all([
           apiGet('videos').catch(()=>[]),
-          apiGet('songs').catch(()=>[]),
           apiGet('users').catch(()=>[]),
           apiGet('reports').catch(()=>[]),
           apiGet('requests').catch(()=>[]),
@@ -748,14 +767,6 @@
           thumbnail: getThumbnailLink(r.thumbnail || r.link)
         })).sort((a, b) => a.seriesId.localeCompare(b.seriesId) || a.season - b.season || a.episode - b.episode) : []);
 
-        STATE.songs = (Array.isArray(songsRaw) ? songsRaw.map(r => ({
-            id: r.id || rid('sng'),
-            title: r.title || r.Title || 'Untitled Song',
-            artist: r.artist || r.Artist || 'Unknown Artist',
-            album_art: getThumbnailLink(r.album_art || r.link),
-            link: r.link || r.Link || ''
-        })) : []);
-        
         STATE.users = (Array.isArray(usersRaw) ? usersRaw.map(r => ({
             id: r.id || r.ID,
             name: r.name || r.Name || 'Unknown',
@@ -778,7 +789,6 @@
         })) : [];
 
         renderHomeContent();
-        renderSongsPage(STATE.songs);
       }catch(e){
         console.error(e);
       }
@@ -850,32 +860,6 @@
       });
     }
 
-    function renderSongsPage(songsToRender) {
-        const container = qs('#fullSongsList');
-        const searchResultsContainer = qs('#songSearchResults');
-        
-        container.innerHTML = '';
-        searchResultsContainer.innerHTML = '';
-
-        if (songsToRender.length === 0) {
-            container.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">No songs found.</div>';
-            return;
-        }
-        songsToRender.forEach(song => {
-            const songItem = document.createElement('div');
-            songItem.className = 'song-item';
-            songItem.innerHTML = `
-                <img src="${song.album_art}" onerror="this.src='https://via.placeholder.com/60.png?text=No+Art'" alt="${song.title}">
-                <div class="song-info">
-                    <div class="song-title">${escapeHtml(song.title)}</div>
-                    <div class="song-artist">${escapeHtml(song.artist)}</div>
-                </div>
-            `;
-            songItem.onclick = () => playSong(song);
-            container.appendChild(songItem);
-        });
-    }
-
     function renderFilteredSongs(songsToRender, container) {
         container.innerHTML = '';
         if (songsToRender.length === 0) {
@@ -885,10 +869,11 @@
                 const songItem = document.createElement('div');
                 songItem.className = 'song-item';
                 songItem.innerHTML = `
-                    <img src="${song.album_art}" onerror="this.src='https://via.placeholder.com/60.png?text=No+Art'" alt="${song.title}">
+                    <img src="${song.thumbnail}" onerror="this.src='https://via.placeholder.com/60.png?text=No+Art'" alt="${song.title}">
                     <div class="song-info">
                         <div class="song-title">${escapeHtml(song.title)}</div>
-                        <div class="song-artist">${escapeHtml(song.artist)}</div>
+                        <div class="song-artist">${escapeHtml(song.channelTitle || 'Unknown Artist')}</div>
+                        <div class="song-artist" style="font-size:12px;color:var(--accent)">Duration: ${escapeHtml(song.timestamp)}</div>
                     </div>
                 `;
                 songItem.onclick = () => playSong(song);
@@ -940,7 +925,6 @@
       const downloadBtnText = isDownloaded ? '⬇️ Downloaded' : '⬇️ Download';
       const favoriteBtnText = isFavorite ? '⭐ Favorited' : '⭐ Favorite';
       
-      // Pause any playing music
       const audioPlayer = qs('#audioPlayer');
       audioPlayer.pause();
       qs('#playPauseBtn').textContent = '▶️';
@@ -1279,11 +1263,11 @@
                 qsa('.admin-pane').forEach(p => p.classList.add('hidden'));
                 qs(`#admin-${btn.dataset.adminPane}-pane`).classList.remove('hidden');
                 
-                if (btn.dataset.admin-pane === 'users') {
+                if (btn.dataset.adminPane === 'users') {
                     renderUserList();
-                } else if (btn.dataset.admin-pane === 'reports') {
+                } else if (btn.dataset.adminPane === 'reports') {
                     renderReportsList();
-                } else if (btn.dataset.admin-pane === 'requests') {
+                } else if (btn.dataset.adminPane === 'requests') {
                     renderRequestsList();
                 }
             });
@@ -1472,44 +1456,46 @@
                         resultsContainer.appendChild(card);
                     });
                 }
-                if (filteredSongs.length > 0) {
-                    filteredSongs.forEach(s => {
-                        const songItem = document.createElement('div');
-                        songItem.className = 'song-item';
-                        songItem.innerHTML = `
-                            <img src="${s.album_art}" onerror="this.src='https://via.placeholder.com/60.png?text=No+Art'" alt="${s.title}">
-                            <div class="song-info">
-                                <div class="song-title">${escapeHtml(s.title)}</div>
-                                <div class="song-artist">${escapeHtml(s.artist)}</div>
-                            </div>
-                        `;
-                        songItem.onclick = () => playSong(s);
-                        resultsContainer.appendChild(songItem);
-                    });
-                }
             }
         }
     });
     
     // Dedicated song search logic
-    qs('#songSearchInput').addEventListener('input', (e) => {
-        const query = e.target.value.trim().toLowerCase();
+    qs('#songSearchInput').addEventListener('input', async (e) => {
+        const query = e.target.value.trim();
         const searchResultsContainer = qs('#songSearchResults');
-        const fullSongsListContainer = qs('#fullSongsList');
-
+        
         if (query.length > 0) {
-            fullSongsListContainer.style.display = 'none';
-            searchResultsContainer.style.display = 'block';
+            searchResultsContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Searching...</div>';
+            
+            try {
+                const searchResponse = await fetch(`${MUSIC_API.SEARCH}?search=${encodeURIComponent(query)}`);
+                const searchData = await searchResponse.json();
+                
+                if (searchData && Array.isArray(searchData)) {
+                    const filteredSongs = searchData.filter(video => {
+                        try {
+                            const totalSeconds = parseDuration(video.timestamp);
+                            return totalSeconds < 600; // 10 মিনিটের নিচে
+                        } catch {
+                            return false;
+                        }
+                    });
 
-            const filteredSongs = STATE.songs.filter(s => 
-                (s.title && s.title.toLowerCase().includes(query)) ||
-                (s.artist && s.artist.toLowerCase().includes(query))
-            );
-            renderFilteredSongs(filteredSongs, searchResultsContainer);
+                    STATE.songs = filteredSongs; // Store the results in the state
+                    renderFilteredSongs(filteredSongs, searchResultsContainer);
+                } else {
+                    searchResultsContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">No results found. Please try a different query.</div>';
+                }
+
+            } catch (error) {
+                console.error('Search API error:', error);
+                searchResultsContainer.innerHTML = '<div style="text-align:center;color:var(--accent);padding:20px;">An error occurred while searching. Please try again.</div>';
+            }
+
         } else {
-            searchResultsContainer.style.display = 'none';
-            fullSongsListContainer.style.display = 'block';
-            renderSongsPage(STATE.songs);
+            searchResultsContainer.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">Search for a song to get started.</div>';
+            STATE.songs = []; // Clear the state
         }
     });
 
@@ -1596,30 +1582,48 @@
     const nextBtn = qs('#nextBtn');
     const prevBtn = qs('#prevBtn');
 
-    function playSong(song) {
-        if (!song || !song.link) {
+    async function playSong(song) {
+        if (!song || !song.url) {
             toast('No valid song link found.');
             return;
         }
-        
-        // Find the index of the song to manage next/prev
-        const index = STATE.songs.findIndex(s => s.id === song.id);
-        STATE.currentSongIndex = index;
 
-        STATE.currentSong = song;
-        audioPlayer.src = getAudioLink(song.link);
-        audioPlayer.play();
+        musicPlayerTitle.textContent = 'Loading...';
+        musicPlayerArtist.textContent = '';
+        musicPlayerArt.src = 'https://via.placeholder.com/45.png';
         musicPlayerBar.classList.add('active');
-        musicPlayerTitle.textContent = song.title;
-        musicPlayerArtist.textContent = song.artist;
-        musicPlayerArt.src = song.album_art;
-        playPauseBtn.textContent = '⏸️';
+        playPauseBtn.textContent = '⏳';
+        
+        try {
+            const apiResponse = await fetch(`${MUSIC_API.DOWNLOAD}?url=${encodeURIComponent(song.url)}`);
+            const apiData = await apiResponse.json();
+            
+            if (apiData && apiData.url) {
+                audioPlayer.src = apiData.url;
+                await audioPlayer.play();
+                musicPlayerTitle.textContent = song.title;
+                musicPlayerArtist.textContent = song.channelTitle || 'Unknown Artist';
+                musicPlayerArt.src = song.thumbnail || 'https://via.placeholder.com/45.png';
+                playPauseBtn.textContent = '⏸️';
+
+                const index = STATE.songs.findIndex(s => s.url === song.url);
+                STATE.currentSongIndex = index;
+            } else {
+                throw new Error('No audio URL found in response');
+            }
+        } catch (error) {
+            console.error('Play API error:', error);
+            toast('Error playing song. Please try again.');
+            playPauseBtn.textContent = '▶️';
+            musicPlayerTitle.textContent = 'Playback Failed';
+            musicPlayerArtist.textContent = 'Try another song.';
+        }
     }
 
     playPauseBtn.addEventListener('click', () => {
         if (audioPlayer.paused) {
             audioPlayer.play();
-            playPauseBtn.textContent = '▶️';
+            playPauseBtn.textContent = '⏸️';
         } else {
             audioPlayer.pause();
             playPauseBtn.textContent = '▶️';
